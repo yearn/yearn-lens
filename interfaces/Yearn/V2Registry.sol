@@ -1,16 +1,14 @@
 pragma solidity ^0.8.2;
 
 interface V2Registry {
-    function getVaults() external view returns (address[] memory);
+    function numTokens() external view returns (uint256);
 
-    // function getVaultsInfo()
-    //     external
-    //     view
-    //     returns (
-    //         address[] memory,
-    //         address[] memory,
-    //         address[] memory,
-    //         address[] memory,
-    //         address[] memory
-    //     );
+    function numVaults(address token) external view returns (uint256);
+
+    function tokens(uint256 tokenIdx) external view returns (address);
+
+    function vaults(address token, uint256 tokenIdx)
+        external
+        view
+        returns (address);
 }

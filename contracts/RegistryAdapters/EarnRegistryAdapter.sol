@@ -30,7 +30,7 @@ contract RegistryAdapterEarn {
         oracle = Oracle(_oracleAddress);
     }
 
-    function getAssetAddresses() public view returns (address[] memory) {
+    function getAssetsAddresses() public view returns (address[] memory) {
         return GenericRegistry(registryAddress).getAssets();
     }
 
@@ -85,7 +85,7 @@ contract RegistryAdapterEarn {
     }
 
     function getAssets() external view returns (Asset[] memory) {
-        address[] memory assetAddresses = getAssetAddresses();
+        address[] memory assetAddresses = getAssetsAddresses();
         uint256 numberOfAssets = assetAddresses.length;
         Asset[] memory assets = new Asset[](numberOfAssets);
         for (uint256 i = 0; i < numberOfAssets; i++) {

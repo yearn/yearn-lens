@@ -1,9 +1,8 @@
 pragma solidity ^0.8.2;
 pragma experimental ABIEncoderV2;
-import "../../interfaces/Yearn/V1Vault.sol";
-import "../../interfaces/Yearn/V1Registry.sol";
 import "../../interfaces/Yearn/RegistryAdapter.sol";
 
+// TODO: Implement authentication
 contract Lens {
     mapping(uint256 => address) private registries;
     uint256 public numRegistries;
@@ -25,6 +24,9 @@ contract Lens {
             addRegistry(registryAddress);
         }
     }
+
+    // TODO: Implement
+    // function replaceRegistry(address oldAddress, address newAddress) public {}
 
     function removeRegistry(address registryAddress) public {
         if (isRegistered[registryAddress] != 0) {
@@ -54,10 +56,14 @@ contract Lens {
         return registryAdapter.getAssets();
     }
 
-    function getAssetsLength() internal view returns (uint256) {
+    function getAssetsLength() public view returns (uint256) {
         uint256 assetsLength;
-        for (uint256 i = 0; i < numRegistries; i++) {
-            address registryAdapterAddress = registries[i + 1];
+        for (
+            uint256 registryIdx = 0;
+            registryIdx < numRegistries;
+            registryIdx++
+        ) {
+            address registryAdapterAddress = registries[registryIdx + 1];
             RegistryAdapter registryAdapter =
                 RegistryAdapter(registryAdapterAddress);
             assetsLength += registryAdapter.getAssetsLength();
@@ -65,6 +71,34 @@ contract Lens {
         return assetsLength;
     }
 
+    // TODO: Implement array concat.. memcpy..?
+    function getAssetsAddresses() public view returns (address[] memory) {
+        uint256 assetsLength = getAssetsLength();
+        address[] memory assetsAddresses = new address[](assetsLength);
+        uint256 assetIdx;
+        for (
+            uint256 registryIdx = 0;
+            registryIdx < numRegistries;
+            registryIdx++
+        ) {
+            address registryAdapterAddress = registries[registryIdx + 1];
+            RegistryAdapter registryAdapter =
+                RegistryAdapter(registryAdapterAddress);
+            address[] memory assetAddresses =
+                registryAdapter.getAssetsAddresses();
+            for (
+                uint256 registryAssetIdx = 0;
+                registryAssetIdx < assetAddresses.length;
+                registryAssetIdx++
+            ) {
+                assetsAddresses[assetIdx] = assetAddresses[registryAssetIdx];
+                assetIdx++;
+            }
+        }
+        return assetsAddresses;
+    }
+
+    // TODO: Is there a better way to do this?
     function getAssets()
         external
         view
@@ -73,18 +107,70 @@ contract Lens {
         uint256 assetsLength = getAssetsLength();
         RegistryAdapter.Asset[] memory assetsList =
             new RegistryAdapter.Asset[](assetsLength);
-        uint256 currentIdx;
-        for (uint256 i = 0; i < numRegistries; i++) {
-            address registryAdapterAddress = registries[i + 1];
+        uint256 assetIdx;
+        for (
+            uint256 registryIdx = 0;
+            registryIdx < numRegistries;
+            registryIdx++
+        ) {
+            address registryAdapterAddress = registries[registryIdx + 1];
             RegistryAdapter registryAdapter =
                 RegistryAdapter(registryAdapterAddress);
             RegistryAdapter.Asset[] memory registryAssets =
                 registryAdapter.getAssets();
-            for (uint256 c = 0; c < registryAssets.length; c++) {
-                assetsList[currentIdx] = registryAssets[c];
-                currentIdx++;
+
+            // TODO: Can this be moved into a separate function? Dislike nested for loops..
+            for (
+                uint256 registryAssetIdx = 0;
+                registryAssetIdx < registryAssets.length;
+                registryAssetIdx++
+            ) {
+                assetsList[assetIdx] = registryAssets[registryAssetIdx];
+                assetIdx++;
             }
         }
         return assetsList;
+    }
+
+    function getPositionsFromAdapter(
+        address account,
+        RegistryAdapter registryAdapterAddress
+    ) external view returns (RegistryAdapter.Position[] memory) {
+        RegistryAdapter registryAdapter =
+            RegistryAdapter(registryAdapterAddress);
+        return registryAdapter.getPositionsOf(account);
+    }
+
+    // TODO: Refactor..
+    function getPositionsOf(address account)
+        external
+        view
+        returns (RegistryAdapter.Position[] memory)
+    {
+        uint256 assetsLength = getAssetsLength();
+        RegistryAdapter.Position[] memory positionsList =
+            new RegistryAdapter.Position[](assetsLength);
+        uint256 assetIdx;
+        for (
+            uint256 registryIdx = 0;
+            registryIdx < numRegistries;
+            registryIdx++
+        ) {
+            address registryAdapterAddress = registries[registryIdx + 1];
+            RegistryAdapter registryAdapter =
+                RegistryAdapter(registryAdapterAddress);
+            RegistryAdapter.Position[] memory adapterPositions =
+                registryAdapter.getPositionsOf(account);
+            // TODO: Can this be moved into a separate function? Dislike nested for loops..
+            for (
+                uint256 registryAssetIdx = 0;
+                registryAssetIdx < adapterPositions.length;
+                registryAssetIdx++
+            ) {
+                positionsList[assetIdx] = adapterPositions[registryAssetIdx];
+                assetIdx++;
+            }
+        }
+        return positionsList;
     }
 }
