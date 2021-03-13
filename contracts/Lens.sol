@@ -1,6 +1,9 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.2;
 pragma experimental ABIEncoderV2;
-import "../../interfaces/Yearn/RegistryAdapter.sol";
+
+import "../interfaces/Yearn/RegistryAdapter.sol";
 
 // TODO: Implement authentication
 contract Lens {
