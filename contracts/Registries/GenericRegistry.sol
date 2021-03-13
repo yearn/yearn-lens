@@ -39,7 +39,7 @@ contract GenericRegistry {
         for (uint256 i = 0; i < numAssets; i++) {
             address assetAddress = assets[i + 1];
             assetList[i] = assetAddress;
-            return (assetList);
         }
+        return assetList;
     }
 }
