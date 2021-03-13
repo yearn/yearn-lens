@@ -1,5 +1,8 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.2;
 pragma experimental ABIEncoderV2;
+
 import "../../interfaces/Yearn/V2Vault.sol";
 import "../../interfaces/Yearn/V2Registry.sol";
 import "../../interfaces/Common/IERC20.sol";
