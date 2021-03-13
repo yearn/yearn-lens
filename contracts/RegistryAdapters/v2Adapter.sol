@@ -4,7 +4,7 @@ pragma solidity ^0.8.2;
 pragma experimental ABIEncoderV2;
 
 import "../../interfaces/Yearn/V2Vault.sol";
-import "../../interfaces/Yearn/V2Registry.sol";
+import "../../interfaces/Yearn/IV2Registry.sol";
 import "../../interfaces/Common/IERC20.sol";
 
 contract RegisteryAdapterV2Vault {
@@ -39,7 +39,7 @@ contract RegisteryAdapterV2Vault {
     }
 
     function getAssetsLength() public view returns (uint256) {
-        V2Registry registry = V2Registry(registryAddress);
+        IV2Registry registry = IV2Registry(registryAddress);
         uint256 numTokens = registry.numTokens();
         uint256 numVaults;
         for (uint256 i = 0; i < numTokens; i++) {
@@ -53,7 +53,7 @@ contract RegisteryAdapterV2Vault {
     function getAssetsAddresses() public view returns (address[] memory) {
         uint256 numVaults = getAssetsLength();
         address[] memory vaultAddresses = new address[](numVaults);
-        V2Registry registry = V2Registry(registryAddress);
+        IV2Registry registry = IV2Registry(registryAddress);
         uint256 numTokens = registry.numTokens();
         uint256 currentVaultIdx;
         for (uint256 tokenIdx = 0; tokenIdx < numTokens; tokenIdx++) {

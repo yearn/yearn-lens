@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.2;
 
-interface V2Registry {
+interface IV2Registry {
     function numTokens() external view returns (uint256);
 
     function numVaults(address token) external view returns (uint256);
