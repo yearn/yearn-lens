@@ -1,6 +1,7 @@
 import pytest
 import brownie
-from brownie import V2Registry
+
+from brownie import *
 
 # def test_v1_adapter(RegisteryAdapterV1Vault, gov):
 #     v1RegistryAddress = "0x3eE41C098f9666ed2eA246f4D2558010e59d63A0"
@@ -25,6 +26,7 @@ def test_lens(
     RegistryAdapterEarn,
     Oracle,
     gov,
+    V2Registry,
     GenericRegistry,
 ):
 
@@ -54,7 +56,7 @@ def test_lens(
     lens.addRegistry(v2VaultsAdapter)
     lens.addRegistry(v1VaultsAdapter)
 
-    print("lll", lens.getAssetsAddresses())
+    # print("lll", lens.getAssetsAddresses())
 
 
 # # print(
@@ -80,39 +82,6 @@ def test_lens(
 
 # v2Adapter = RegisteryAdapterV2Vault.deploy(v2RegistryAddress, {"from": gov})
 
-############### EARN
-# earnRegistry = GenericRegistry.deploy({"from": gov})
-# # Earn v1
-# yDaiV1Address = "0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01"
-# yUsdV1Address = "0xd6aD7a6750A7593E092a9B218d66C0A814a3436e"
-# yUsdtV1Address = "0x83f798e925BcD4017Eb265844FDDAbb448f1707D"
-# yTusdV1Address = "0x73a052500105205d34daf004eab301916da8190f"
-# ySusdV1Address = "0xF61718057901F84C4eEC4339EF8f0D86D2B45600"
-
-# # Earn v2
-# yDaiV2Address = "0xC2cB1040220768554cf699b0d863A3cd4324ce32"
-# yUsdcV2Address = "0x26EA744E5B887E5205727f55dFBE8685e3b21951"
-# yUsdtV2Address = "0xE6354ed5bC4b393a5Aad09f21c46E101e692d447"
-# yBusdV2Address = "0x04bC0Ab673d88aE9dbC9DA2380cB6B79C4BCa9aE"
-# yWbtcV2Address = "0x04Aa51bbcB46541455cCF1B8bef2ebc5d3787EC9"
-
-# earnRegistry.addAssets(
-#     [
-#         # yDaiV1Address,
-#         # yUsdV1Address,
-#         # yTusdV1Address,
-#         # yUsdtV1Address,
-#         # ySusdV1Address,
-#         # yDaiV2Address,
-#         # yUsdcV2Address,
-#         yUsdtV2Address,
-#         yBusdV2Address,
-#     ]
-# )
-# oracle = Oracle.deploy({"from": gov})
-# earnAdapter = RegistryAdapterEarn.deploy(earnRegistry, oracle, {"from": gov})
-# # print("Earn assets", earnAdapter.getAssets())
-# print("Earn assets", earnAdapter.getAssetTvl(yDaiV2Address))
 # ###################
 
 # wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"

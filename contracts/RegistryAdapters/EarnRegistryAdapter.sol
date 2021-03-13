@@ -5,9 +5,8 @@ pragma experimental ABIEncoderV2;
 
 import "../../interfaces/Yearn/EarnToken.sol";
 import "../../interfaces/Yearn/GenericRegistry.sol";
-import "../../interfaces/Aave/AToken.sol";
-import "../../interfaces/Aave/AToken.sol";
 import "../../interfaces/Common/Oracle.sol";
+import "../../interfaces/Common/IERC20.sol";
 
 contract RegistryAdapterEarn {
     address public registryAddress;
@@ -44,23 +43,21 @@ contract RegistryAdapterEarn {
     {
         EarnToken earnToken = EarnToken(earnTokenAddress);
         uint256 valueInToken = earnToken.calcPoolValueInToken();
-        address underlyingTokenAddress =
-            getUnderlyingAssetAddress(earnTokenAddress);
+        address underlyingTokenAddress = earnToken.token();
+        IERC20 underlyingToken = IERC20(underlyingTokenAddress);
+        uint256 underlyingTokenDecimals = underlyingToken.decimals();
+        uint256 usdcDecimals = 6;
+        uint256 decimalsAdjustment = underlyingTokenDecimals - usdcDecimals;
         uint256 price = oracle.getPriceUsdc(underlyingTokenAddress);
-        uint256 tvl = valueInToken * price;
+        uint256 tvl;
+        if (decimalsAdjustment > 0) {
+            tvl =
+                (valueInToken * price * (10**decimalsAdjustment)) /
+                10**(decimalsAdjustment + underlyingTokenDecimals);
+        } else {
+            tvl = (valueInToken * price) / 10**usdcDecimals;
+        }
         return tvl;
-    }
-
-    function getUnderlyingAssetAddress(address earnTokenAddress)
-        public
-        view
-        returns (address)
-    {
-        EarnToken earnToken = EarnToken(earnTokenAddress);
-        address aaveTokenAddress = earnToken.aaveToken();
-        AToken aaveToken = AToken(aaveTokenAddress);
-        address underlyingAssetAddress = aaveToken.underlyingAssetAddress();
-        return underlyingAssetAddress;
     }
 
     function getAsset(address id) public view returns (Asset memory) {
@@ -97,5 +94,18 @@ contract RegistryAdapterEarn {
             assets[i] = asset;
         }
         return assets;
+    }
+
+    function getAssetsTvl() external view returns (uint256) {
+        uint256 tvl;
+        address[] memory assetAddresses = getAssetsAddresses();
+        uint256 numberOfAssets = assetAddresses.length;
+        Asset[] memory assets = new Asset[](numberOfAssets);
+        for (uint256 i = 0; i < numberOfAssets; i++) {
+            address assetAddress = assetAddresses[i];
+            uint256 assetTvl = getAssetTvl(assetAddress);
+            tvl += assetTvl;
+        }
+        return tvl;
     }
 }
