@@ -19,6 +19,8 @@ contract Oracle {
     PriceRouter primaryRouter;
     PriceRouter secondaryRouter;
 
+    CurveRegistry curveRegistry;
+
     // Factories
     // address secondaryFactoryAddress =
     //     0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac;
@@ -44,9 +46,20 @@ contract Oracle {
         usdcAddress = _usdcAddress;
         primaryRouter = PriceRouter(primaryRouterAddress);
         secondaryRouter = PriceRouter(secondaryRouterAddress);
+        curveRegistry = CurveRegistry(curveRegistryAddress);
         wethAddress = primaryRouter.WETH();
     }
 
+    // General
+    function getPriceUsdc(address tokenAddress) public view returns (uint256) {
+        bool useCurveCalculation = isCurveLpToken(tokenAddress);
+        if (useCurveCalculation) {
+            return getCurvePriceUsdc(tokenAddress);
+        }
+        return getPriceFromRouterUsdc(tokenAddress);
+    }
+
+    // Uniswap/Sushiswap
     function getPriceFromRouter(address token0Address, address token1Address)
         public
         view
@@ -61,14 +74,17 @@ contract Oracle {
         }
 
         address[] memory path;
+        uint8 numberOfJumps;
         if (token0Address == wethAddress || token1Address == wethAddress) {
             // If WETH is already in the path, create a simple path ...
-            path = new address[](2);
+            numberOfJumps = 1;
+            path = new address[](numberOfJumps + 1);
             path[0] = token0Address;
             path[1] = token1Address;
         } else {
             // ... otherwise add WETH in the middle of the path.
-            path = new address[](3);
+            numberOfJumps = 2;
+            path = new address[](numberOfJumps + 1);
             path[0] = token0Address;
             path[1] = wethAddress;
             path[2] = token1Address;
@@ -92,6 +108,10 @@ contract Oracle {
         }
 
         uint256 amountOut = amountsOut[amountsOut.length - 1];
+
+        // Return raw price (without fees)
+        uint256 feeBips = 30; // .3% per swap
+        amountOut = (amountOut * 10000) / (10000 - (feeBips * numberOfJumps));
         return amountOut;
     }
 
@@ -103,17 +123,7 @@ contract Oracle {
         return getPriceFromRouter(tokenAddress, usdcAddress);
     }
 
-    function getPriceUsdc(address tokenAddress) public view returns (uint256) {
-        bool useCurveCalculation = isCurveLpToken(tokenAddress);
-        if (useCurveCalculation) {
-            return getCurvePriceUsdc(tokenAddress);
-        }
-        return getPriceFromRouterUsdc(tokenAddress);
-    }
-
     // Curve
-    CurveRegistry curveRegistry = CurveRegistry(curveRegistryAddress);
-
     function getCurvePriceUsdc(address curveLpTokenAddress)
         public
         view
