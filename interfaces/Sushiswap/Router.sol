@@ -7,4 +7,6 @@ interface PriceRouter {
         external
         view
         returns (uint256[] memory amounts);
+
+    function WETH() external view returns (address);
 }

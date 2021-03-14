@@ -4,29 +4,22 @@ pragma solidity ^0.8.2;
 
 import "../../interfaces/Sushiswap/Factory.sol";
 import "../../interfaces/Sushiswap/Router.sol";
+import "../../interfaces/Sushiswap/Pair.sol";
 import "../../interfaces/Common/IERC20.sol";
 import "../../interfaces/Curve/Registry.sol";
 
 contract Oracle {
     address public primaryRouterAddress;
+    address public primaryFactoryAddress;
     address public secondaryRouterAddress;
-    // address public primaryFactoryAddress;
-    // address public secondaryFactoryAddress;
+    address public secondaryFactoryAddress;
     address public curveRegistryAddress;
     address public usdcAddress;
     address public wethAddress;
 
     PriceRouter primaryRouter;
     PriceRouter secondaryRouter;
-
     CurveRegistry curveRegistry;
-
-    // Factories
-    // address secondaryFactoryAddress =
-    //     0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac;
-    // address primaryFactoryAddress = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
-    // PriceFactory primaryFactory = PriceFactory(primaryFactoryAddress);
-    // PriceFactory secondaryFactory = PriceFactory(secondaryFactoryAddress);
 
     // Constants
     address ethAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
@@ -34,14 +27,16 @@ contract Oracle {
 
     constructor(
         address _primaryRouterAddress,
+        address _primaryFactoryAddress,
         address _secondaryRouterAddress,
-        // address _primaryFactoryAddress,
-        // address _secondaryFactoryAddress,
+        address _secondaryFactoryAddress,
         address _curveRegistryAddress,
         address _usdcAddress
     ) {
         primaryRouterAddress = _primaryRouterAddress;
+        primaryFactoryAddress = _primaryFactoryAddress;
         secondaryRouterAddress = _secondaryRouterAddress;
+        secondaryFactoryAddress = _secondaryFactoryAddress;
         curveRegistryAddress = _curveRegistryAddress;
         usdcAddress = _usdcAddress;
         primaryRouter = PriceRouter(primaryRouterAddress);
@@ -53,8 +48,11 @@ contract Oracle {
     // General
     function getPriceUsdc(address tokenAddress) public view returns (uint256) {
         bool useCurveCalculation = isCurveLpToken(tokenAddress);
+        bool useLpCalculation = isLpToken(tokenAddress);
         if (useCurveCalculation) {
             return getCurvePriceUsdc(tokenAddress);
+        } else if (useLpCalculation) {
+            return getLpTokenPriceUsdc(tokenAddress);
         }
         return getPriceFromRouterUsdc(tokenAddress);
     }
@@ -121,6 +119,65 @@ contract Oracle {
         returns (uint256)
     {
         return getPriceFromRouter(tokenAddress, usdcAddress);
+    }
+
+    function isLpToken(address tokenAddress) public view returns (bool) {
+        Pair lpToken = Pair(tokenAddress);
+        try lpToken.factory() returns (address isLp) {
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    function getRouterForLpToken(address tokenAddress)
+        public
+        view
+        returns (PriceRouter)
+    {
+        Pair lpToken = Pair(tokenAddress);
+        address factoryAddress = lpToken.factory();
+        if (factoryAddress == primaryFactoryAddress) {
+            return primaryRouter;
+        } else if (factoryAddress == secondaryFactoryAddress) {
+            return secondaryRouter;
+        }
+    }
+
+    function getLpTokenTotalLiquidityUsdc(address tokenAddress)
+        public
+        view
+        returns (uint256)
+    {
+        PriceRouter router = getRouterForLpToken(tokenAddress);
+        Pair pair = Pair(tokenAddress);
+        address token0Address = pair.token0();
+        address token1Address = pair.token1();
+        IERC20 token0 = IERC20(token0Address);
+        IERC20 token1 = IERC20(token1Address);
+        uint8 token0Decimals = token0.decimals();
+        uint8 token1Decimals = token1.decimals();
+        uint256 token0Price = getPriceUsdc(token0Address);
+        uint256 token1Price = getPriceUsdc(token1Address);
+        (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
+        uint256 totalLiquidity =
+            ((reserve0 / 10**token0Decimals) * token0Price) +
+                ((reserve1 / 10**token1Decimals) * token1Price);
+        return totalLiquidity;
+    }
+
+    function getLpTokenPriceUsdc(address tokenAddress)
+        public
+        view
+        returns (uint256)
+    {
+        Pair pair = Pair(tokenAddress);
+        uint256 totalLiquidity = getLpTokenTotalLiquidityUsdc(tokenAddress);
+        uint256 totalSupply = pair.totalSupply();
+        uint8 pairDecimals = pair.decimals();
+        uint256 pricePerLpTokenUsdc =
+            (totalLiquidity * 10**pairDecimals) / totalSupply;
+        return pricePerLpTokenUsdc;
     }
 
     // Curve
