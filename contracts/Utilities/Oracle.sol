@@ -8,24 +8,44 @@ import "../../interfaces/Common/IERC20.sol";
 import "../../interfaces/Curve/Registry.sol";
 
 contract Oracle {
+    address public primaryRouterAddress;
+    address public secondaryRouterAddress;
+    // address public primaryFactoryAddress;
+    // address public secondaryFactoryAddress;
+    address public curveRegistryAddress;
+    address public usdcAddress;
+    address public wethAddress;
+
+    PriceRouter primaryRouter;
+    PriceRouter secondaryRouter;
+
     // Factories
-    address sushiswapFactoryAddress =
-        0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac;
-    address uniswapFactoryAddress = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
-
-    PriceFactory sushiswapFactory = PriceFactory(sushiswapFactoryAddress);
-    PriceFactory uniswapFactory = PriceFactory(uniswapFactoryAddress);
-
-    // Routers
-    address sushiswapRouterAddress = 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F;
-    address uniswapRouterAddress = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
-    PriceRouter sushiswapRouter = PriceRouter(sushiswapRouterAddress);
-    PriceRouter uniswapRouter = PriceRouter(uniswapRouterAddress);
+    // address secondaryFactoryAddress =
+    //     0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac;
+    // address primaryFactoryAddress = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
+    // PriceFactory primaryFactory = PriceFactory(primaryFactoryAddress);
+    // PriceFactory secondaryFactory = PriceFactory(secondaryFactoryAddress);
 
     // Constants
-    address USDCAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address WETHAddress = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address ETHAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address ethAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address nullAddress = 0x0000000000000000000000000000000000000000;
+
+    constructor(
+        address _primaryRouterAddress,
+        address _secondaryRouterAddress,
+        // address _primaryFactoryAddress,
+        // address _secondaryFactoryAddress,
+        address _curveRegistryAddress,
+        address _usdcAddress
+    ) {
+        primaryRouterAddress = _primaryRouterAddress;
+        secondaryRouterAddress = _secondaryRouterAddress;
+        curveRegistryAddress = _curveRegistryAddress;
+        usdcAddress = _usdcAddress;
+        primaryRouter = PriceRouter(primaryRouterAddress);
+        secondaryRouter = PriceRouter(secondaryRouterAddress);
+        wethAddress = primaryRouter.WETH();
+    }
 
     function getPriceFromRouter(address token0Address, address token1Address)
         public
@@ -33,15 +53,15 @@ contract Oracle {
         returns (uint256)
     {
         // Convert ETH address (0xEeee...) to WETH
-        if (token0Address == ETHAddress) {
-            token0Address = WETHAddress;
+        if (token0Address == ethAddress) {
+            token0Address = wethAddress;
         }
-        if (token1Address == ETHAddress) {
-            token1Address = WETHAddress;
+        if (token1Address == ethAddress) {
+            token1Address = wethAddress;
         }
 
         address[] memory path;
-        if (token0Address == WETHAddress || token1Address == WETHAddress) {
+        if (token0Address == wethAddress || token1Address == wethAddress) {
             // If WETH is already in the path, create a simple path ...
             path = new address[](2);
             path[0] = token0Address;
@@ -50,7 +70,7 @@ contract Oracle {
             // ... otherwise add WETH in the middle of the path.
             path = new address[](3);
             path[0] = token0Address;
-            path[1] = WETHAddress;
+            path[1] = wethAddress;
             path[2] = token1Address;
         }
 
@@ -58,12 +78,17 @@ contract Oracle {
         uint256 amountIn = 10**uint256(token0.decimals());
         uint256[] memory amountsOut;
 
-        try uniswapRouter.getAmountsOut(amountIn, path) returns (
-            uint256[] memory _amountsOut
-        ) {
-            amountsOut = _amountsOut;
-        } catch {
-            amountsOut = sushiswapRouter.getAmountsOut(amountIn, path);
+        bool fallbackRouterExists = secondaryRouterAddress != nullAddress;
+        if (fallbackRouterExists) {
+            try primaryRouter.getAmountsOut(amountIn, path) returns (
+                uint256[] memory _amountsOut
+            ) {
+                amountsOut = _amountsOut;
+            } catch {
+                amountsOut = secondaryRouter.getAmountsOut(amountIn, path);
+            }
+        } else {
+            amountsOut = primaryRouter.getAmountsOut(amountIn, path);
         }
 
         uint256 amountOut = amountsOut[amountsOut.length - 1];
@@ -75,7 +100,7 @@ contract Oracle {
         view
         returns (uint256)
     {
-        return getPriceFromRouter(tokenAddress, USDCAddress);
+        return getPriceFromRouter(tokenAddress, usdcAddress);
     }
 
     function getPriceUsdc(address tokenAddress) public view returns (uint256) {
@@ -87,9 +112,7 @@ contract Oracle {
     }
 
     // Curve
-    address CurveRegistryAddress = 0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c;
-    address NULLAddress = 0x0000000000000000000000000000000000000000;
-    CurveRegistry curveRegistry = CurveRegistry(CurveRegistryAddress);
+    CurveRegistry curveRegistry = CurveRegistry(curveRegistryAddress);
 
     function getCurvePriceUsdc(address curveLpTokenAddress)
         public
@@ -98,7 +121,7 @@ contract Oracle {
     {
         uint256 basePrice = getBasePrice(curveLpTokenAddress);
         uint256 virtualPrice = getVirtualPrice(curveLpTokenAddress);
-        IERC20 usdc = IERC20(USDCAddress);
+        IERC20 usdc = IERC20(usdcAddress);
         uint256 decimals = usdc.decimals();
         uint256 decimalsAdjustment = 18 - decimals;
         uint256 price =
@@ -132,7 +155,7 @@ contract Oracle {
     function isCurveLpToken(address tokenAddress) public view returns (bool) {
         address poolAddress =
             curveRegistry.get_pool_from_lp_token(tokenAddress);
-        bool tokenHasCurvePool = poolAddress != NULLAddress;
+        bool tokenHasCurvePool = poolAddress != nullAddress;
         return tokenHasCurvePool;
     }
 
