@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: MIT
-
+// SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.2;
 
 import "../../interfaces/Sushiswap/Factory.sol";
@@ -14,16 +13,15 @@ contract Oracle {
     address public secondaryRouterAddress;
     address public secondaryFactoryAddress;
     address public curveRegistryAddress;
+    address public unitrollerAddress;
     address public usdcAddress;
     address public wethAddress;
-
     PriceRouter primaryRouter;
     PriceRouter secondaryRouter;
     CurveRegistry curveRegistry;
 
-    // Constants
     address ethAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-    address nullAddress = 0x0000000000000000000000000000000000000000;
+    address zeroAddress = 0x0000000000000000000000000000000000000000;
 
     constructor(
         address _primaryRouterAddress,
@@ -31,6 +29,7 @@ contract Oracle {
         address _secondaryRouterAddress,
         address _secondaryFactoryAddress,
         address _curveRegistryAddress,
+        address _unitrollerAddress,
         address _usdcAddress
     ) {
         primaryRouterAddress = _primaryRouterAddress;
@@ -38,6 +37,7 @@ contract Oracle {
         secondaryRouterAddress = _secondaryRouterAddress;
         secondaryFactoryAddress = _secondaryFactoryAddress;
         curveRegistryAddress = _curveRegistryAddress;
+        unitrollerAddress = _unitrollerAddress;
         usdcAddress = _usdcAddress;
         primaryRouter = PriceRouter(primaryRouterAddress);
         secondaryRouter = PriceRouter(secondaryRouterAddress);
@@ -49,10 +49,13 @@ contract Oracle {
     function getPriceUsdc(address tokenAddress) public view returns (uint256) {
         bool useCurveCalculation = isCurveLpToken(tokenAddress);
         bool useLpCalculation = isLpToken(tokenAddress);
+        bool useIronBankCalculation = isIronBankMarket(tokenAddress);
         if (useCurveCalculation) {
             return getCurvePriceUsdc(tokenAddress);
         } else if (useLpCalculation) {
             return getLpTokenPriceUsdc(tokenAddress);
+        } else if (useIronBankCalculation) {
+            return getIronBankMarketPriceUsdc(tokenAddress);
         }
         return getPriceFromRouterUsdc(tokenAddress);
     }
@@ -73,14 +76,16 @@ contract Oracle {
 
         address[] memory path;
         uint8 numberOfJumps;
-        if (token0Address == wethAddress || token1Address == wethAddress) {
-            // If WETH is already in the path, create a simple path ...
+        bool inputTokenIsWeth =
+            token0Address == wethAddress || token1Address == wethAddress;
+        if (inputTokenIsWeth) {
+            // path = [token0, weth] or [weth, token1]
             numberOfJumps = 1;
             path = new address[](numberOfJumps + 1);
             path[0] = token0Address;
             path[1] = token1Address;
         } else {
-            // ... otherwise add WETH in the middle of the path.
+            // path = [token0, weth, token1]
             numberOfJumps = 2;
             path = new address[](numberOfJumps + 1);
             path[0] = token0Address;
@@ -92,7 +97,7 @@ contract Oracle {
         uint256 amountIn = 10**uint256(token0.decimals());
         uint256[] memory amountsOut;
 
-        bool fallbackRouterExists = secondaryRouterAddress != nullAddress;
+        bool fallbackRouterExists = secondaryRouterAddress != zeroAddress;
         if (fallbackRouterExists) {
             try primaryRouter.getAmountsOut(amountIn, path) returns (
                 uint256[] memory _amountsOut
@@ -105,9 +110,8 @@ contract Oracle {
             amountsOut = primaryRouter.getAmountsOut(amountIn, path);
         }
 
-        uint256 amountOut = amountsOut[amountsOut.length - 1];
-
         // Return raw price (without fees)
+        uint256 amountOut = amountsOut[amountsOut.length - 1];
         uint256 feeBips = 30; // .3% per swap
         amountOut = (amountOut * 10000) / (10000 - (feeBips * numberOfJumps));
         return amountOut;
@@ -123,7 +127,7 @@ contract Oracle {
 
     function isLpToken(address tokenAddress) public view returns (bool) {
         Pair lpToken = Pair(tokenAddress);
-        try lpToken.factory() returns (address isLp) {
+        try lpToken.factory() {
             return true;
         } catch {
             return false;
@@ -142,6 +146,7 @@ contract Oracle {
         } else if (factoryAddress == secondaryFactoryAddress) {
             return secondaryRouter;
         }
+        revert();
     }
 
     function getLpTokenTotalLiquidityUsdc(address tokenAddress)
@@ -149,7 +154,6 @@ contract Oracle {
         view
         returns (uint256)
     {
-        PriceRouter router = getRouterForLpToken(tokenAddress);
         Pair pair = Pair(tokenAddress);
         address token0Address = pair.token0();
         address token1Address = pair.token1();
@@ -222,7 +226,7 @@ contract Oracle {
     function isCurveLpToken(address tokenAddress) public view returns (bool) {
         address poolAddress =
             curveRegistry.get_pool_from_lp_token(tokenAddress);
-        bool tokenHasCurvePool = poolAddress != nullAddress;
+        bool tokenHasCurvePool = poolAddress != zeroAddress;
         return tokenHasCurvePool;
     }
 
@@ -235,5 +239,44 @@ contract Oracle {
             curveRegistry.get_underlying_coins(poolAddress);
         address firstCoin = coins[0];
         return firstCoin;
+    }
+
+    // Iron Bank
+    function getIronBankMarkets() public view returns (address[] memory) {
+        return Unitroller(unitrollerAddress).getAllMarkets();
+    }
+
+    function isIronBankMarket(address tokenAddress) public view returns (bool) {
+        address[] memory ironBankMarkets = getIronBankMarkets();
+        uint256 numIronBankMarkets = ironBankMarkets.length;
+        for (
+            uint256 marketIdx = 0;
+            marketIdx < numIronBankMarkets;
+            marketIdx++
+        ) {
+            address marketAddress = ironBankMarkets[marketIdx];
+            if (tokenAddress == marketAddress) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function getIronBankMarketPriceUsdc(address tokenAddress)
+        public
+        view
+        returns (uint256)
+    {
+        CyToken cyToken = CyToken(tokenAddress);
+        uint256 exchangeRateStored = cyToken.exchangeRateStored();
+        address underlyingTokenAddress = cyToken.underlying();
+        uint256 decimals = cyToken.decimals();
+        IERC20 underlyingToken = IERC20(underlyingTokenAddress);
+        uint8 underlyingTokenDecimals = underlyingToken.decimals();
+        uint256 underlyingTokenPrice = getPriceUsdc(underlyingTokenAddress);
+        uint256 price =
+            (underlyingTokenPrice * exchangeRateStored) /
+                10**(underlyingTokenDecimals + decimals);
+        return price;
     }
 }
