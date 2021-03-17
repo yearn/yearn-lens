@@ -6,10 +6,12 @@ pragma experimental ABIEncoderV2;
 import "../../interfaces/Yearn/V2Vault.sol";
 import "../../interfaces/Yearn/IV2Registry.sol";
 import "../../interfaces/Common/IERC20.sol";
+import "../../interfaces/Common/Oracle.sol";
 
 contract RegisteryAdapterV2Vault {
     address public registryAddress;
     string public constant registryType = "v2Adapter";
+    Oracle public oracle;
 
     struct Asset {
         string name;
@@ -33,9 +35,10 @@ contract RegisteryAdapterV2Vault {
         uint256 pricePerShare;
     }
 
-    constructor(address _registryAddress) {
+    constructor(address _registryAddress, address _oracleAddress) {
         require(_registryAddress != address(0), "Missing registry address");
         registryAddress = _registryAddress;
+        oracle = Oracle(_oracleAddress);
     }
 
     function getAssetsLength() public view returns (uint256) {
@@ -71,6 +74,40 @@ contract RegisteryAdapterV2Vault {
             }
         }
         return vaultAddresses;
+    }
+
+    function getAssetTvl(address vaultAddress) public view returns (uint256) {
+        V2Vault vault = V2Vault(vaultAddress);
+        uint256 valueInToken = vault.totalAssets();
+        address underlyingTokenAddress = vault.token();
+        IERC20 underlyingToken = IERC20(underlyingTokenAddress);
+        uint256 underlyingTokenDecimals = underlyingToken.decimals();
+
+        uint256 usdcDecimals = 6;
+        uint256 decimalsAdjustment = underlyingTokenDecimals - usdcDecimals;
+        uint256 price = oracle.getPriceUsdc(underlyingTokenAddress);
+        uint256 tvl;
+        if (decimalsAdjustment > 0) {
+            tvl =
+                (valueInToken * price * (10**decimalsAdjustment)) /
+                10**(decimalsAdjustment + underlyingTokenDecimals);
+        } else {
+            tvl = (valueInToken * price) / 10**usdcDecimals;
+        }
+        return tvl;
+    }
+
+    function getAssetsTvl() external view returns (uint256) {
+        uint256 tvl;
+        address[] memory assetAddresses = getAssetsAddresses();
+        uint256 numberOfAssets = assetAddresses.length;
+        Asset[] memory assets = new Asset[](numberOfAssets);
+        for (uint256 i = 0; i < numberOfAssets; i++) {
+            address assetAddress = assetAddresses[i];
+            uint256 assetTvl = getAssetTvl(assetAddress);
+            tvl += assetTvl;
+        }
+        return tvl;
     }
 
     // TODO: Add metadata for vault upgrades/versioning
