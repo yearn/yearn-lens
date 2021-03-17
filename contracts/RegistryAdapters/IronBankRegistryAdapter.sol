@@ -4,7 +4,7 @@ pragma solidity ^0.8.2;
 pragma experimental ABIEncoderV2;
 
 import "../../interfaces/Yearn/V1Vault.sol";
-import "../../interfaces/Cream/IronBankRegistry.sol";
+import "../../interfaces/Cream/Unitroller.sol";
 
 contract RegistryAdapterIronBank {
     address public registryAddress;
@@ -30,6 +30,6 @@ contract RegistryAdapterIronBank {
     }
 
     function getAllMarkets() public view returns (address[] memory) {
-        return IronBankRegistry(registryAddress).getAllMarkets();
+        return Unitroller(registryAddress).getAllMarkets();
     }
 }
