@@ -1,24 +1,22 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.2;
+pragma experimental ABIEncoderV2;
 
-import "../../interfaces/Sushiswap/Factory.sol";
-import "../../interfaces/Sushiswap/Router.sol";
-import "../../interfaces/Sushiswap/Pair.sol";
-import "../../interfaces/Common/IERC20.sol";
-import "../../interfaces/Curve/Registry.sol";
+import "../../../interfaces/Sushiswap/Factory.sol";
+import "../../../interfaces/Sushiswap/Router.sol";
+import "../../../interfaces/Sushiswap/Pair.sol";
+import "../../../interfaces/Common/IERC20.sol";
+import "../../../interfaces/Common/Oracle.sol";
 
-contract Oracle {
+contract CalculationsSushiswap {
     address public primaryRouterAddress;
     address public primaryFactoryAddress;
     address public secondaryRouterAddress;
     address public secondaryFactoryAddress;
-    address public curveRegistryAddress;
-    address public unitrollerAddress;
-    address public usdcAddress;
     address public wethAddress;
     PriceRouter primaryRouter;
     PriceRouter secondaryRouter;
-    CurveRegistry curveRegistry;
 
     address ethAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address zeroAddress = 0x0000000000000000000000000000000000000000;
@@ -27,40 +25,25 @@ contract Oracle {
         address _primaryRouterAddress,
         address _primaryFactoryAddress,
         address _secondaryRouterAddress,
-        address _secondaryFactoryAddress,
-        address _curveRegistryAddress,
-        address _unitrollerAddress,
-        address _usdcAddress
+        address _secondaryFactoryAddress
     ) {
         primaryRouterAddress = _primaryRouterAddress;
         primaryFactoryAddress = _primaryFactoryAddress;
         secondaryRouterAddress = _secondaryRouterAddress;
         secondaryFactoryAddress = _secondaryFactoryAddress;
-        curveRegistryAddress = _curveRegistryAddress;
-        unitrollerAddress = _unitrollerAddress;
-        usdcAddress = _usdcAddress;
         primaryRouter = PriceRouter(primaryRouterAddress);
         secondaryRouter = PriceRouter(secondaryRouterAddress);
-        curveRegistry = CurveRegistry(curveRegistryAddress);
         wethAddress = primaryRouter.WETH();
     }
 
-    // General
+    // Uniswap/Sushiswap
     function getPriceUsdc(address tokenAddress) public view returns (uint256) {
-        bool useCurveCalculation = isCurveLpToken(tokenAddress);
-        bool useLpCalculation = isLpToken(tokenAddress);
-        bool useIronBankCalculation = isIronBankMarket(tokenAddress);
-        if (useCurveCalculation) {
-            return getCurvePriceUsdc(tokenAddress);
-        } else if (useLpCalculation) {
+        if (isLpToken(tokenAddress)) {
             return getLpTokenPriceUsdc(tokenAddress);
-        } else if (useIronBankCalculation) {
-            return getIronBankMarketPriceUsdc(tokenAddress);
         }
         return getPriceFromRouterUsdc(tokenAddress);
     }
 
-    // Uniswap/Sushiswap
     function getPriceFromRouter(address token0Address, address token1Address)
         public
         view
@@ -117,11 +100,17 @@ contract Oracle {
         return amountOut;
     }
 
+    function getUsdcAddressFromSender() internal view returns (address) {
+        Oracle oracle = Oracle(msg.sender);
+        return oracle.usdcAddress();
+    }
+
     function getPriceFromRouterUsdc(address tokenAddress)
         public
         view
         returns (uint256)
     {
+        address usdcAddress = getUsdcAddressFromSender();
         return getPriceFromRouter(tokenAddress, usdcAddress);
     }
 
@@ -182,101 +171,5 @@ contract Oracle {
         uint256 pricePerLpTokenUsdc =
             (totalLiquidity * 10**pairDecimals) / totalSupply;
         return pricePerLpTokenUsdc;
-    }
-
-    // Curve
-    function getCurvePriceUsdc(address curveLpTokenAddress)
-        public
-        view
-        returns (uint256)
-    {
-        uint256 basePrice = getBasePrice(curveLpTokenAddress);
-        uint256 virtualPrice = getVirtualPrice(curveLpTokenAddress);
-        IERC20 usdc = IERC20(usdcAddress);
-        uint256 decimals = usdc.decimals();
-        uint256 decimalsAdjustment = 18 - decimals;
-        uint256 price =
-            (virtualPrice * basePrice * (10**decimalsAdjustment)) /
-                10**(decimalsAdjustment + 18);
-        return price;
-    }
-
-    function getBasePrice(address curveLpTokenAddress)
-        public
-        view
-        returns (uint256)
-    {
-        address poolAddress =
-            curveRegistry.get_pool_from_lp_token(curveLpTokenAddress);
-        address firstUnderlyingCoin =
-            getFirstUnderlyingCoinFromPool(poolAddress);
-        uint256 basePrice = getPriceFromRouterUsdc(firstUnderlyingCoin);
-        return basePrice;
-    }
-
-    function getVirtualPrice(address curveLpTokenAddress)
-        public
-        view
-        returns (uint256)
-    {
-        return
-            curveRegistry.get_virtual_price_from_lp_token(curveLpTokenAddress);
-    }
-
-    function isCurveLpToken(address tokenAddress) public view returns (bool) {
-        address poolAddress =
-            curveRegistry.get_pool_from_lp_token(tokenAddress);
-        bool tokenHasCurvePool = poolAddress != zeroAddress;
-        return tokenHasCurvePool;
-    }
-
-    function getFirstUnderlyingCoinFromPool(address poolAddress)
-        public
-        view
-        returns (address)
-    {
-        address[8] memory coins =
-            curveRegistry.get_underlying_coins(poolAddress);
-        address firstCoin = coins[0];
-        return firstCoin;
-    }
-
-    // Iron Bank
-    function getIronBankMarkets() public view returns (address[] memory) {
-        return Unitroller(unitrollerAddress).getAllMarkets();
-    }
-
-    function isIronBankMarket(address tokenAddress) public view returns (bool) {
-        address[] memory ironBankMarkets = getIronBankMarkets();
-        uint256 numIronBankMarkets = ironBankMarkets.length;
-        for (
-            uint256 marketIdx = 0;
-            marketIdx < numIronBankMarkets;
-            marketIdx++
-        ) {
-            address marketAddress = ironBankMarkets[marketIdx];
-            if (tokenAddress == marketAddress) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function getIronBankMarketPriceUsdc(address tokenAddress)
-        public
-        view
-        returns (uint256)
-    {
-        CyToken cyToken = CyToken(tokenAddress);
-        uint256 exchangeRateStored = cyToken.exchangeRateStored();
-        address underlyingTokenAddress = cyToken.underlying();
-        uint256 decimals = cyToken.decimals();
-        IERC20 underlyingToken = IERC20(underlyingTokenAddress);
-        uint8 underlyingTokenDecimals = underlyingToken.decimals();
-        uint256 underlyingTokenPrice = getPriceUsdc(underlyingTokenAddress);
-        uint256 price =
-            (underlyingTokenPrice * exchangeRateStored) /
-                10**(underlyingTokenDecimals + decimals);
-        return price;
     }
 }
