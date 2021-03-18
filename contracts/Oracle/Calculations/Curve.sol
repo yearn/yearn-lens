@@ -13,7 +13,7 @@ contract CalculationsCurve {
     address zeroAddress = 0x0000000000000000000000000000000000000000;
 
     constructor(address _curveRegistryAddress) {
-        curveRegistry = CurveRegistry(curveRegistryAddress);
+        curveRegistry = CurveRegistry(_curveRegistryAddress);
     }
 
     function getUsdcAddressFromSender() internal view returns (address) {
