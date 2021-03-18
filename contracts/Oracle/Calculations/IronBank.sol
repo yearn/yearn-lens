@@ -7,6 +7,13 @@ import "../../../interfaces/Cream/Unitroller.sol";
 import "../../../interfaces/Cream/CyToken.sol";
 import "../../../interfaces/Common/IERC20.sol";
 
+interface CalculationsSushiswap {
+    function getPriceFromRouterUsdc(address tokenAddress)
+        external
+        view
+        returns (uint256);
+}
+
 contract CalculationsIronBank {
     address public unitrollerAddress;
 
@@ -45,14 +52,12 @@ contract CalculationsIronBank {
         uint256 decimals = cyToken.decimals();
         IERC20 underlyingToken = IERC20(underlyingTokenAddress);
         uint8 underlyingTokenDecimals = underlyingToken.decimals();
-        (, bytes memory data) =
-            address(msg.sender).staticcall(
-                abi.encodeWithSignature(
-                    "getPriceFromRouterUsdc(address)",
-                    underlyingTokenAddress
-                )
+        CalculationsSushiswap calculationsSushiswap =
+            CalculationsSushiswap(msg.sender);
+        uint256 underlyingTokenPrice =
+            calculationsSushiswap.getPriceFromRouterUsdc(
+                underlyingTokenAddress
             );
-        uint256 underlyingTokenPrice = abi.decode(data, (uint256));
 
         uint256 price =
             (underlyingTokenPrice * exchangeRateStored) /

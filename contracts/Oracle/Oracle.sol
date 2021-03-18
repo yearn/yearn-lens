@@ -22,8 +22,12 @@ contract Oracle {
         return (_calculations);
     }
 
-    // This method is only for etherscan (you can actually call getPriceUsdc() directly on the oracle)
-    function getPrice(address tokenAddress) public view returns (uint256) {
+    // This method is only for etherscan (during development it's better to call getPriceUsdc() on the oracle directly)
+    function getPriceUsdcEtherscan(address tokenAddress)
+        public
+        view
+        returns (uint256)
+    {
         (, bytes memory data) =
             address(this).staticcall(
                 abi.encodeWithSignature("getPriceUsdc(address)", tokenAddress)
