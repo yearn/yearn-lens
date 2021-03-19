@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.2;
-pragma experimental ABIEncoderV2;
 
 import "../../../interfaces/Sushiswap/Factory.sol";
 import "../../../interfaces/Sushiswap/Router.sol";

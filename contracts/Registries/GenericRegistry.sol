@@ -8,7 +8,7 @@ contract GenericRegistry {
     uint256 public numAssets;
     mapping(address => uint256) private isRegistered;
 
-    constructor() public {}
+    constructor() {}
 
     function addAsset(address assetAddress) public {
         if (isRegistered[assetAddress] == 0) {
