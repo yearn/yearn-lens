@@ -24,8 +24,20 @@ cyDaiAddress = "0x8e595470Ed749b85C6F7669de83EAe304C2ec68F"
 
 
 @pytest.fixture
-def oracle(gov, Oracle, CalculationsSushiswap, CalculationsCurve, CalculationsIronBank):
-    oracle = Oracle.deploy(usdcAddress, {"from": gov})
+def managementList(ManagementList, gov):
+    return ManagementList.deploy("Managemenet list", {"from": gov})
+
+
+@pytest.fixture
+def oracle(
+    gov,
+    Oracle,
+    managementList,
+    CalculationsSushiswap,
+    CalculationsCurve,
+    CalculationsIronBank,
+):
+    oracle = Oracle.deploy(managementList, usdcAddress, {"from": gov})
     calculationsSushiswap = CalculationsSushiswap.deploy(
         uniswapRouterAddress,
         uniswapFactoryAddress,
@@ -58,6 +70,23 @@ def oracleProxyCurve(oracle, CalculationsCurve):
 
 
 # General
+def test_set_calculations(Oracle, ManagementList, CalculationsCurve, gov, rando):
+    managementList = ManagementList.deploy("Managemenet list", {"from": gov})
+    oracle = Oracle.deploy(managementList, usdcAddress, {"from": gov})
+    calculationsCurve = CalculationsCurve.deploy(curveRegistryAddress, {"from": gov})
+
+    # Randos cannot set calculations
+    with brownie.reverts():
+        oracle.setCalculations(
+            [calculationsCurve], {"from": rando},
+        )
+
+    # Managers can set calculations
+    oracle.setCalculations(
+        [calculationsCurve], {"from": gov},
+    )
+
+
 def test_get_price_usdc_sushiswap(oracle):
     price = oracle.getPriceUsdcEtherscan(yfiAddress)
     assert price > 0

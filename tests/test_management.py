@@ -1,12 +1,12 @@
 import pytest
 import brownie
 
-from brownie import Manageable, ZERO_ADDRESS
+from brownie import ManagementList, ZERO_ADDRESS
 
 
 @pytest.fixture
-def manageable(Manageable, gov):
-    return Manageable.deploy("Managers", {"from": gov})
+def manageable(ManagementList, gov):
+    return ManagementList.deploy("Managers", {"from": gov})
 
 
 def test_initialization(manageable, gov):

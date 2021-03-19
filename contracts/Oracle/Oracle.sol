@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.2;
 
-contract Oracle {
+import "../Utilities/Manageable.sol";
+
+contract Oracle is Manageable {
     address public usdcAddress;
     address[] private _calculations;
 
-    constructor(address _usdcAddress) {
+    constructor(address _managementListAddress, address _usdcAddress)
+        Manageable(_managementListAddress)
+    {
         usdcAddress = _usdcAddress;
     }
 
@@ -14,7 +18,10 @@ contract Oracle {
      * When setting calculation contracts all calculations must be set at the same time (we intentionally do not support for adding/removing calculations).
      * The order of calculation contracts matters as it determines the order preference in the cascading fallback mechanism.
      */
-    function setCalculations(address[] memory calculationAddresses) public {
+    function setCalculations(address[] memory calculationAddresses)
+        public
+        onlyManagers
+    {
         _calculations = calculationAddresses;
     }
 

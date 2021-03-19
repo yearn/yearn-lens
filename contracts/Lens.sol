@@ -11,7 +11,7 @@ contract Lens {
     uint256 public numRegistries;
     mapping(address => uint256) private isRegistered;
 
-    constructor() public {}
+    constructor() {}
 
     function addRegistry(address registryAddress) public {
         if (isRegistered[registryAddress] == 0) {
