@@ -9,11 +9,11 @@ contract ManagementList {
     mapping(uint256 => address) public managerAddressByIdx;
     mapping(address => uint256) public managerIdxByAddress;
 
-    constructor(string memory _name) public {
+    constructor(string memory _name, address _owner) {
         name = _name;
-        owner = msg.sender;
+        owner = _owner;
         managersCount = 1;
-        managerAddressByIdx[0] = owner;
+        managerAddressByIdx[1] = owner;
         managerIdxByAddress[owner] = 1;
     }
 
@@ -58,7 +58,10 @@ contract ManagementList {
             isManager(managerAddress),
             "ManagementList: non-managers cannot be removed"
         );
-        require(managerAddress != owner, "Manageable: owner cannot be removed");
+        require(
+            managerAddress != owner,
+            "ManagemenetList: owner cannot be removed"
+        );
         uint256 managerIdx = managerIdxByAddress[managerAddress];
         delete managerAddressByIdx[managerIdx];
         delete managerIdxByAddress[managerAddress];

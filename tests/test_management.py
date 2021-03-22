@@ -6,19 +6,24 @@ from brownie import ManagementList, ZERO_ADDRESS
 
 @pytest.fixture
 def manageable(ManagementList, gov):
-    return ManagementList.deploy("Managers", {"from": gov})
+    return ManagementList.deploy("Managers", gov, {"from": gov})
 
 
 def test_initialization(manageable, gov):
     assert manageable.managersCount() == 1
-    assert manageable.managerAddressByIdx(0) == gov
+    assert manageable.managerAddressByIdx(1) == gov
     assert manageable.managerIdxByAddress(gov) == 1
+    assert manageable.managersCount() == 1
+    assert manageable.managersList()[0] == gov
 
 
 def test_managers_list(manageable, gov, chad, rando):
     manageable.addManager(chad, {"from": gov})
     manageable.addManager(rando, {"from": gov})
     assert manageable.managersCount() == 3
+    assert manageable.managersList()[0] == gov
+    assert manageable.managersList()[1] == chad
+    assert manageable.managersList()[2] == rando
     assert len(manageable.managersList()) == 3
 
 
@@ -35,6 +40,7 @@ def test_add_manager(manageable, gov, chad, rando):
 
     # Managers can add managers
     manageable.addManager(rando, {"from": gov})
+    assert len(manageable.managersList()) == 2
     assert manageable.managersCount() == 2
 
     # New managers can add managers
@@ -80,9 +86,9 @@ def test_reset_managers(manageable, gov, chad, rando):
     # Owners can reset managers
     manageable.resetManagers({"from": gov})
     assert manageable.managersCount() == 1
-    assert manageable.managerAddressByIdx(0) == gov
-    assert manageable.managerAddressByIdx(1) == ZERO_ADDRESS
+    assert manageable.managerAddressByIdx(1) == gov
     assert manageable.managerAddressByIdx(2) == ZERO_ADDRESS
+    assert manageable.managerAddressByIdx(3) == ZERO_ADDRESS
     assert manageable.managerIdxByAddress(chad) == 0
     assert manageable.managerIdxByAddress(rando) == 0
     assert manageable.managerIdxByAddress(gov) == 1
