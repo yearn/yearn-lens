@@ -6,12 +6,12 @@ pragma experimental ABIEncoderV2;
 import "../../interfaces/Yearn/V2Vault.sol";
 import "../../interfaces/Yearn/IV2Registry.sol";
 import "../../interfaces/Common/IERC20.sol";
-import "../../interfaces/Common/Oracle.sol";
+import "../../interfaces/Common/IOracle.sol";
 
 contract RegisteryAdapterV2Vault {
     address public registryAddress;
     string public constant registryType = "v2Adapter";
-    Oracle public oracle;
+    IOracle public oracle;
 
     struct Asset {
         string name;
@@ -38,7 +38,7 @@ contract RegisteryAdapterV2Vault {
     constructor(address _registryAddress, address _oracleAddress) {
         require(_registryAddress != address(0), "Missing registry address");
         registryAddress = _registryAddress;
-        oracle = Oracle(_oracleAddress);
+        oracle = IOracle(_oracleAddress);
     }
 
     function getAssetsLength() public view returns (uint256) {

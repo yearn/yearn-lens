@@ -2,7 +2,7 @@
 
 pragma solidity >=0.6.0;
 
-interface Oracle {
+interface IOracle {
     function getPriceUsdc(address tokenAddress) external view returns (uint256);
 
     function usdcAddress() external view returns (address);

@@ -7,7 +7,7 @@ interface ManagementList {
 }
 
 contract Manageable {
-    ManagementList managementList;
+    ManagementList public managementList;
 
     constructor(address _managementListAddress) {
         managementList = ManagementList(_managementListAddress);

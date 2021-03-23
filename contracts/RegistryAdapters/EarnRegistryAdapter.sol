@@ -5,12 +5,12 @@ pragma experimental ABIEncoderV2;
 
 import "../../interfaces/Yearn/EarnToken.sol";
 import "../../interfaces/Yearn/GenericRegistry.sol";
-import "../../interfaces/Common/Oracle.sol";
+import "../../interfaces/Common/IOracle.sol";
 import "../../interfaces/Common/IERC20.sol";
 
 contract RegistryAdapterEarn {
     address public registryAddress;
-    Oracle public oracle;
+    IOracle public oracle;
 
     struct Asset {
         string name;
@@ -29,7 +29,7 @@ contract RegistryAdapterEarn {
     constructor(address _registryAddress, address _oracleAddress) {
         require(_registryAddress != address(0), "Missing registry address");
         registryAddress = _registryAddress;
-        oracle = Oracle(_oracleAddress);
+        oracle = IOracle(_oracleAddress);
     }
 
     function getAssetsAddresses() public view returns (address[] memory) {
