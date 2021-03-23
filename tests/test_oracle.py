@@ -25,7 +25,7 @@ cyDaiAddress = "0x8e595470Ed749b85C6F7669de83EAe304C2ec68F"
 
 @pytest.fixture
 def managementList(ManagementList, gov):
-    return ManagementList.deploy("Managemenet list", {"from": gov})
+    return ManagementList.deploy("Managemenet list", gov, {"from": gov})
 
 
 @pytest.fixture
@@ -43,10 +43,15 @@ def oracle(
         uniswapFactoryAddress,
         sushiswapRouterAddress,
         sushiswapFactoryAddress,
+        usdcAddress,
         {"from": gov},
     )
-    calculationsCurve = CalculationsCurve.deploy(curveRegistryAddress, {"from": gov})
-    calculationsIronBank = CalculationsIronBank.deploy(unitrollerAddress, {"from": gov})
+    calculationsCurve = CalculationsCurve.deploy(
+        curveRegistryAddress, oracle, {"from": gov}
+    )
+    calculationsIronBank = CalculationsIronBank.deploy(
+        unitrollerAddress, oracle, {"from": gov}
+    )
     oracle.setCalculations(
         [calculationsCurve, calculationsIronBank, calculationsSushiswap]
     )
@@ -71,9 +76,15 @@ def oracleProxyCurve(oracle, CalculationsCurve):
 
 # General
 def test_set_calculations(Oracle, ManagementList, CalculationsCurve, gov, rando):
-    managementList = ManagementList.deploy("Managemenet list", {"from": gov})
+    managementList = ManagementList.deploy("Managemenet list", gov, {"from": gov})
     oracle = Oracle.deploy(managementList, usdcAddress, {"from": gov})
-    calculationsCurve = CalculationsCurve.deploy(curveRegistryAddress, {"from": gov})
+    calculationsCurve = CalculationsCurve.deploy(
+        curveRegistryAddress, oracle, {"from": gov}
+    )
+
+    # Oracles with no calculations should revert
+    with brownie.reverts():
+        oracle.getPriceUsdcRecommended(usdcAddress)
 
     # Randos cannot set calculations
     with brownie.reverts():
@@ -86,24 +97,27 @@ def test_set_calculations(Oracle, ManagementList, CalculationsCurve, gov, rando)
         [calculationsCurve], {"from": gov},
     )
 
+    # Oracle should return managementList address
+    assert not oracle.managementList() == ZERO_ADDRESS
+
 
 def test_get_price_usdc_sushiswap(oracle):
-    price = oracle.getPriceUsdcEtherscan(yfiAddress)
+    price = oracle.getPriceUsdcRecommended(yfiAddress)
     assert price > 0
 
 
 def test_get_price_usdc_curve(oracle):
-    price = oracle.getPriceUsdcEtherscan(threeCrvAddress)
+    price = oracle.getPriceUsdcRecommended(threeCrvAddress)
     assert price > 0
 
 
 def test_get_price_usdc_lp_token(oracle):
-    price = oracle.getPriceUsdcEtherscan(uniswapLpTokenAddress)
+    price = oracle.getPriceUsdcRecommended(uniswapLpTokenAddress)
     assert price > 0
 
 
 def test_get_price_usdc_iron_bank(oracle):
-    price = oracle.getPriceUsdcEtherscan(cyDaiAddress)
+    price = oracle.getPriceUsdcRecommended(cyDaiAddress)
     assert price > 0
 
 
@@ -124,8 +138,10 @@ def test_is_iron_bank_market(oracleProxyIronBank):
 
 
 # Curve
-def test_is_curve_lp_token(oracleProxyCurve, CalculationsCurve, gov):
-    calculationsCurve = CalculationsCurve.deploy(curveRegistryAddress, {"from": gov})
+def test_is_curve_lp_token(oracle, CalculationsCurve, gov):
+    calculationsCurve = CalculationsCurve.deploy(
+        curveRegistryAddress, oracle, {"from": gov}
+    )
     assert calculationsCurve.isCurveLpToken(threeCrvAddress)
 
 
