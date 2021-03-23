@@ -2,26 +2,37 @@
 
 pragma solidity ^0.8.2;
 
-import "../../../interfaces/Cream/Unitroller.sol";
-import "../../../interfaces/Cream/CyToken.sol";
-import "../../../interfaces/Common/IERC20.sol";
+interface IUnitroller {
+    function getAllMarkets() external view returns (address[] memory);
+}
 
-interface CalculationsSushiswap {
-    function getPriceFromRouterUsdc(address tokenAddress)
-        external
-        view
-        returns (uint256);
+interface ICyToken {
+    function underlying() external view returns (address);
+
+    function exchangeRateStored() external view returns (uint256);
+
+    function decimals() external view returns (uint8);
+}
+
+interface IERC20 {
+    function decimals() external view returns (uint8);
+}
+
+interface IOracle {
+    function getPriceUsdc(address tokenAddress) external view returns (uint256);
 }
 
 contract CalculationsIronBank {
     address public unitrollerAddress;
+    address public oracleAddress;
 
-    constructor(address _unitrollerAddress) {
+    constructor(address _unitrollerAddress, address _oracleAddress) {
         unitrollerAddress = _unitrollerAddress;
+        oracleAddress = _oracleAddress;
     }
 
     function getIronBankMarkets() public view returns (address[] memory) {
-        return Unitroller(unitrollerAddress).getAllMarkets();
+        return IUnitroller(unitrollerAddress).getAllMarkets();
     }
 
     function isIronBankMarket(address tokenAddress) public view returns (bool) {
@@ -45,18 +56,15 @@ contract CalculationsIronBank {
         view
         returns (uint256)
     {
-        CyToken cyToken = CyToken(tokenAddress);
+        ICyToken cyToken = ICyToken(tokenAddress);
         uint256 exchangeRateStored = cyToken.exchangeRateStored();
         address underlyingTokenAddress = cyToken.underlying();
         uint256 decimals = cyToken.decimals();
         IERC20 underlyingToken = IERC20(underlyingTokenAddress);
         uint8 underlyingTokenDecimals = underlyingToken.decimals();
-        CalculationsSushiswap calculationsSushiswap =
-            CalculationsSushiswap(msg.sender);
+        IOracle oracle = IOracle(oracleAddress);
         uint256 underlyingTokenPrice =
-            calculationsSushiswap.getPriceFromRouterUsdc(
-                underlyingTokenAddress
-            );
+            oracle.getPriceUsdc(underlyingTokenAddress);
 
         uint256 price =
             (underlyingTokenPrice * exchangeRateStored) /

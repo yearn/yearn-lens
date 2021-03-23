@@ -2,22 +2,45 @@
 
 pragma solidity ^0.8.2;
 
-import "../../../interfaces/Common/Oracle.sol";
-import "../../../interfaces/Common/IERC20.sol";
-import "../../../interfaces/Curve/Registry.sol";
+interface IERC20 {
+    function decimals() external view returns (uint8);
+}
+
+interface ICurveRegistry {
+    function get_pool_from_lp_token(address arg0)
+        external
+        view
+        returns (address);
+
+    function get_underlying_coins(address arg0)
+        external
+        view
+        returns (address[8] memory);
+
+    function get_virtual_price_from_lp_token(address arg0)
+        external
+        view
+        returns (uint256);
+}
+
+interface IOracle {
+    function getPriceUsdc(address tokenAddress) external view returns (uint256);
+
+    function usdcAddress() external view returns (address);
+}
 
 contract CalculationsCurve {
     address public curveRegistryAddress;
-    CurveRegistry curveRegistry;
+    address public oracleAddress;
+    ICurveRegistry curveRegistry;
     address zeroAddress = 0x0000000000000000000000000000000000000000;
+    IOracle oracle;
 
-    constructor(address _curveRegistryAddress) {
-        curveRegistry = CurveRegistry(_curveRegistryAddress);
-    }
-
-    function getUsdcAddressFromSender() internal view returns (address) {
-        Oracle oracle = Oracle(msg.sender);
-        return oracle.usdcAddress();
+    constructor(address _curveRegistryAddress, address _oracleAddress) {
+        curveRegistryAddress = _curveRegistryAddress;
+        curveRegistry = ICurveRegistry(_curveRegistryAddress);
+        oracleAddress = _oracleAddress;
+        oracle = IOracle(_oracleAddress);
     }
 
     function getCurvePriceUsdc(address curveLpTokenAddress)
@@ -27,7 +50,7 @@ contract CalculationsCurve {
     {
         uint256 basePrice = getBasePrice(curveLpTokenAddress);
         uint256 virtualPrice = getVirtualPrice(curveLpTokenAddress);
-        IERC20 usdc = IERC20(getUsdcAddressFromSender());
+        IERC20 usdc = IERC20(oracle.usdcAddress());
         uint256 decimals = usdc.decimals();
         uint256 decimalsAdjustment = 18 - decimals;
         uint256 price =
@@ -45,14 +68,7 @@ contract CalculationsCurve {
             curveRegistry.get_pool_from_lp_token(curveLpTokenAddress);
         address firstUnderlyingCoinAddress =
             getFirstUnderlyingCoinFromPool(poolAddress);
-        (, bytes memory data) =
-            address(msg.sender).staticcall(
-                abi.encodeWithSignature(
-                    "getPriceFromRouterUsdc(address)",
-                    firstUnderlyingCoinAddress
-                )
-            );
-        uint256 basePrice = abi.decode(data, (uint256));
+        uint256 basePrice = oracle.getPriceUsdc(firstUnderlyingCoinAddress);
         return basePrice;
     }
 

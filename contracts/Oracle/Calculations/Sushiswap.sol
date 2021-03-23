@@ -2,11 +2,41 @@
 
 pragma solidity ^0.8.2;
 
-import "../../../interfaces/Sushiswap/Factory.sol";
-import "../../../interfaces/Sushiswap/Router.sol";
-import "../../../interfaces/Sushiswap/Pair.sol";
-import "../../../interfaces/Common/IERC20.sol";
-import "../../../interfaces/Common/Oracle.sol";
+interface PriceRouter {
+    function getAmountsOut(uint256 amountIn, address[] calldata path)
+        external
+        view
+        returns (uint256[] memory amounts);
+
+    function WETH() external view returns (address);
+}
+
+interface Pair {
+    function factory() external view returns (address);
+
+    function token0() external view returns (address);
+
+    function token1() external view returns (address);
+
+    function totalSupply() external view returns (uint256);
+
+    function decimals() external view returns (uint8);
+
+    function getReserves()
+        external
+        view
+        returns (
+            uint112,
+            uint112,
+            uint32
+        );
+}
+
+interface IERC20 {
+    function decimals() external view returns (uint8);
+
+    function balanceOf(address account) external view returns (uint256);
+}
 
 contract CalculationsSushiswap {
     address public primaryRouterAddress;
@@ -14,6 +44,7 @@ contract CalculationsSushiswap {
     address public secondaryRouterAddress;
     address public secondaryFactoryAddress;
     address public wethAddress;
+    address public usdcAddress;
     PriceRouter primaryRouter;
     PriceRouter secondaryRouter;
 
@@ -24,12 +55,14 @@ contract CalculationsSushiswap {
         address _primaryRouterAddress,
         address _primaryFactoryAddress,
         address _secondaryRouterAddress,
-        address _secondaryFactoryAddress
+        address _secondaryFactoryAddress,
+        address _usdcAddress
     ) {
         primaryRouterAddress = _primaryRouterAddress;
         primaryFactoryAddress = _primaryFactoryAddress;
         secondaryRouterAddress = _secondaryRouterAddress;
         secondaryFactoryAddress = _secondaryFactoryAddress;
+        usdcAddress = _usdcAddress;
         primaryRouter = PriceRouter(primaryRouterAddress);
         secondaryRouter = PriceRouter(secondaryRouterAddress);
         wethAddress = primaryRouter.WETH();
@@ -99,17 +132,11 @@ contract CalculationsSushiswap {
         return amountOut;
     }
 
-    function getUsdcAddressFromSender() internal view returns (address) {
-        Oracle oracle = Oracle(msg.sender);
-        return oracle.usdcAddress();
-    }
-
     function getPriceFromRouterUsdc(address tokenAddress)
         public
         view
         returns (uint256)
     {
-        address usdcAddress = getUsdcAddressFromSender();
         return getPriceFromRouter(tokenAddress, usdcAddress);
     }
 
