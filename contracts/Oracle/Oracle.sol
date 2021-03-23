@@ -4,8 +4,8 @@ pragma solidity ^0.8.2;
 import "../Utilities/Manageable.sol";
 
 contract Oracle is Manageable {
-    address public usdcAddress;
     address[] private _calculations;
+    address public usdcAddress;
 
     constructor(address _managementListAddress, address _usdcAddress)
         Manageable(_managementListAddress)
@@ -29,17 +29,19 @@ contract Oracle is Manageable {
         return (_calculations);
     }
 
-    // This method is only for etherscan (during development it's better to call getPriceUsdc() on the oracle directly)
-    function getPriceUsdcEtherscan(address tokenAddress)
+    function getPriceUsdcRecommended(address tokenAddress)
         public
         view
         returns (uint256)
     {
-        (, bytes memory data) =
+        (bool success, bytes memory data) =
             address(this).staticcall(
                 abi.encodeWithSignature("getPriceUsdc(address)", tokenAddress)
             );
-        return abi.decode(data, (uint256));
+        if (success) {
+            return abi.decode(data, (uint256));
+        }
+        revert("Oracle: No price found");
     }
 
     /**
@@ -58,13 +60,20 @@ contract Oracle is Manageable {
             assembly {
                 let _target := calculation
                 calldatacopy(0, 0, calldatasize())
-                pop(staticcall(gas(), _target, 0, calldatasize(), 0, 0))
+                let success := staticcall(
+                    gas(),
+                    _target,
+                    0,
+                    calldatasize(),
+                    0,
+                    0
+                )
                 returndatacopy(0, 0, returndatasize())
-                if gt(returndatasize(), 0) {
+                if success {
                     return(0, returndatasize())
                 }
             }
         }
-        revert("Fallback proxy failed to return data");
+        revert("Oracle: Fallback proxy failed to return data");
     }
 }
