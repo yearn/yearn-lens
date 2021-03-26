@@ -23,6 +23,7 @@ def test_lens(
     RegisteryAdapterV1Vault,
     RegisteryAdapterV2Vault,
     RegistryAdapterIronBank,
+    managementList,
     RegistryAdapterEarn,
     Oracle,
     oracle,
@@ -53,9 +54,9 @@ def test_lens(
     v2Registry.endorseVault(v2WethVaultAddress, ({"from": gov}))
     v2Registry.endorseVault(v2YfiVaultAddress, ({"from": gov}))
 
-    lens = Lens.deploy({"from": gov})
-    lens.addRegistry(v2VaultsAdapter)
-    lens.addRegistry(v1VaultsAdapter)
+    lens = Lens.deploy(managementList, {"from": gov})
+    lens.addAdapter(v2VaultsAdapter)
+    lens.addAdapter(v1VaultsAdapter)
 
     # print("lll", lens.getAssetsAddresses())
 
@@ -70,10 +71,10 @@ def test_lens(
 #     lens.getPositionsOf("0x4800C3b3B570bE4EeE918404d0f847c1Bf25826b"),
 # )
 
-# print(lens.getRegistries())
+# print(lens.getAdapters())
 # print(v2VaultsAdapter.getAssets())
 
-# lens.removeRegistry(v2VaultsAdapter)
+# lens.removeAdapter(v2VaultsAdapter)
 # print(lens.numRegistries())
 # print("Combined assets", lens.getAssets())
 # print("yyy", lens.getAssetsFromAdapter(v2VaultsAdapter))
