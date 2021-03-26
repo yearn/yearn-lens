@@ -6,7 +6,7 @@ from brownie import ManagementList, ZERO_ADDRESS
 
 @pytest.fixture
 def manageable(ManagementList, gov):
-    return ManagementList.deploy("Managers", gov, {"from": gov})
+    return ManagementList.deploy("Managers", {"from": gov})
 
 
 def test_initialization(manageable, gov):

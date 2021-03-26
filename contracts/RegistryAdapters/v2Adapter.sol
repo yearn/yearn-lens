@@ -152,7 +152,7 @@ contract RegisteryAdapterV2Vault {
         return assets;
     }
 
-    function getPositionsForVault(address accountAddress, address vaultAddress)
+    function getPositionOf(address accountAddress, address vaultAddress)
         public
         view
         returns (Position memory)
@@ -184,7 +184,7 @@ contract RegisteryAdapterV2Vault {
         for (uint256 i = 0; i < numberOfVaults; i++) {
             address vaultAddress = vaultAddresses[i];
             Position memory position =
-                getPositionsForVault(accountAddress, vaultAddress);
+                getPositionOf(accountAddress, vaultAddress);
 
             positions[i] = position;
         }

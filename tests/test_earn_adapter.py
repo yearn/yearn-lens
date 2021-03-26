@@ -6,11 +6,6 @@ ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 YFI = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
 
 
-@pytest.fixture
-def oracle(Oracle, gov):
-    return gov.deploy(Oracle)
-
-
 def test_earn_adapter(oracle, GenericRegistry, RegistryAdapterEarn, gov):
     earnRegistry = GenericRegistry.deploy({"from": gov})
 

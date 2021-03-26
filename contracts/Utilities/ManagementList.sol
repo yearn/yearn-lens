@@ -9,9 +9,9 @@ contract ManagementList {
     mapping(uint256 => address) public managerAddressByIdx;
     mapping(address => uint256) public managerIdxByAddress;
 
-    constructor(string memory _name, address _owner) {
+    constructor(string memory _name) {
         name = _name;
-        owner = _owner;
+        owner = tx.origin;
         managersCount = 1;
         managerAddressByIdx[1] = owner;
         managerIdxByAddress[owner] = 1;

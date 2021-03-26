@@ -25,6 +25,7 @@ def test_lens(
     RegistryAdapterIronBank,
     RegistryAdapterEarn,
     Oracle,
+    oracle,
     gov,
     V2Registry,
     GenericRegistry,
@@ -40,7 +41,7 @@ def test_lens(
     v2Registry = V2Registry.deploy({"from": gov})
 
     # v2RegistryAddress = "0xE15461B18EE31b7379019Dc523231C57d1Cbc18c""
-    v2VaultsAdapter = RegisteryAdapterV2Vault.deploy(v2Registry, {"from": gov})
+    v2VaultsAdapter = RegisteryAdapterV2Vault.deploy(v2Registry, oracle, {"from": gov})
 
     # 0.3.0
     v2Registry.newRelease(v2UsdcVaultV1Address, ({"from": gov}))

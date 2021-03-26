@@ -23,41 +23,6 @@ threeCrvPoolAddress = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
 cyDaiAddress = "0x8e595470Ed749b85C6F7669de83EAe304C2ec68F"
 
 
-@pytest.fixture
-def managementList(ManagementList, gov):
-    return ManagementList.deploy("Managemenet list", gov, {"from": gov})
-
-
-@pytest.fixture
-def oracle(
-    gov,
-    Oracle,
-    managementList,
-    CalculationsSushiswap,
-    CalculationsCurve,
-    CalculationsIronBank,
-):
-    oracle = Oracle.deploy(managementList, usdcAddress, {"from": gov})
-    calculationsSushiswap = CalculationsSushiswap.deploy(
-        uniswapRouterAddress,
-        uniswapFactoryAddress,
-        sushiswapRouterAddress,
-        sushiswapFactoryAddress,
-        usdcAddress,
-        {"from": gov},
-    )
-    calculationsCurve = CalculationsCurve.deploy(
-        curveRegistryAddress, oracle, {"from": gov}
-    )
-    calculationsIronBank = CalculationsIronBank.deploy(
-        unitrollerAddress, oracle, {"from": gov}
-    )
-    oracle.setCalculations(
-        [calculationsCurve, calculationsIronBank, calculationsSushiswap]
-    )
-    return oracle
-
-
 # Fixtures
 @pytest.fixture
 def oracleProxyIronBank(oracle, CalculationsIronBank):
@@ -75,9 +40,10 @@ def oracleProxyCurve(oracle, CalculationsCurve):
 
 
 # General
-def test_set_calculations(Oracle, ManagementList, CalculationsCurve, gov, rando):
-    managementList = ManagementList.deploy("Managemenet list", gov, {"from": gov})
-    oracle = Oracle.deploy(managementList, usdcAddress, {"from": gov})
+def test_set_calculations(
+    Oracle, managementList, CalculationsCurve, gov, management, rando
+):
+    oracle = Oracle.deploy(managementList, usdcAddress, {"from": management})
     calculationsCurve = CalculationsCurve.deploy(
         curveRegistryAddress, oracle, {"from": gov}
     )
@@ -94,7 +60,7 @@ def test_set_calculations(Oracle, ManagementList, CalculationsCurve, gov, rando)
 
     # Managers can set calculations
     oracle.setCalculations(
-        [calculationsCurve], {"from": gov},
+        [calculationsCurve], {"from": management},
     )
 
     # Oracle should return managementList address
