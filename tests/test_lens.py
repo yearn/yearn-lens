@@ -24,6 +24,7 @@ def test_lens(
     RegisteryAdapterV2Vault,
     RegistryAdapterIronBank,
     managementList,
+    management,
     RegistryAdapterEarn,
     Oracle,
     oracle,
@@ -55,8 +56,8 @@ def test_lens(
     v2Registry.endorseVault(v2YfiVaultAddress, ({"from": gov}))
 
     lens = Lens.deploy(managementList, {"from": gov})
-    lens.addAdapter(v2VaultsAdapter)
-    lens.addAdapter(v1VaultsAdapter)
+    lens.addAdapter(v2VaultsAdapter, {"from": management})
+    lens.addAdapter(v1VaultsAdapter, {"from": management})
 
     # print("lll", lens.getAssetsAddresses())
 

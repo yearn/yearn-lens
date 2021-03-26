@@ -4,16 +4,19 @@ pragma solidity ^0.8.2;
 pragma experimental ABIEncoderV2;
 
 import "../interfaces/Yearn/RegistryAdapter.sol";
+import "./Utilities/Manageable.sol";
 
 // TODO: Implement authentication
-contract Lens {
+contract Lens is Manageable {
     mapping(uint256 => address) private registries;
     uint256 public numRegistries;
     mapping(address => uint256) private isRegistered;
 
-    constructor() {}
+    constructor(address _managementListAddress)
+        Manageable(_managementListAddress)
+    {}
 
-    function addRegistry(address registryAddress) public {
+    function addAdapter(address registryAddress) public onlyManagers {
         if (isRegistered[registryAddress] == 0) {
             numRegistries += 1;
             registries[numRegistries] = registryAddress;
@@ -21,17 +24,20 @@ contract Lens {
         }
     }
 
-    function addRegistries(address[] memory registryAddresses) public {
+    function addAdapters(address[] memory registryAddresses)
+        public
+        onlyManagers
+    {
         for (uint256 i = 0; i < registryAddresses.length; i++) {
             address registryAddress = registryAddresses[i];
-            addRegistry(registryAddress);
+            addAdapter(registryAddress);
         }
     }
 
     // TODO: Implement
     // function replaceRegistry(address oldAddress, address newAddress) public {}
 
-    function removeRegistry(address registryAddress) public {
+    function removeAdapter(address registryAddress) public onlyManagers {
         if (isRegistered[registryAddress] != 0) {
             uint256 registryIndex = isRegistered[registryAddress];
             delete registries[registryIndex];
@@ -40,7 +46,7 @@ contract Lens {
         }
     }
 
-    function getRegistries() external view returns (address[] memory) {
+    function getAdapters() external view returns (address[] memory) {
         address[] memory registryList = new address[](numRegistries);
         for (uint256 i = 0; i < numRegistries; i++) {
             address registryAddress = registries[i + 1];
