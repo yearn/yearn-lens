@@ -2,6 +2,7 @@
 pragma solidity ^0.8.2;
 
 import "../Utilities/Manageable.sol";
+import "../../interfaces/Common/IERC20.sol";
 
 contract Oracle is Manageable {
     address[] private _calculations;
@@ -63,8 +64,30 @@ contract Oracle is Manageable {
         emit TokenAliasRemoved(tokenAddress);
     }
 
-    function getPriceUsdcRecommended(address tokenAddress)
+    function getNormalizedValueUsdc(address tokenAddress, uint256 amount)
         external
+        view
+        returns (uint256)
+    {
+        IERC20 token = IERC20(tokenAddress);
+        uint256 tokenDecimals = token.decimals();
+
+        uint256 usdcDecimals = 6;
+        uint256 decimalsAdjustment = tokenDecimals - usdcDecimals;
+        uint256 price = getPriceUsdcRecommended(tokenAddress);
+        uint256 value;
+        if (decimalsAdjustment > 0) {
+            value =
+                (amount * price * (10**decimalsAdjustment)) /
+                10**(decimalsAdjustment + tokenDecimals);
+        } else {
+            value = (amount * price) / 10**usdcDecimals;
+        }
+        return value;
+    }
+
+    function getPriceUsdcRecommended(address tokenAddress)
+        public
         view
         returns (uint256)
     {
