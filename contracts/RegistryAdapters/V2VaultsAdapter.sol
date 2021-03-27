@@ -10,29 +10,65 @@ import "../../interfaces/Common/IOracle.sol";
 
 contract RegisteryAdapterV2Vault {
     address public registryAddress;
-    string public constant registryType = "v2Adapter";
     IOracle public oracle;
 
+    struct AdapterInfo {
+        string typeId;
+        string categoryId;
+        string subcategoryId;
+    }
+
+    AdapterInfo public adapterInfo =
+        AdapterInfo({
+            typeId: "v2Vaults",
+            categoryId: "deposit",
+            subcategoryId: "vault"
+        });
+
     struct Asset {
-        string name;
         address id;
+        string name;
         string version;
+        uint256 balance;
+        uint256 balanceUsdc;
+        Token token;
         AssetMetadata metadata;
     }
 
-    // TODO: Inherit from standardized interface?
     struct Position {
         address assetId;
-        uint256 depositedBalance;
-        uint256 tokenBalance;
-        uint256 tokenAllowance;
+        uint256 balance;
+        uint256 balanceUsdc;
+        TokenPosition tokenPosition;
+    }
+
+    struct Token {
+        address id;
+        string name;
+        string symbol;
+        uint8 decimals;
+    }
+
+    struct TokenPosition {
+        address tokenId;
+        uint256 balance;
+        uint256 balanceUsdc;
+        Allowance[] allowances;
+    }
+
+    struct Allowance {
+        address owner;
+        address spender;
+        uint256 allowance;
     }
 
     struct AssetMetadata {
-        address controller;
-        uint256 totalAssets;
-        uint256 totalSupply;
+        string symbol;
         uint256 pricePerShare;
+        bool migrationAvailable;
+        address latestVaultAddress;
+        uint256 depositLimit;
+        bool emergencyShutdown;
     }
 
     constructor(address _registryAddress, address _oracleAddress) {
@@ -41,7 +77,7 @@ contract RegisteryAdapterV2Vault {
         oracle = IOracle(_oracleAddress);
     }
 
-    function getAssetsLength() public view returns (uint256) {
+    function assetsLength() public view returns (uint256) {
         IV2Registry registry = IV2Registry(registryAddress);
         uint256 numTokens = registry.numTokens();
         uint256 numVaults;
@@ -53,8 +89,8 @@ contract RegisteryAdapterV2Vault {
         return numVaults;
     }
 
-    function getAssetsAddresses() public view returns (address[] memory) {
-        uint256 numVaults = getAssetsLength();
+    function assetsAddresses() public view returns (address[] memory) {
+        uint256 numVaults = assetsLength();
         address[] memory vaultAddresses = new address[](numVaults);
         IV2Registry registry = IV2Registry(registryAddress);
         uint256 numTokens = registry.numTokens();
@@ -76,116 +112,154 @@ contract RegisteryAdapterV2Vault {
         return vaultAddresses;
     }
 
-    function getAssetTvl(address vaultAddress) public view returns (uint256) {
+    function assetTvl(address vaultAddress) public view returns (uint256) {
         V2Vault vault = V2Vault(vaultAddress);
-        uint256 valueInToken = vault.totalAssets();
+        uint256 amount = vault.totalAssets();
         address underlyingTokenAddress = vault.token();
-        IERC20 underlyingToken = IERC20(underlyingTokenAddress);
-        uint256 underlyingTokenDecimals = underlyingToken.decimals();
-
-        uint256 usdcDecimals = 6;
-        uint256 decimalsAdjustment = underlyingTokenDecimals - usdcDecimals;
-        uint256 price = oracle.getPriceUsdc(underlyingTokenAddress);
-        uint256 tvl;
-        if (decimalsAdjustment > 0) {
-            tvl =
-                (valueInToken * price * (10**decimalsAdjustment)) /
-                10**(decimalsAdjustment + underlyingTokenDecimals);
-        } else {
-            tvl = (valueInToken * price) / 10**usdcDecimals;
-        }
+        uint256 tvl =
+            oracle.getNormalizedValueUsdc(underlyingTokenAddress, amount);
         return tvl;
     }
 
-    function getAssetsTvl() external view returns (uint256) {
+    function assetsTvl() external view returns (uint256) {
         uint256 tvl;
-        address[] memory assetAddresses = getAssetsAddresses();
+        address[] memory assetAddresses = assetsAddresses();
         uint256 numberOfAssets = assetAddresses.length;
-        Asset[] memory assets = new Asset[](numberOfAssets);
         for (uint256 i = 0; i < numberOfAssets; i++) {
             address assetAddress = assetAddresses[i];
-            uint256 assetTvl = getAssetTvl(assetAddress);
-            tvl += assetTvl;
+            uint256 _assetTvl = assetTvl(assetAddress);
+            tvl += _assetTvl;
         }
         return tvl;
     }
 
-    // TODO: Add metadata for vault upgrades/versioning
-    function getAsset(address vaultAddress) public view returns (Asset memory) {
+    function asset(address vaultAddress) public view returns (Asset memory) {
         V2Vault vault = V2Vault(vaultAddress);
-        string memory vaultName = vault.name();
-        uint256 totalAssets = vault.totalAssets();
+        IV2Registry registry = IV2Registry(registryAddress);
         uint256 totalSupply = vault.totalSupply();
         uint256 pricePerShare = 0;
-        string memory version = "0.00";
         bool vaultHasShares = totalSupply != 0;
         if (vaultHasShares) {
             pricePerShare = vault.pricePerShare();
         }
+        address vaultTokenAddress = vault.token();
+
+        address latestVaultAddress = registry.latestVault(vaultTokenAddress);
+        bool migrationAvailable = latestVaultAddress != vaultAddress;
 
         AssetMetadata memory metadata =
             AssetMetadata({
-                controller: vaultAddress,
-                totalAssets: totalAssets,
-                totalSupply: totalSupply,
-                pricePerShare: pricePerShare
+                symbol: vault.symbol(),
+                pricePerShare: pricePerShare,
+                migrationAvailable: migrationAvailable,
+                latestVaultAddress: latestVaultAddress,
+                depositLimit: vault.depositLimit(),
+                emergencyShutdown: vault.emergencyShutdown()
             });
-        Asset memory asset =
+
+        Asset memory _asset =
             Asset({
-                name: vaultName,
                 id: vaultAddress,
-                version: version,
+                name: vault.name(),
+                version: vault.apiVersion(),
+                balance: vault.totalAssets(),
+                balanceUsdc: assetTvl(vaultAddress),
+                token: token(vaultTokenAddress),
                 metadata: metadata
             });
-        return asset;
+        return _asset;
     }
 
-    function getAssets() external view returns (Asset[] memory) {
-        address[] memory vaultAddresses = getAssetsAddresses();
+    function assets() external view returns (Asset[] memory) {
+        address[] memory vaultAddresses = assetsAddresses();
         uint256 numberOfVaults = vaultAddresses.length;
-        Asset[] memory assets = new Asset[](numberOfVaults);
+        Asset[] memory _assets = new Asset[](numberOfVaults);
         for (uint256 i = 0; i < numberOfVaults; i++) {
             address vaultAddress = vaultAddresses[i];
-            Asset memory asset = getAsset(vaultAddress);
-            assets[i] = asset;
+            Asset memory _asset = asset(vaultAddress);
+            _assets[i] = _asset;
         }
-        return assets;
+        return _assets;
     }
 
-    function getPositionOf(address accountAddress, address vaultAddress)
+    function token(address tokenAddress) internal view returns (Token memory) {
+        IERC20 underlyingToken = IERC20(tokenAddress);
+        Token memory _token =
+            Token({
+                id: tokenAddress,
+                name: underlyingToken.name(),
+                symbol: underlyingToken.symbol(),
+                decimals: underlyingToken.decimals()
+            });
+        return _token;
+    }
+
+    function tokens() public view returns (Token[] memory) {
+        IV2Registry registry = IV2Registry(registryAddress);
+        uint256 numTokens = registry.numTokens();
+        Token[] memory _tokens = new Token[](numTokens);
+        for (uint256 i = 0; i < numTokens; i++) {
+            address tokenAddress = registry.tokens(i);
+            Token memory _token = token(tokenAddress);
+            _tokens[i] = _token;
+        }
+        return _tokens;
+    }
+
+    function positionOf(address accountAddress, address vaultAddress)
         public
         view
         returns (Position memory)
     {
         V2Vault vault = V2Vault(vaultAddress);
         address tokenAddress = vault.token();
-        IERC20 token = IERC20(tokenAddress);
-        uint256 depositedBalance = vault.balanceOf(accountAddress);
-        uint256 tokenBalance = token.balanceOf(accountAddress);
-        uint256 tokenAllowance = token.allowance(accountAddress, vaultAddress);
+        IERC20 _token = IERC20(tokenAddress);
+        uint256 balance = vault.balanceOf(accountAddress);
+        uint256 balanceUsdc =
+            oracle.getNormalizedValueUsdc(tokenAddress, balance);
+        uint256 tokenBalance = _token.balanceOf(accountAddress);
+        uint256 tokenBalanceUsdc =
+            oracle.getNormalizedValueUsdc(tokenAddress, tokenBalance);
+        uint256 tokenAllowance = _token.allowance(accountAddress, vaultAddress);
+        Allowance memory allowance =
+            Allowance({
+                owner: accountAddress,
+                spender: vaultAddress,
+                allowance: tokenAllowance
+            });
+
+        Allowance[] memory allowances = new Allowance[](1);
+        allowances[0] = allowance;
+
+        TokenPosition memory tokenPosition =
+            TokenPosition({
+                tokenId: tokenAddress,
+                balance: tokenBalance,
+                balanceUsdc: tokenBalanceUsdc,
+                allowances: allowances
+            });
+
         Position memory position =
             Position({
                 assetId: vaultAddress,
-                depositedBalance: depositedBalance,
-                tokenBalance: tokenBalance,
-                tokenAllowance: tokenAllowance
+                balance: balance,
+                balanceUsdc: balanceUsdc,
+                tokenPosition: tokenPosition
             });
         return position;
     }
 
-    function getPositionsOf(address accountAddress)
+    function positionsOf(address accountAddress)
         external
         view
         returns (Position[] memory)
     {
-        address[] memory vaultAddresses = getAssetsAddresses();
+        address[] memory vaultAddresses = assetsAddresses();
         uint256 numberOfVaults = vaultAddresses.length;
         Position[] memory positions = new Position[](numberOfVaults);
         for (uint256 i = 0; i < numberOfVaults; i++) {
             address vaultAddress = vaultAddresses[i];
-            Position memory position =
-                getPositionOf(accountAddress, vaultAddress);
-
+            Position memory position = positionOf(accountAddress, vaultAddress);
             positions[i] = position;
         }
         return positions;

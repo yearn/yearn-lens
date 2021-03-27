@@ -15,7 +15,15 @@ interface V2Vault {
 
     function totalAssets() external view returns (uint256);
 
+    function apiVersion() external view returns (string memory);
+
     function totalSupply() external view returns (uint256);
 
     function balanceOf(address account) external view returns (uint256);
+
+    function emergencyShutdown() external view returns (bool);
+
+    function depositLimit() external view returns (uint256);
+
+    function deposit(uint256 amount) external;
 }

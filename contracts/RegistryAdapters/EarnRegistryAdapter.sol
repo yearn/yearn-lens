@@ -48,7 +48,7 @@ contract RegistryAdapterEarn {
         uint256 underlyingTokenDecimals = underlyingToken.decimals();
         uint256 usdcDecimals = 6;
         uint256 decimalsAdjustment = underlyingTokenDecimals - usdcDecimals;
-        uint256 price = oracle.getPriceUsdc(underlyingTokenAddress);
+        uint256 price = oracle.getPriceUsdcRecommended(underlyingTokenAddress);
         uint256 tvl;
         if (decimalsAdjustment > 0) {
             tvl =

@@ -9,6 +9,8 @@ interface IV2Registry {
 
     function tokens(uint256 tokenIdx) external view returns (address);
 
+    function latestVault(address token) external view returns (address);
+
     function vaults(address token, uint256 tokenIdx)
         external
         view
