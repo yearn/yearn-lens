@@ -6,6 +6,15 @@ import "../Utilities/Manageable.sol";
 contract Oracle is Manageable {
     address[] private _calculations;
     address public usdcAddress;
+    mapping(address => address) public tokenAliases;
+
+    event TokenAliasAdded(address tokenAddress, address tokenAliasAddress);
+    event TokenAliasRemoved(address tokenAddress);
+
+    struct TokenAlias {
+        address tokenAddress;
+        address tokenAliasAddress;
+    }
 
     constructor(address _managementListAddress, address _usdcAddress)
         Manageable(_managementListAddress)
@@ -19,7 +28,7 @@ contract Oracle is Manageable {
      * The order of calculation contracts matters as it determines the order preference in the cascading fallback mechanism.
      */
     function setCalculations(address[] memory calculationAddresses)
-        public
+        external
         onlyManagers
     {
         _calculations = calculationAddresses;
@@ -29,14 +38,44 @@ contract Oracle is Manageable {
         return (_calculations);
     }
 
-    function getPriceUsdcRecommended(address tokenAddress)
+    function addTokenAliases(TokenAlias[] memory _tokenAliases)
         public
+        onlyManagers
+    {
+        for (uint256 i = 0; i < _tokenAliases.length; i++) {
+            addTokenAlias(
+                _tokenAliases[i].tokenAddress,
+                _tokenAliases[i].tokenAliasAddress
+            );
+        }
+    }
+
+    function addTokenAlias(address tokenAddress, address tokenAliasAddress)
+        public
+        onlyManagers
+    {
+        tokenAliases[tokenAddress] = tokenAliasAddress;
+        emit TokenAliasAdded(tokenAddress, tokenAliasAddress);
+    }
+
+    function removeTokenAlias(address tokenAddress) public onlyManagers {
+        delete tokenAliases[tokenAddress];
+        emit TokenAliasRemoved(tokenAddress);
+    }
+
+    function getPriceUsdcRecommended(address tokenAddress)
+        external
         view
         returns (uint256)
     {
+        address tokenAddressAlias = tokenAliases[tokenAddress];
+        address tokenToQuery = tokenAddress;
+        if (tokenAddressAlias != address(0)) {
+            tokenToQuery = tokenAddressAlias;
+        }
         (bool success, bytes memory data) =
             address(this).staticcall(
-                abi.encodeWithSignature("getPriceUsdc(address)", tokenAddress)
+                abi.encodeWithSignature("getPriceUsdc(address)", tokenToQuery)
             );
         if (success) {
             return abi.decode(data, (uint256));

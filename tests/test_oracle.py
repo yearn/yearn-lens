@@ -1,7 +1,7 @@
 import pytest
 import brownie
 
-from brownie import Oracle, accounts, Contract, ZERO_ADDRESS
+from brownie import Contract, ZERO_ADDRESS
 
 # Oracle deployment options
 uniswapRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
@@ -22,7 +22,6 @@ threeCrvAddress = "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490"
 threeCrvPoolAddress = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
 cyDaiAddress = "0x8e595470Ed749b85C6F7669de83EAe304C2ec68F"
 
-
 # Fixtures
 @pytest.fixture
 def oracleProxyIronBank(oracle, CalculationsIronBank):
@@ -40,6 +39,19 @@ def oracleProxyCurve(oracle, CalculationsCurve):
 
 
 # General
+def test_add_and_remove_token_alias(oracle):
+    assert oracle.tokenAliases(ethAddress) != ZERO_ADDRESS
+    oracle.removeTokenAlias(ethAddress)
+    assert oracle.tokenAliases(ethAddress) == ZERO_ADDRESS
+    oracle.addTokenAlias(ethAddress, wethAddress)
+    assert oracle.tokenAliases(ethAddress) == wethAddress
+
+
+def test_add_token_aliases(oracle):
+    oracle.addTokenAliases([[ethAddress, yfiAddress]])
+    assert oracle.tokenAliases(ethAddress) == yfiAddress
+
+
 def test_set_calculations(
     Oracle, managementList, CalculationsCurve, gov, management, rando
 ):
