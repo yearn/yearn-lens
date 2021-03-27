@@ -47,6 +47,7 @@ contract RegisteryAdapterV2Vault {
         string name;
         string symbol;
         uint8 decimals;
+        uint256 priceUsdc;
     }
 
     struct TokenPosition {
@@ -189,7 +190,8 @@ contract RegisteryAdapterV2Vault {
                 id: tokenAddress,
                 name: underlyingToken.name(),
                 symbol: underlyingToken.symbol(),
-                decimals: underlyingToken.decimals()
+                decimals: underlyingToken.decimals(),
+                priceUsdc: oracle.getPriceUsdcRecommended(tokenAddress)
             });
         return _token;
     }

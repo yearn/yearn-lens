@@ -61,10 +61,13 @@ def test_asset(v2VaultsAdapter):
     tokenName = token[1]
     tokenSymbol = token[2]
     tokenDecimals = token[3]
+    tokenPriceUsdc = token[4]
     assert tokenId == usdcAddress
     assert tokenName == "USD Coin"
     assert tokenSymbol == "USDC"
     assert tokenDecimals == 6
+    assert tokenPriceUsdc > 900000
+    assert tokenPriceUsdc < 1100000
 
     # Test vault metadata
     metadata = asset[6]
@@ -113,7 +116,7 @@ def test_assets(v2VaultsAdapter):
     assert assetId == yfiVaultAddress
     assert assetName == "YFI yVault"
     assert assetVersion == "0.3.2"
-    print(assets)
+    # print(assets)
 
 
 def test_position_of(v2VaultsAdapter, accounts):
