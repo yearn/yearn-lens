@@ -58,7 +58,7 @@ def test_asset(ironBankAdapter):
     assert balanceUsdc > balance / 10 ** 18
 
     # Test token metadata
-    token = asset[6]
+    token = asset[5]
     tokenId = token[0]
     tokenName = token[1]
     tokenSymbol = token[2]
