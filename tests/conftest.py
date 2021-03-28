@@ -22,6 +22,7 @@ def oracle(
     CalculationsSushiswap,
     CalculationsCurve,
     CalculationsIronBank,
+    CalculationsYearnVaults,
 ):
 
     uniswapRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
@@ -56,6 +57,10 @@ def oracle(
         {"from": management},
     )
 
+    calculationsYearnVaults = CalculationsYearnVaults.deploy(
+        oracle, {"from": management}
+    )
+
     calculationsSushiswap = CalculationsSushiswap.deploy(
         uniswapRouterAddress,
         uniswapFactoryAddress,
@@ -71,7 +76,12 @@ def oracle(
         unitrollerAddress, oracle, {"from": management}
     )
     oracle.setCalculations(
-        [calculationsCurve, calculationsIronBank, calculationsSushiswap]
+        [
+            calculationsCurve,
+            calculationsYearnVaults,
+            calculationsIronBank,
+            calculationsSushiswap,
+        ]
     )
     return oracle
 
