@@ -3,12 +3,18 @@
 pragma solidity ^0.8.2;
 pragma experimental ABIEncoderV2;
 
-import "../../interfaces/Yearn/V2Vault.sol";
-import "../../interfaces/Yearn/IV2Registry.sol";
+// Common imports
 import "../../interfaces/Common/IERC20.sol";
 import "../../interfaces/Common/IOracle.sol";
 
+// Adapter-specific imports
+import "../../interfaces/Yearn/V2Vault.sol";
+import "../../interfaces/Yearn/IV2Registry.sol";
+
 contract RegisteryAdapterV2Vault {
+    /**
+     * Common code shared by all adapters
+     */
     address public registryAddress;
     IOracle public oracle;
 
@@ -16,23 +22,6 @@ contract RegisteryAdapterV2Vault {
         string typeId;
         string categoryId;
         string subcategoryId;
-    }
-
-    AdapterInfo public adapterInfo =
-        AdapterInfo({
-            typeId: "v2Vaults",
-            categoryId: "deposit",
-            subcategoryId: "vault"
-        });
-
-    struct Asset {
-        address id;
-        string name;
-        string version;
-        uint256 balance;
-        uint256 balanceUsdc;
-        Token token;
-        AssetMetadata metadata;
     }
 
     struct Position {
@@ -63,6 +52,70 @@ contract RegisteryAdapterV2Vault {
         uint256 allowance;
     }
 
+    constructor(address _registryAddress, address _oracleAddress) {
+        require(_registryAddress != address(0), "Missing registry address");
+        require(_oracleAddress != address(0), "Missing oracle address");
+        registryAddress = _registryAddress;
+        oracle = IOracle(_oracleAddress);
+    }
+
+    function assets() external view returns (Asset[] memory) {
+        address[] memory assetAddresses = assetsAddresses();
+        uint256 numberOfAssets = assetAddresses.length;
+        Asset[] memory _assets = new Asset[](numberOfAssets);
+        for (uint256 i = 0; i < numberOfAssets; i++) {
+            address assetAddress = assetAddresses[i];
+            Asset memory _asset = asset(assetAddress);
+            _assets[i] = _asset;
+        }
+        return _assets;
+    }
+
+    function token(address tokenAddress) internal view returns (Token memory) {
+        IERC20 underlyingToken = IERC20(tokenAddress);
+        Token memory _token =
+            Token({
+                id: tokenAddress,
+                name: underlyingToken.name(),
+                symbol: underlyingToken.symbol(),
+                decimals: underlyingToken.decimals(),
+                priceUsdc: oracle.getPriceUsdcRecommended(tokenAddress)
+            });
+        return _token;
+    }
+
+    function assetsTvl() external view returns (uint256) {
+        uint256 tvl;
+        address[] memory assetAddresses = assetsAddresses();
+        uint256 numberOfAssets = assetAddresses.length;
+        for (uint256 i = 0; i < numberOfAssets; i++) {
+            address assetAddress = assetAddresses[i];
+            uint256 _assetTvl = assetTvl(assetAddress);
+            tvl += _assetTvl;
+        }
+        return tvl;
+    }
+
+    /**
+     * V2 Vaults Adapter
+     */
+    AdapterInfo public adapterInfo =
+        AdapterInfo({
+            typeId: "v2Vaults",
+            categoryId: "deposit",
+            subcategoryId: "vault"
+        });
+
+    struct Asset {
+        address id;
+        string name;
+        string version;
+        uint256 balance;
+        uint256 balanceUsdc;
+        Token token;
+        AssetMetadata metadata;
+    }
+
     struct AssetMetadata {
         string symbol;
         uint256 pricePerShare;
@@ -70,12 +123,6 @@ contract RegisteryAdapterV2Vault {
         address latestVaultAddress;
         uint256 depositLimit;
         bool emergencyShutdown;
-    }
-
-    constructor(address _registryAddress, address _oracleAddress) {
-        require(_registryAddress != address(0), "Missing registry address");
-        registryAddress = _registryAddress;
-        oracle = IOracle(_oracleAddress);
     }
 
     function assetsLength() public view returns (uint256) {
@@ -122,18 +169,6 @@ contract RegisteryAdapterV2Vault {
         return tvl;
     }
 
-    function assetsTvl() external view returns (uint256) {
-        uint256 tvl;
-        address[] memory assetAddresses = assetsAddresses();
-        uint256 numberOfAssets = assetAddresses.length;
-        for (uint256 i = 0; i < numberOfAssets; i++) {
-            address assetAddress = assetAddresses[i];
-            uint256 _assetTvl = assetTvl(assetAddress);
-            tvl += _assetTvl;
-        }
-        return tvl;
-    }
-
     function asset(address vaultAddress) public view returns (Asset memory) {
         V2Vault vault = V2Vault(vaultAddress);
         IV2Registry registry = IV2Registry(registryAddress);
@@ -169,31 +204,6 @@ contract RegisteryAdapterV2Vault {
                 metadata: metadata
             });
         return _asset;
-    }
-
-    function assets() external view returns (Asset[] memory) {
-        address[] memory vaultAddresses = assetsAddresses();
-        uint256 numberOfVaults = vaultAddresses.length;
-        Asset[] memory _assets = new Asset[](numberOfVaults);
-        for (uint256 i = 0; i < numberOfVaults; i++) {
-            address vaultAddress = vaultAddresses[i];
-            Asset memory _asset = asset(vaultAddress);
-            _assets[i] = _asset;
-        }
-        return _assets;
-    }
-
-    function token(address tokenAddress) internal view returns (Token memory) {
-        IERC20 underlyingToken = IERC20(tokenAddress);
-        Token memory _token =
-            Token({
-                id: tokenAddress,
-                name: underlyingToken.name(),
-                symbol: underlyingToken.symbol(),
-                decimals: underlyingToken.decimals(),
-                priceUsdc: oracle.getPriceUsdcRecommended(tokenAddress)
-            });
-        return _token;
     }
 
     function tokens() public view returns (Token[] memory) {
