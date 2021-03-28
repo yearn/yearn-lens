@@ -1,5 +1,6 @@
 import pytest
 import brownie
+from operator import itemgetter
 
 from brownie import interface, ZERO_ADDRESS
 
@@ -40,18 +41,18 @@ def test_assets_length(v2VaultsAdapter):
 
 
 def test_asset(v2VaultsAdapter):
-    v2UsdcVaultV1Address = "0xe2F6b9773BF3A015E2aA70741Bde1498bdB9425b"
+    v2UsdcVaultV2Address = "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9"
 
     # test vault data
-    asset = v2VaultsAdapter.asset(v2UsdcVaultV1Address)
+    asset = v2VaultsAdapter.asset(v2UsdcVaultV2Address)
     assetId = asset[0]
     name = asset[1]
     version = asset[2]
     balance = asset[3]
     balanceUsdc = asset[4]
-    assert assetId == v2UsdcVaultV1Address
-    assert name == "Yearn USDC Vault"
-    assert version == "0.2.2"
+    assert assetId == v2UsdcVaultV2Address
+    assert name == "USDC yVault"
+    assert version == "0.3.0"
     assert balance > 0
     assert balanceUsdc > balance / 10 ** 18
 
@@ -62,14 +63,22 @@ def test_asset(v2VaultsAdapter):
     tokenSymbol = token[2]
     tokenDecimals = token[3]
     tokenPriceUsdc = token[4]
+    tolerance = 5000000  # $5.00
+    estimatedBalanceUsdc = tokenPriceUsdc * balance / 10 ** 6
     assert tokenId == usdcAddress
     assert tokenName == "USD Coin"
     assert tokenSymbol == "USDC"
     assert tokenDecimals == 6
     assert tokenPriceUsdc > 900000
     assert tokenPriceUsdc < 1100000
+    assert estimatedBalanceUsdc >= balanceUsdc - tolerance
+    assert estimatedBalanceUsdc <= balanceUsdc + tolerance
 
+
+def test_asset_metadata(v2VaultsAdapter):
     # Test vault metadata
+    v2UsdcVaultV1Address = "0xe2F6b9773BF3A015E2aA70741Bde1498bdB9425b"
+    asset = v2VaultsAdapter.asset(v2UsdcVaultV1Address)
     metadata = asset[6]
     symbol = metadata[0]
     pricePerShare = metadata[1]
@@ -88,8 +97,21 @@ def test_asset_tvl(v2VaultsAdapter):
     assetsAddresses = v2VaultsAdapter.assetsAddresses()
     for address in assetsAddresses:
         tvl = v2VaultsAdapter.assetTvl(address) / 10 ** 12
-        # print(address, tvl)
         assert tvl > 0
+
+    # Print TVL per asset
+    print("-------------")
+    print("V2 Vaults TVL")
+    print("-------------")
+    assetsAddresses = v2VaultsAdapter.assetsAddresses()
+    tvlList = []
+    for address in assetsAddresses:
+        token = interface.IERC20(address)
+        tvl = v2VaultsAdapter.assetTvl(address) / 10 ** 6
+        tvlList.append({"symbol": token.symbol(), "tvl": tvl})
+    sortedTvlItems = sorted(tvlList, key=itemgetter("tvl"), reverse=True)
+    for item in sortedTvlItems:
+        print(item.get("symbol"), item.get("tvl"))
 
 
 def test_assets_tvl(v2VaultsAdapter):

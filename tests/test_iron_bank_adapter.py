@@ -80,7 +80,9 @@ def test_asset_tvl(ironBankAdapter):
     assert cyDaiTvl > 0
 
     # Print TVL per asset
+    print("-------------")
     print("Iron Bank TVL")
+    print("-------------")
     assetsAddresses = ironBankAdapter.assetsAddresses()
     tvlList = []
     for address in assetsAddresses:
@@ -95,7 +97,7 @@ def test_asset_tvl(ironBankAdapter):
 def test_assets_tvl(ironBankAdapter):
     tvl = ironBankAdapter.assetsTvl()
     assert tvl > 0
-    print("Total tvl", tvl / 10 ** 6)
+    print("Total TVL:", tvl / 10 ** 6)
 
 
 # def test_tokens(ironBankAdapter):
