@@ -39,6 +39,14 @@ contract Oracle is Manageable {
         return (_calculations);
     }
 
+    function addTokenAlias(address tokenAddress, address tokenAliasAddress)
+        public
+        onlyManagers
+    {
+        tokenAliases[tokenAddress] = tokenAliasAddress;
+        emit TokenAliasAdded(tokenAddress, tokenAliasAddress);
+    }
+
     function addTokenAliases(TokenAlias[] memory _tokenAliases)
         public
         onlyManagers
@@ -49,14 +57,6 @@ contract Oracle is Manageable {
                 _tokenAliases[i].tokenAliasAddress
             );
         }
-    }
-
-    function addTokenAlias(address tokenAddress, address tokenAliasAddress)
-        public
-        onlyManagers
-    {
-        tokenAliases[tokenAddress] = tokenAliasAddress;
-        emit TokenAliasAdded(tokenAddress, tokenAliasAddress);
     }
 
     function removeTokenAlias(address tokenAddress) public onlyManagers {
@@ -73,7 +73,12 @@ contract Oracle is Manageable {
         uint256 tokenDecimals = token.decimals();
 
         uint256 usdcDecimals = 6;
-        uint256 decimalsAdjustment = tokenDecimals - usdcDecimals;
+        uint256 decimalsAdjustment;
+        if (tokenDecimals >= usdcDecimals) {
+            decimalsAdjustment = tokenDecimals - usdcDecimals;
+        } else {
+            decimalsAdjustment = usdcDecimals - tokenDecimals;
+        }
         uint256 price = getPriceUsdcRecommended(tokenAddress);
         uint256 value;
         if (decimalsAdjustment > 0) {
@@ -103,7 +108,7 @@ contract Oracle is Manageable {
         if (success) {
             return abi.decode(data, (uint256));
         }
-        revert("Oracle: No price found");
+        return 0;
     }
 
     /**

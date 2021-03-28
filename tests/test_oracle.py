@@ -62,7 +62,7 @@ def test_set_calculations(
 
     # Oracles with no calculations should revert
     with brownie.reverts():
-        oracle.getPriceUsdcRecommended(usdcAddress)
+        oracle.getPriceUsdc(usdcAddress)
 
     # Randos cannot set calculations
     with brownie.reverts():
