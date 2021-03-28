@@ -19,7 +19,10 @@ interface IERC20 {
 }
 
 interface IOracle {
-    function getPriceUsdc(address tokenAddress) external view returns (uint256);
+    function getPriceUsdcRecommended(address tokenAddress)
+        external
+        view
+        returns (uint256);
 }
 
 contract CalculationsIronBank {
@@ -62,9 +65,10 @@ contract CalculationsIronBank {
         uint256 decimals = cyToken.decimals();
         IERC20 underlyingToken = IERC20(underlyingTokenAddress);
         uint8 underlyingTokenDecimals = underlyingToken.decimals();
+
         IOracle oracle = IOracle(oracleAddress);
         uint256 underlyingTokenPrice =
-            oracle.getPriceUsdc(underlyingTokenAddress);
+            oracle.getPriceUsdcRecommended(underlyingTokenAddress);
 
         uint256 price =
             (underlyingTokenPrice * exchangeRateStored) /
