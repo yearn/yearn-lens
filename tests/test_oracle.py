@@ -61,8 +61,9 @@ def test_set_calculations(
     )
 
     # Oracles with no calculations should revert
+    proxyOracle = Contract.from_abi("", oracle, CalculationsCurve.abi)
     with brownie.reverts():
-        oracle.getPriceUsdc(usdcAddress)
+        proxyOracle.getPriceUsdc(usdcAddress)
 
     # Randos cannot set calculations
     with brownie.reverts():
