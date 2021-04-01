@@ -6,17 +6,19 @@ pragma experimental ABIEncoderV2;
 // Common imports
 import "../../interfaces/Common/IERC20.sol";
 import "../../interfaces/Common/IOracle.sol";
+import "../Utilities/Manageable.sol";
 
 // Adapter-specific imports
 import "../../interfaces/Yearn/V2Vault.sol";
 import "../../interfaces/Yearn/IV2Registry.sol";
 
-contract RegisteryAdapterV2Vault {
+contract RegisteryAdapterV2Vault is Manageable {
     /**
      * Common code shared by all adapters
      */
-    address public registryAddress;
     IOracle public oracle;
+    address public registryAddress;
+    address[] public positionSpenderAddresses;
 
     struct AdapterInfo {
         string typeId;
@@ -29,6 +31,7 @@ contract RegisteryAdapterV2Vault {
         uint256 balance;
         uint256 balanceUsdc;
         TokenPosition tokenPosition;
+        Allowance[] allowances;
     }
 
     struct Token {
@@ -52,11 +55,28 @@ contract RegisteryAdapterV2Vault {
         uint256 allowance;
     }
 
-    constructor(address _registryAddress, address _oracleAddress) {
+    constructor(
+        address _registryAddress,
+        address _oracleAddress,
+        address _managementListAddress,
+        address[] memory _positionSpenderAddresses
+    ) Manageable(_managementListAddress) {
         require(_registryAddress != address(0), "Missing registry address");
         require(_oracleAddress != address(0), "Missing oracle address");
+        require(
+            _managementListAddress != address(0),
+            "Missing management list address"
+        );
         registryAddress = _registryAddress;
         oracle = IOracle(_oracleAddress);
+        setPositionSpenderAddresses(_positionSpenderAddresses);
+    }
+
+    function setPositionSpenderAddresses(address[] memory addresses)
+        public
+        onlyManagers
+    {
+        positionSpenderAddresses = addresses;
     }
 
     function assets() external view returns (Asset[] memory) {
@@ -101,13 +121,14 @@ contract RegisteryAdapterV2Vault {
      */
     AdapterInfo public adapterInfo =
         AdapterInfo({
-            typeId: "v2Vaults",
+            typeId: "v2Vault",
             categoryId: "deposit",
             subcategoryId: "vault"
         });
 
     struct Asset {
         address id;
+        string typeId;
         string name;
         string version;
         uint256 balance;
@@ -196,6 +217,7 @@ contract RegisteryAdapterV2Vault {
         Asset memory _asset =
             Asset({
                 id: vaultAddress,
+                typeId: adapterInfo.typeId,
                 name: vault.name(),
                 version: vault.apiVersion(),
                 balance: vault.totalAssets(),
@@ -218,6 +240,52 @@ contract RegisteryAdapterV2Vault {
         return _tokens;
     }
 
+    function positionAllowances(address accountAddress, address vaultAddress)
+        public
+        view
+        returns (Allowance[] memory)
+    {
+        V2Vault vault = V2Vault(vaultAddress);
+        uint256 numberOfSpenders = positionSpenderAddresses.length;
+        Allowance[] memory allowances = new Allowance[](numberOfSpenders);
+        for (
+            uint256 spenderIdx = 0;
+            spenderIdx < numberOfSpenders;
+            spenderIdx++
+        ) {
+            address spenderAddress = positionSpenderAddresses[spenderIdx];
+            uint256 vaultAllowance =
+                vault.allowance(accountAddress, spenderAddress);
+            Allowance memory allowance =
+                Allowance({
+                    owner: accountAddress,
+                    spender: spenderAddress,
+                    allowance: vaultAllowance
+                });
+            allowances[spenderIdx] = allowance;
+        }
+        return allowances;
+    }
+
+    function tokenPositionAllowances(
+        address accountAddress,
+        address vaultAddress
+    ) public view returns (Allowance[] memory) {
+        V2Vault vault = V2Vault(vaultAddress);
+        address tokenAddress = vault.token();
+        IERC20 _token = IERC20(tokenAddress);
+        Allowance[] memory allowances = new Allowance[](1);
+        uint256 tokenAllowance = _token.allowance(accountAddress, vaultAddress);
+        Allowance memory allowance =
+            Allowance({
+                owner: accountAddress,
+                spender: vaultAddress,
+                allowance: tokenAllowance
+            });
+        allowances[0] = allowance;
+        return allowances;
+    }
+
     function positionOf(address accountAddress, address vaultAddress)
         public
         view
@@ -232,23 +300,18 @@ contract RegisteryAdapterV2Vault {
         uint256 tokenBalance = _token.balanceOf(accountAddress);
         uint256 tokenBalanceUsdc =
             oracle.getNormalizedValueUsdc(tokenAddress, tokenBalance);
-        uint256 tokenAllowance = _token.allowance(accountAddress, vaultAddress);
-        Allowance memory allowance =
-            Allowance({
-                owner: accountAddress,
-                spender: vaultAddress,
-                allowance: tokenAllowance
-            });
 
-        Allowance[] memory allowances = new Allowance[](1);
-        allowances[0] = allowance;
+        Allowance[] memory _tokenPositionAllowances =
+            tokenPositionAllowances(accountAddress, vaultAddress);
+        Allowance[] memory _positionAllowances =
+            positionAllowances(accountAddress, vaultAddress);
 
         TokenPosition memory tokenPosition =
             TokenPosition({
                 tokenId: tokenAddress,
                 balance: tokenBalance,
                 balanceUsdc: tokenBalanceUsdc,
-                allowances: allowances
+                allowances: _tokenPositionAllowances
             });
 
         Position memory position =
@@ -256,7 +319,8 @@ contract RegisteryAdapterV2Vault {
                 assetId: vaultAddress,
                 balance: balance,
                 balanceUsdc: balanceUsdc,
-                tokenPosition: tokenPosition
+                tokenPosition: tokenPosition,
+                allowances: _positionAllowances
             });
         return position;
     }
@@ -269,10 +333,10 @@ contract RegisteryAdapterV2Vault {
         address[] memory vaultAddresses = assetsAddresses();
         uint256 numberOfVaults = vaultAddresses.length;
         Position[] memory positions = new Position[](numberOfVaults);
-        for (uint256 i = 0; i < numberOfVaults; i++) {
-            address vaultAddress = vaultAddresses[i];
+        for (uint256 vaultIdx = 0; vaultIdx < numberOfVaults; vaultIdx++) {
+            address vaultAddress = vaultAddresses[vaultIdx];
             Position memory position = positionOf(accountAddress, vaultAddress);
-            positions[i] = position;
+            positions[vaultIdx] = position;
         }
         return positions;
     }

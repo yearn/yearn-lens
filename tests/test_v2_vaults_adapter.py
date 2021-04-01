@@ -10,12 +10,26 @@ usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
 
 
 @pytest.fixture
-def v2VaultsAdapter(RegisteryAdapterV2Vault, oracle, gov):
+def v2VaultsAdapter(RegisteryAdapterV2Vault, managementList, oracle, management):
     v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
+    trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
+    positionSpenderAddresses = [trustedMigratorAddress]
     v2VaultsAdapter = RegisteryAdapterV2Vault.deploy(
-        v2RegistryAddress, oracle, {"from": gov}
+        v2RegistryAddress,
+        oracle,
+        managementList,
+        positionSpenderAddresses,
+        {"from": management},
     )
     return v2VaultsAdapter
+
+
+def test_set_position_spender_addresses(v2VaultsAdapter, management, rando):
+    ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
+    with brownie.reverts():
+        v2VaultsAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": rando})
+    v2VaultsAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": management})
+    assert v2VaultsAdapter.positionSpenderAddresses(0) == ethZapAddress
 
 
 def test_registry_address(v2VaultsAdapter):
@@ -24,7 +38,7 @@ def test_registry_address(v2VaultsAdapter):
 
 def test_adapter_info(v2VaultsAdapter):
     adapterInfo = v2VaultsAdapter.adapterInfo()
-    assert adapterInfo[0] == "v2Vaults"
+    assert adapterInfo[0] == "v2Vault"
     assert adapterInfo[1] == "deposit"
     assert adapterInfo[2] == "vault"
 
@@ -40,16 +54,26 @@ def test_assets_length(v2VaultsAdapter):
     assert assetsLength > 0
 
 
+def test_interface(
+    v2VaultsAdapter, introspection, management, registryAdapterCommonInterface
+):
+    adapterImplementsCommonInterface = introspection.implementsInterface(
+        v2VaultsAdapter, registryAdapterCommonInterface
+    )
+    assert adapterImplementsCommonInterface
+
+
 def test_asset(v2VaultsAdapter):
     v2UsdcVaultV2Address = "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9"
 
     # test vault data
     asset = v2VaultsAdapter.asset(v2UsdcVaultV2Address)
     assetId = asset[0]
-    name = asset[1]
-    version = asset[2]
-    balance = asset[3]
-    balanceUsdc = asset[4]
+    assetTypeId = asset[1]
+    name = asset[2]
+    version = asset[3]
+    balance = asset[4]
+    balanceUsdc = asset[5]
     assert assetId == v2UsdcVaultV2Address
     assert name == "USDC yVault"
     assert version == "0.3.0"
@@ -57,7 +81,7 @@ def test_asset(v2VaultsAdapter):
     assert balanceUsdc > balance / 10 ** 18
 
     # Test token metadata
-    token = asset[5]
+    token = asset[6]
     tokenId = token[0]
     tokenName = token[1]
     tokenSymbol = token[2]
@@ -79,7 +103,7 @@ def test_asset_metadata(v2VaultsAdapter):
     # Test vault metadata
     v2UsdcVaultV1Address = "0xe2F6b9773BF3A015E2aA70741Bde1498bdB9425b"
     asset = v2VaultsAdapter.asset(v2UsdcVaultV1Address)
-    metadata = asset[6]
+    metadata = asset[7]
     symbol = metadata[0]
     pricePerShare = metadata[1]
     migrationAvailable = metadata[2]
@@ -100,9 +124,9 @@ def test_asset_tvl(v2VaultsAdapter):
         assert tvl > 0
 
     # Print TVL per asset
-    print("-------------")
-    print("V2 Vaults TVL")
-    print("-------------")
+    # print("-------------")
+    # print("V2 Vaults TVL")
+    # print("-------------")
     assetsAddresses = v2VaultsAdapter.assetsAddresses()
     tvlList = []
     for address in assetsAddresses:
@@ -133,24 +157,29 @@ def test_assets(v2VaultsAdapter):
     assert len(assets) > 0
     firstAsset = assets[0]
     assetId = firstAsset[0]
-    assetName = firstAsset[1]
-    assetVersion = firstAsset[2]
+    assetTypeId = firstAsset[1]
+    assetName = firstAsset[2]
+    assetVersion = firstAsset[3]
     assert assetId == yfiVaultAddress
     assert assetName == "YFI yVault"
+    assert assetTypeId == "v2Vault"
     assert assetVersion == "0.3.2"
     # print(assets)
 
 
-def test_position_of(v2VaultsAdapter, accounts):
+def test_position_of(v2VaultsAdapter, management, accounts):
     # Deposit into YFI vault
     v2YfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
     vestedYfiAddress = "0x42A28ADDC15E627d19e780c89043b4B1d3629D34"
     yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
+    trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
+    zapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
     yfiAccount = accounts.at(vestedYfiAddress, force=True)
     yfi = interface.IERC20(yfiAddress)
     yfi.approve(v2YfiVaultAddress, 2 ** 256 - 1, {"from": vestedYfiAddress})
     yfiVault = interface.V2Vault(v2YfiVaultAddress)
     yfiVault.deposit(1 * 10 ** 18, {"from": yfiAccount})
+    yfiVault.approve(trustedMigratorAddress, 100, {"from": vestedYfiAddress})
     userVaultBalance = yfiVault.balanceOf(vestedYfiAddress)
     assert userVaultBalance > 0
 
@@ -173,13 +202,22 @@ def test_position_of(v2VaultsAdapter, accounts):
     assert tokenBalanceUsdc > tokenBalance / 10 ** 18
 
     # Test token allowances
-    allowances = tokenPosition[3]
-    owner = allowances[0][0]
-    spender = allowances[0][1]
-    allowance = allowances[0][2]
+    tokenAllowances = tokenPosition[3]
+    owner = tokenAllowances[0][0]
+    spender = tokenAllowances[0][1]
+    allowance = tokenAllowances[0][2]
     assert owner == vestedYfiAddress
     assert spender == v2YfiVaultAddress
     assert allowance > 0
+
+    # Position allowances
+    positionAllowances = position[4]
+    owner = positionAllowances[0][0]
+    spender = positionAllowances[0][1]
+    allowance = positionAllowances[0][2]
+    assert owner == vestedYfiAddress
+    assert spender == trustedMigratorAddress
+    assert allowance == 100
 
 
 def test_positions_of(v2VaultsAdapter, accounts):
