@@ -15,6 +15,27 @@ def managementList(ManagementList, management):
 
 
 @pytest.fixture
+def registryAdapterCommonInterface():
+    return [
+        "registryAddress()",
+        "assetsLength()",
+        "assetsAddresses()",
+        "assetsTvl()",
+        "assetTvl(address)",
+        "asset(address)",
+        "assets()",
+        "positionOf(address,address)",
+        "positionsOf(address)",
+        "tokens()",
+    ]
+
+
+@pytest.fixture
+def introspection(Introspection, management):
+    return Introspection.deploy({"from": management})
+
+
+@pytest.fixture
 def oracle(
     Oracle,
     management,

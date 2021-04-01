@@ -17,16 +17,16 @@ interface RegistryAdapter {
         uint256 tokenAllowance;
     }
 
-    function getAssets() external view returns (Asset[] memory);
+    function assets() external view returns (Asset[] memory);
 
-    function getPositionsOf(address account)
+    function positionsOf(address account)
         external
         view
         returns (Position[] memory);
 
-    function getAsset() external view returns (Asset memory);
+    function asset() external view returns (Asset memory);
 
-    function getAssetsLength() external view returns (uint256);
+    function assetsLength() external view returns (uint256);
 
-    function getAssetsAddresses() external view returns (address[] memory);
+    function assetsAddresses() external view returns (address[] memory);
 }

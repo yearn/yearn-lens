@@ -26,4 +26,11 @@ interface V2Vault {
     function depositLimit() external view returns (uint256);
 
     function deposit(uint256 amount) external;
+
+    function approve(address spender, uint256 amount) external;
+
+    function allowance(address spender, address owner)
+        external
+        view
+        returns (uint256);
 }
