@@ -38,9 +38,10 @@ def test_registry_address(v2VaultsAdapter):
 
 def test_adapter_info(v2VaultsAdapter):
     adapterInfo = v2VaultsAdapter.adapterInfo()
-    assert adapterInfo[0] == "v2Vault"
-    assert adapterInfo[1] == "deposit"
-    assert adapterInfo[2] == "vault"
+    assert adapterInfo[0] == v2VaultsAdapter
+    assert adapterInfo[1] == "v2Vault"
+    assert adapterInfo[2] == "deposit"
+    assert adapterInfo[3] == "vault"
 
 
 def test_assets_addresses(v2VaultsAdapter):
