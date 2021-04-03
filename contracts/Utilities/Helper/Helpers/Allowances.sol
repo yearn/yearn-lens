@@ -43,16 +43,15 @@ contract AllowancesHelper {
             }
         }
 
-        Allowance[] memory _allowances = new Allowance[](numberOfAllowances);
-
         // Fetch allowances
+        Allowance[] memory _allowances = new Allowance[](numberOfAllowances);
+        uint256 allowanceIdx;
         for (tokenIdx = 0; tokenIdx < tokensAddresses.length; tokenIdx++) {
             for (
                 spenderIdx = 0;
                 spenderIdx < spenderAddresses.length;
                 spenderIdx++
             ) {
-                uint256 allowanceIdx;
                 address spenderAddress = spenderAddresses[spenderIdx];
                 address tokenAddress = tokensAddresses[tokenIdx];
                 IERC20 token = IERC20(tokenAddress);
@@ -66,6 +65,7 @@ contract AllowancesHelper {
                             token: tokenAddress
                         });
                     _allowances[allowanceIdx] = allowance;
+                    allowanceIdx++;
                 }
             }
         }
