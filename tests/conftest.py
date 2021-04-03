@@ -108,6 +108,41 @@ def oracle(
 
 
 @pytest.fixture
+def earnRegistry(GenericRegistry, management):
+    registry = GenericRegistry.deploy({"from": management})
+
+    # Earn v2
+    yDaiV2Address = "0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01"
+    yUsdcV2Address = "0xd6aD7a6750A7593E092a9B218d66C0A814a3436e"
+    yUsdtV2Address = "0x83f798e925BcD4017Eb265844FDDAbb448f1707D"
+    ySusdV2Address = "0xF61718057901F84C4eEC4339EF8f0D86D2B45600"
+    yTusdV2Address = "0x73a052500105205d34daf004eab301916da8190f"
+    yWbtcV2Address = "0x04Aa51bbcB46541455cCF1B8bef2ebc5d3787EC9"
+
+    # Earn v3
+    yDaiV3Address = "0xC2cB1040220768554cf699b0d863A3cd4324ce32"
+    yUsdcV3Address = "0x26EA744E5B887E5205727f55dFBE8685e3b21951"
+    yUsdtV3Address = "0xE6354ed5bC4b393a5Aad09f21c46E101e692d447"
+    yBusdV3Address = "0x04bC0Ab673d88aE9dbC9DA2380cB6B79C4BCa9aE"
+
+    registry.addAssets(
+        [
+            yDaiV2Address,
+            yUsdcV2Address,
+            yUsdtV2Address,
+            ySusdV2Address,
+            yTusdV2Address,
+            yWbtcV2Address,
+            yDaiV3Address,
+            yUsdcV3Address,
+            yUsdtV3Address,
+            yBusdV3Address,
+        ]
+    )
+    return registry
+
+
+@pytest.fixture
 def management(accounts):
     yield accounts[0]
 
