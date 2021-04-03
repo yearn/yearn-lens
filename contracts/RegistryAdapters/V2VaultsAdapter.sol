@@ -52,7 +52,7 @@ contract RegisteryAdapterV2Vault is Manageable {
     struct Allowance {
         address owner;
         address spender;
-        uint256 allowance;
+        uint256 amount;
     }
 
     constructor(
@@ -254,13 +254,13 @@ contract RegisteryAdapterV2Vault is Manageable {
             spenderIdx++
         ) {
             address spenderAddress = positionSpenderAddresses[spenderIdx];
-            uint256 vaultAllowance =
+            uint256 allowanceAmount =
                 vault.allowance(accountAddress, spenderAddress);
             Allowance memory allowance =
                 Allowance({
                     owner: accountAddress,
                     spender: spenderAddress,
-                    allowance: vaultAllowance
+                    amount: allowanceAmount
                 });
             allowances[spenderIdx] = allowance;
         }
@@ -275,12 +275,13 @@ contract RegisteryAdapterV2Vault is Manageable {
         address tokenAddress = vault.token();
         IERC20 _token = IERC20(tokenAddress);
         Allowance[] memory allowances = new Allowance[](1);
-        uint256 tokenAllowance = _token.allowance(accountAddress, vaultAddress);
+        uint256 allowanceAmount =
+            _token.allowance(accountAddress, vaultAddress);
         Allowance memory allowance =
             Allowance({
                 owner: accountAddress,
                 spender: vaultAddress,
-                allowance: tokenAllowance
+                amount: allowanceAmount
             });
         allowances[0] = allowance;
         return allowances;
