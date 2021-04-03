@@ -127,15 +127,15 @@ def test_asset_tvl(v2VaultsAdapter):
     # print("-------------")
     # print("V2 Vaults TVL")
     # print("-------------")
-    assetsAddresses = v2VaultsAdapter.assetsAddresses()
-    tvlList = []
-    for address in assetsAddresses:
-        token = interface.IERC20(address)
-        tvl = v2VaultsAdapter.assetTvl(address) / 10 ** 6
-        tvlList.append({"symbol": token.symbol(), "tvl": tvl})
-    sortedTvlItems = sorted(tvlList, key=itemgetter("tvl"), reverse=True)
-    for item in sortedTvlItems:
-        print(item.get("symbol"), item.get("tvl"))
+    # assetsAddresses = v2VaultsAdapter.assetsAddresses()
+    # tvlList = []
+    # for address in assetsAddresses:
+    #     token = interface.IERC20(address)
+    #     tvl = v2VaultsAdapter.assetTvl(address) / 10 ** 6
+    #     tvlList.append({"symbol": token.symbol(), "tvl": tvl})
+    # sortedTvlItems = sorted(tvlList, key=itemgetter("tvl"), reverse=True)
+    # for item in sortedTvlItems:
+    #     print(item.get("symbol"), item.get("tvl"))
 
 
 def test_assets_tvl(v2VaultsAdapter):
