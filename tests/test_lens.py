@@ -1,136 +1,106 @@
 import pytest
 import brownie
-
-from brownie import *
-
-# def test_v1_adapter(RegisteryAdapterV1Vault, gov):
-#     v1RegistryAddress = "0x3eE41C098f9666ed2eA246f4D2558010e59d63A0"
-#     v1VaultsAdapter = RegisteryAdapterV1Vault.deploy(v1RegistryAddress, {"from": gov})
-#     # print("Assets", v1VaultsAdapter.getAssets())
-#     print("Addresses", v1VaultsAdapter.getVaultAddresses())
+from brownie import web3
 
 
-# def test_v2_adapter(RegisteryAdapterV2Vault, gov):
-#     v2RegistryAddress = "0xE15461B18EE31b7379019Dc523231C57d1Cbc18c"
-#     v2VaultsAdapter = RegisteryAdapterV2Vault.deploy(v2RegistryAddress, {"from": gov})
-#     # print("Addresses", v2VaultsAdapter.getVaultAddresses())
-#     print("Assets", v2VaultsAdapter.getAssets())
+@pytest.fixture
+def earnAdapter(RegistryAdapterEarn, earnRegistry, management, oracle):
+    return RegistryAdapterEarn.deploy(earnRegistry, oracle, {"from": management})
 
 
-def test_lens(
-    interface,
-    Lens,
-    RegisteryAdapterV1Vault,
-    RegisteryAdapterV2Vault,
-    RegistryAdapterIronBank,
-    managementList,
-    management,
-    RegistryAdapterEarn,
-    Oracle,
-    oracle,
-    gov,
-    V2Registry,
-    GenericRegistry,
-):
+@pytest.fixture
+def v2VaultsAdapter(RegisteryAdapterV2Vault, managementList, management, oracle):
+    v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
+    return RegisteryAdapterV2Vault.deploy(
+        v2RegistryAddress, oracle, managementList, [], {"from": management}
+    )
 
+
+@pytest.fixture
+def v1VaultsAdapter(RegisteryAdapterV1Vault, management, oracle):
     v1RegistryAddress = "0x3eE41C098f9666ed2eA246f4D2558010e59d63A0"
-    v1VaultsAdapter = RegisteryAdapterV1Vault.deploy(v1RegistryAddress, {"from": gov})
+    return RegisteryAdapterV1Vault.deploy(v1RegistryAddress, {"from": management})
 
-    v2UsdcVaultV1Address = "0xe2F6b9773BF3A015E2aA70741Bde1498bdB9425b"
-    v2UsdcVaultV2Address = "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9"
-    v2WethVaultAddress = "0x19D3364A399d251E894aC732651be8B0E4e85001"
-    v2YfiVaultAddress = "0xe11ba472F74869176652C35D30dB89854b5ae84D"
-    v2Registry = V2Registry.deploy({"from": gov})
 
-    # v2RegistryAddress = "0xE15461B18EE31b7379019Dc523231C57d1Cbc18c""
-    v2VaultsAdapter = RegisteryAdapterV2Vault.deploy(v2Registry, oracle, {"from": gov})
-
-    # 0.3.0
-    v2Registry.newRelease(v2UsdcVaultV1Address, ({"from": gov}))
-    v2Registry.endorseVault(v2UsdcVaultV1Address, ({"from": gov}))
-
-    # 0.3.2
-    v2Registry.newRelease(v2UsdcVaultV2Address, ({"from": gov}))
-    v2Registry.endorseVault(v2UsdcVaultV2Address, ({"from": gov}))
-    v2Registry.endorseVault(v2WethVaultAddress, ({"from": gov}))
-    v2Registry.endorseVault(v2YfiVaultAddress, ({"from": gov}))
-
-    lens = Lens.deploy(managementList, {"from": gov})
+@pytest.fixture
+def lens(
+    Lens, managementList, management, earnAdapter, v2VaultsAdapter, v1VaultsAdapter
+):
+    lens = Lens.deploy(managementList, {"from": management})
     lens.addAdapter(v2VaultsAdapter, {"from": management})
     lens.addAdapter(v1VaultsAdapter, {"from": management})
-
-    # print("lll", lens.getAssetsAddresses())
-
-
-# # print(
-# #     "balances",
-# #     v1VaultsAdapter.getPositionsOf("0x4800C3b3B570bE4EeE918404d0f847c1Bf25826b"),
-# # )
-
-# print(
-#     "lens balances",
-#     lens.getPositionsOf("0x4800C3b3B570bE4EeE918404d0f847c1Bf25826b"),
-# )
-
-# print(lens.getAdapters())
-# print(v2VaultsAdapter.getAssets())
-
-# lens.removeAdapter(v2VaultsAdapter)
-# print(lens.numRegistries())
-# print("Combined assets", lens.getAssets())
-# print("yyy", lens.getAssetsFromAdapter(v2VaultsAdapter))
-
-# v2RegistryAddress = "0xE15461B18EE31b7379019Dc523231C57d1Cbc18c"
-# ironBankRegistryAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
-
-# v2Adapter = RegisteryAdapterV2Vault.deploy(v2RegistryAddress, {"from": gov})
-
-# ###################
-
-# wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-# wbtcAddress = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
-
-# price = oracle.getPriceFromRouterUsdc(wbtcAddress)
-# print("price", price)
-# print(
-#     "isCurveLpToken",
-#     oracle.isCurveLpToken("0x6c3f90f043a72fa612cbac8115ee7e52bde6e490"),
-# )
-# print(
-#     "underlying token",
-#     oracle.getFirstUnderlyingCoinFromPool(
-#         "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
-#     ),
-# )
-# print("virt", oracle.getVirtualPrice("0x6c3f90f043a72fa612cbac8115ee7e52bde6e490"))
-# print("base", oracle.getBasePrice("0x6c3f90f043a72fa612cbac8115ee7e52bde6e490"))
-# print(
-#     "virt * base",
-#     oracle.getCurvePriceUsdc("0x6c3f90f043a72fa612cbac8115ee7e52bde6e490"),
-# )
+    lens.addAdapter(earnAdapter, {"from": management})
+    return lens
 
 
-# ironBankAdapter = RegistryAdapterIronBank.deploy(
-#     ironBankRegistryAddress, {"from": gov}
-# )
+def test_add_adapter(
+    Lens, management, earnAdapter, managementList, RegistryAdapterEarn
+):
+    lens = Lens.deploy(managementList, {"from": management})
+    assert len(lens.adapters()) == 0
+    lens.addAdapter(earnAdapter, {"from": management})
+    assert len(lens.adapters()) == 1
+    assert lens.adapters()[0] == earnAdapter
+    adapterInfo = lens.adaptersInfo()[0]
+    adapterInfoId = adapterInfo[0]
+    adapterInfoTypeId = adapterInfo[1]
+    adapterInfoCategoryId = adapterInfo[2]
+    adapterInfoSubcategoryId = adapterInfo[3]
+    assert adapterInfoId == earnAdapter
+    assert adapterInfoTypeId == "earn"
+    assert adapterInfoCategoryId == "deposit"
+    assert adapterInfoSubcategoryId == "safe"
 
-# print("xxx", ironBankAdapter.getAllMarkets())
+
+def test_add_adapters(Lens, management, managementList, earnAdapter, v1VaultsAdapter):
+    lens = Lens.deploy(managementList, {"from": management})
+    assert len(lens.adapters()) == 0
+    lens.addAdapters([earnAdapter, v1VaultsAdapter], {"from": management})
+    assert len(lens.adapters()) == 2
+
+    adapterInfo1 = lens.adaptersInfo()[0]
+    adapterInfo1Id = adapterInfo1[0]
+    adapterInfo1TypeId = adapterInfo1[1]
+    adapterInfo1CategoryId = adapterInfo1[2]
+    adapterInfo1SubcategoryId = adapterInfo1[3]
+    assert adapterInfo1Id == earnAdapter
+    assert adapterInfo1TypeId == "earn"
+    assert adapterInfo1CategoryId == "deposit"
+    assert adapterInfo1SubcategoryId == "safe"
+
+    adapterInfo2 = lens.adaptersInfo()[1]
+    adapterInfo2Id = adapterInfo2[0]
+    adapterInfo2TypeId = adapterInfo2[1]
+    adapterInfo2CategoryId = adapterInfo2[2]
+    adapterInfo2SubcategoryId = adapterInfo2[3]
+    assert adapterInfo2Id == v1VaultsAdapter
+    assert adapterInfo2TypeId == "v1Vault"
+    assert adapterInfo2CategoryId == "deposit"
+    assert adapterInfo2SubcategoryId == "vault"
 
 
-# usdcVaultAddress = "0xa9fE4601811213c340e850ea305481afF02f5b28"
-# yCrvAddress = "0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c"
-# threeCrvAddress = "0x9cA85572E6A3EbF24dEDd195623F188735A5179f"
-# vault = interface.Vault_v0_3_0(usdcVaultAddress, owner=gov)
-# lens.addAsset(yCrvAddress, "vault")
-# lens.addAsset(threeCrvAddress, "vault")
-# print(lens.getVaultInfo(yCrvAddress))
+def test_remove_adapter(lens, earnAdapter, management):
+    assert len(lens.adapters()) == 3
+    lens.removeAdapter(earnAdapter, {"from": management})
+    assert len(lens.adapters()) == 2
 
-# print(lens.getAssets())
-# print(lens.getUserBalances())
-# print(lens.getBump())
-# vaultData = lens.getVault(vault)
 
-# print('pps', vault.pricePerShare())
-# print('vault data', vaultData)
-# print('vault data', lens.getVaults())
+# def test_assets_from_adapter(lens):
+
+
+# def test_assets_length(lens):
+#     length = lens.assetsLength()
+#     print(length)
+#     assert length > 0
+
+
+def test_assets_addresses(lens):
+    assert len(lens.assetsAddresses()) > 0
+
+
+# def test_assets(lens):
+
+# def test_positions_from_adapter(lens):
+
+# def test_positions_of(lens):
 

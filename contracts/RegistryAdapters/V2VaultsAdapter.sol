@@ -21,6 +21,7 @@ contract RegisteryAdapterV2Vault is Manageable {
     address[] public positionSpenderAddresses;
 
     struct AdapterInfo {
+        address id;
         string typeId;
         string categoryId;
         string subcategoryId;
@@ -119,12 +120,15 @@ contract RegisteryAdapterV2Vault is Manageable {
     /**
      * V2 Vaults Adapter
      */
-    AdapterInfo public adapterInfo =
-        AdapterInfo({
-            typeId: "v2Vault",
-            categoryId: "deposit",
-            subcategoryId: "vault"
-        });
+    function adapterInfo() public view returns (AdapterInfo memory) {
+        return
+            AdapterInfo({
+                id: address(this),
+                typeId: "v2Vault",
+                categoryId: "deposit",
+                subcategoryId: "vault"
+            });
+    }
 
     struct Asset {
         address id;
@@ -217,7 +221,7 @@ contract RegisteryAdapterV2Vault is Manageable {
         Asset memory _asset =
             Asset({
                 id: vaultAddress,
-                typeId: adapterInfo.typeId,
+                typeId: adapterInfo().typeId,
                 name: vault.name(),
                 version: vault.apiVersion(),
                 balance: vault.totalAssets(),

@@ -10,6 +10,13 @@ import "../../interfaces/Common/IERC20.sol";
 contract RegisteryAdapterV1Vault {
     address public registryAddress;
 
+    struct AdapterInfo {
+        address id;
+        string typeId;
+        string categoryId;
+        string subcategoryId;
+    }
+
     struct Asset {
         string name;
         address id;
@@ -37,11 +44,21 @@ contract RegisteryAdapterV1Vault {
         registryAddress = _registryAddress;
     }
 
-    function getAssetsAddresses() public view returns (address[] memory) {
+    function adapterInfo() public view returns (AdapterInfo memory) {
+        return
+            AdapterInfo({
+                id: address(this),
+                typeId: "v1Vault",
+                categoryId: "deposit",
+                subcategoryId: "vault"
+            });
+    }
+
+    function assetsAddresses() public view returns (address[] memory) {
         return V1Registry(registryAddress).getVaults();
     }
 
-    function getAsset(address id) public view returns (Asset memory) {
+    function asset(address id) public view returns (Asset memory) {
         V1Vault vault = V1Vault(id);
         string memory name = vault.name();
         uint256 totalAssets = vault.balance();
@@ -65,23 +82,23 @@ contract RegisteryAdapterV1Vault {
         return asset;
     }
 
-    function getAssetsLength() public view returns (uint256) {
+    function assetsLength() public view returns (uint256) {
         return V1Registry(registryAddress).getVaultsLength();
     }
 
-    function getAssets() external view returns (Asset[] memory) {
-        address[] memory vaultAddresses = getAssetsAddresses();
+    function assets() external view returns (Asset[] memory) {
+        address[] memory vaultAddresses = assetsAddresses();
         uint256 numberOfVaults = vaultAddresses.length;
         Asset[] memory assets = new Asset[](numberOfVaults);
         for (uint256 i = 0; i < numberOfVaults; i++) {
             address vaultAddress = vaultAddresses[i];
-            Asset memory asset = getAsset(vaultAddress);
+            Asset memory asset = asset(vaultAddress);
             assets[i] = asset;
         }
         return assets;
     }
 
-    function getPositionsForVault(address accountAddress, address vaultAddress)
+    function positionOf(address accountAddress, address vaultAddress)
         public
         view
         returns (Position memory)
@@ -102,18 +119,17 @@ contract RegisteryAdapterV1Vault {
         return position;
     }
 
-    function getPositionsOf(address accountAddress)
+    function positionsOf(address accountAddress)
         external
         view
         returns (Position[] memory)
     {
-        address[] memory vaultAddresses = getAssetsAddresses();
+        address[] memory vaultAddresses = assetsAddresses();
         uint256 numberOfVaults = vaultAddresses.length;
         Position[] memory positions = new Position[](numberOfVaults);
         for (uint256 i = 0; i < numberOfVaults; i++) {
             address vaultAddress = vaultAddresses[i];
-            Position memory position =
-                getPositionsForVault(accountAddress, vaultAddress);
+            Position memory position = positionOf(accountAddress, vaultAddress);
 
             positions[i] = position;
         }

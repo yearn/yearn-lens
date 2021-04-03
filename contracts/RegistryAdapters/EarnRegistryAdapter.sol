@@ -4,7 +4,7 @@ pragma solidity ^0.8.2;
 pragma experimental ABIEncoderV2;
 
 import "../../interfaces/Yearn/EarnToken.sol";
-import "../../interfaces/Yearn/GenericRegistry.sol";
+import "../../interfaces/Yearn/IGenericRegistry.sol";
 import "../../interfaces/Common/IOracle.sol";
 import "../../interfaces/Common/IERC20.sol";
 
@@ -32,15 +32,32 @@ contract RegistryAdapterEarn {
         oracle = IOracle(_oracleAddress);
     }
 
-    function getAssetsAddresses() public view returns (address[] memory) {
-        return GenericRegistry(registryAddress).getAssets();
+    struct AdapterInfo {
+        address id;
+        string typeId;
+        string categoryId;
+        string subcategoryId;
     }
 
-    function getAssetTvl(address earnTokenAddress)
-        public
-        view
-        returns (uint256)
-    {
+    function adapterInfo() public view returns (AdapterInfo memory) {
+        return
+            AdapterInfo({
+                id: address(this),
+                typeId: "earn",
+                categoryId: "deposit",
+                subcategoryId: "safe"
+            });
+    }
+
+    function assetsAddresses() public view returns (address[] memory) {
+        return IGenericRegistry(registryAddress).assets();
+    }
+
+    function assetsLength() public view returns (uint256) {
+        return assetsAddresses().length;
+    }
+
+    function assetTvl(address earnTokenAddress) public view returns (uint256) {
         EarnToken earnToken = EarnToken(earnTokenAddress);
         uint256 valueInToken = earnToken.calcPoolValueInToken();
         address underlyingTokenAddress = earnToken.token();
@@ -60,7 +77,7 @@ contract RegistryAdapterEarn {
         return tvl;
     }
 
-    function getAsset(address id) public view returns (Asset memory) {
+    function asset(address id) public view returns (Asset memory) {
         EarnToken earnToken = EarnToken(id);
         string memory name = earnToken.name();
         uint256 totalAssets = earnToken.pool();
@@ -79,32 +96,30 @@ contract RegistryAdapterEarn {
                 totalSupply: totalSupply,
                 pricePerShare: pricePerShare
             });
-        Asset memory asset =
+        return
             Asset({id: id, name: name, version: version, metadata: metadata});
-        return asset;
     }
 
-    function getAssets() external view returns (Asset[] memory) {
-        address[] memory assetAddresses = getAssetsAddresses();
+    function assets() external view returns (Asset[] memory) {
+        address[] memory assetAddresses = assetsAddresses();
         uint256 numberOfAssets = assetAddresses.length;
-        Asset[] memory assets = new Asset[](numberOfAssets);
+        Asset[] memory _assets = new Asset[](numberOfAssets);
         for (uint256 i = 0; i < numberOfAssets; i++) {
             address assetAddress = assetAddresses[i];
-            Asset memory asset = getAsset(assetAddress);
-            assets[i] = asset;
+            Asset memory _asset = asset(assetAddress);
+            _assets[i] = _asset;
         }
-        return assets;
+        return _assets;
     }
 
-    function getAssetsTvl() external view returns (uint256) {
+    function assetsTvl() external view returns (uint256) {
         uint256 tvl;
-        address[] memory assetAddresses = getAssetsAddresses();
+        address[] memory assetAddresses = assetsAddresses();
         uint256 numberOfAssets = assetAddresses.length;
-        Asset[] memory assets = new Asset[](numberOfAssets);
         for (uint256 i = 0; i < numberOfAssets; i++) {
             address assetAddress = assetAddresses[i];
-            uint256 assetTvl = getAssetTvl(assetAddress);
-            tvl += assetTvl;
+            uint256 _assetTvl = assetTvl(assetAddress);
+            tvl += _assetTvl;
         }
         return tvl;
     }
