@@ -4,11 +4,6 @@ from brownie import web3
 
 
 @pytest.fixture
-def earnAdapter(RegistryAdapterEarn, earnRegistry, management, oracle):
-    return RegistryAdapterEarn.deploy(earnRegistry, oracle, {"from": management})
-
-
-@pytest.fixture
 def v2VaultsAdapter(RegisteryAdapterV2Vault, managementList, management, oracle):
     v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
     return RegisteryAdapterV2Vault.deploy(

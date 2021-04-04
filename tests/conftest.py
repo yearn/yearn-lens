@@ -26,7 +26,7 @@ def registryAdapterCommonInterface():
         "assets()",
         "positionOf(address,address)",
         "positionsOf(address)",
-        "tokens()",
+        # "tokens()",
     ]
 
 
@@ -140,6 +140,17 @@ def earnRegistry(GenericRegistry, management):
         ]
     )
     return registry
+
+
+@pytest.fixture
+def earnAdapter(RegistryAdapterEarn, earnRegistry, management, managementList, oracle):
+    trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
+    positionSpenderAddresses = [trustedMigratorAddress]
+    adapter = RegistryAdapterEarn.deploy(
+        earnRegistry, oracle, managementList, {"from": management},
+    )
+    adapter.setPositionSpenderAddresses(positionSpenderAddresses, {"from": management})
+    return adapter
 
 
 @pytest.fixture
