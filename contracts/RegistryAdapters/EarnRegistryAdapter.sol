@@ -9,7 +9,6 @@ import "../../interfaces/Yearn/IGenericRegistry.sol";
 
 // Common imports
 import "../../interfaces/Common/IERC20.sol";
-import "../../interfaces/Common/IOracle.sol";
 import "../Common/Adapter.sol";
 
 contract RegistryAdapterEarn is Adapter {
