@@ -109,7 +109,7 @@ contract Lens is Manageable {
         return _adaptersInfo;
     }
 
-    function adapters() external view returns (address[] memory) {
+    function adaptersAddresses() external view returns (address[] memory) {
         address[] memory adapterList = new address[](adaptersLength);
         for (
             uint256 adapterIdx = 0;
