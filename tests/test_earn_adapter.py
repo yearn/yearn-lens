@@ -1,60 +1,200 @@
 import pytest
+import brownie
+from brownie import interface, ZERO_ADDRESS
+from operator import itemgetter
+
+yDaiV3Address = "0xC2cB1040220768554cf699b0d863A3cd4324ce32"
+yDaiV2Address = "0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01"
+daiAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
 
 
-USDC = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
-YFI = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
-
-
-def test_earn_adapter(oracle, GenericRegistry, RegistryAdapterEarn, gov):
-    earnRegistry = GenericRegistry.deploy({"from": gov})
-
-    # Earn v2
-    yDaiV2Address = "0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01"
-    yUsdcV2Address = "0xd6aD7a6750A7593E092a9B218d66C0A814a3436e"
-    yUsdtV2Address = "0x83f798e925BcD4017Eb265844FDDAbb448f1707D"
-    ySusdV2Address = "0xF61718057901F84C4eEC4339EF8f0D86D2B45600"
-    yTusdV2Address = "0x73a052500105205d34daf004eab301916da8190f"
-    yWbtcV2Address = "0x04Aa51bbcB46541455cCF1B8bef2ebc5d3787EC9"
-
-    # Earn v3
-    yDaiV3Address = "0xC2cB1040220768554cf699b0d863A3cd4324ce32"
-    yUsdcV3Address = "0x26EA744E5B887E5205727f55dFBE8685e3b21951"
-    yUsdtV3Address = "0xE6354ed5bC4b393a5Aad09f21c46E101e692d447"
-    yBusdV3Address = "0x04bC0Ab673d88aE9dbC9DA2380cB6B79C4BCa9aE"
-
-    earnRegistry.addAssets(
-        [
-            yDaiV2Address,
-            yUsdcV2Address,
-            yUsdtV2Address,
-            ySusdV2Address,
-            yTusdV2Address,
-            yWbtcV2Address,
-            yDaiV3Address,
-            yUsdcV3Address,
-            yUsdtV3Address,
-            yBusdV3Address,
-        ]
+def test_interface(
+    earnAdapter, introspection, management, registryAdapterCommonInterface
+):
+    adapterImplementsCommonInterface = introspection.implementsInterface(
+        earnAdapter, registryAdapterCommonInterface
     )
+    assert adapterImplementsCommonInterface
 
-    # earnRegistry.addAsset(yUsdcV2Address)
-    # earnRegistry.addAsset(yBusdV2Address)
 
-    earnAdapter = RegistryAdapterEarn.deploy(earnRegistry, oracle, {"from": gov})
-    # print("Asset addresses", earnAdapter.getAssetsAddresses())
-    # print("Earn assets", earnAdapter.getAssets())
-    # print("yUsdtV2", earnAdapter.getAssetTvl(yUsdtV2Address))
-    # print("yTusdV2", earnAdapter.getAssetTvl(yTusdV2Address))
-    # print("yUsdtV3", earnAdapter.getAssetTvl(yUsdtV3Address))
-    # print("yUsdcV2", earnAdapter.getAssetTvl(yUsdcV2Address))
-    # print("yBusdV3", earnAdapter.getAssetTvl(yBusdV3Address))
-    # print("yUsdcV3", earnAdapter.getAssetTvl(yUsdcV3Address))
-    # print("yDaiV2", earnAdapter.getAssetTvl(yDaiV2Address))
-    # print("yDaiV3", earnAdapter.getAssetTvl(yDaiV3Address))
-    # print("ySusdV2", earnAdapter.getAssetTvl(ySusdV2Address))
-    # print("yWbtcV2", earnAdapter.getAssetTvl(yWbtcV2Address))
+def test_adapter_info(earnAdapter):
+    adapterInfo = earnAdapter.adapterInfo()
+    assert adapterInfo[0] == earnAdapter
+    assert adapterInfo[1] == "earn"
+    assert adapterInfo[2] == "deposit"
+    assert adapterInfo[3] == "safe"
 
-    # print("Oracle", oracle.getPriceUsdc("0x57Ab1ec28D129707052df4dF418D58a2D46d5f51"))
-    print("Earn TVL", earnAdapter.getAssetsTvl())
+
+def test_registry_address(earnAdapter):
+    assert not earnAdapter.registryAddress() == ZERO_ADDRESS
+
+
+def test_assets_length(earnAdapter):
+    assert earnAdapter.assetsLength() > 0
+
+
+def test_assets_addresses(earnAdapter):
+    assetsAddresses = earnAdapter.assetsAddresses()
+    assert len(assetsAddresses) > 0
+    assert not assetsAddresses[0] == ZERO_ADDRESS
+
+
+def test_asset(earnAdapter):
+    # test earn data
+    asset = earnAdapter.asset(yDaiV3Address)
+    assetId = asset[0]
+    assetTypeId = asset[1]
+    name = asset[2]
+    version = asset[3]
+    balance = asset[4]
+    balanceUsdc = asset[5]
+
+    assert assetId == yDaiV3Address
+    assert name == "iearn DAI"
+    assert version == "2.0.0"
+    assert balance > 0
+    assert balanceUsdc > balance / 10 ** 18
+
+    # Test token metadata
+    token = asset[6]
+    tokenId = token[0]
+    tokenName = token[1]
+    tokenSymbol = token[2]
+    tokenDecimals = token[3]
+    tokenPriceUsdc = token[4]
+    tolerance = 5000000  # $5.00
+    estimatedBalanceUsdc = tokenPriceUsdc * balance / 10 ** tokenDecimals
+    assert tokenId == daiAddress
+    assert tokenName == "Dai Stablecoin"
+    assert tokenSymbol == "DAI"
+    assert tokenDecimals == 18
+    assert tokenPriceUsdc > 900000
+    assert tokenPriceUsdc < 1100000
+    assert estimatedBalanceUsdc >= balanceUsdc - tolerance
+    assert estimatedBalanceUsdc <= balanceUsdc + tolerance
+
+    # Test asset metadata
+    metadata = asset[7]
+    pricePerShare = metadata[0]
+    assert pricePerShare > 1 * 10 ** 18
+
+
+def test_assets(earnAdapter):
+    assets = earnAdapter.assets()
+    assert len(assets) > 1
+    firstAsset = assets[0]
+    assetId = firstAsset[0]
+    assetTypeId = firstAsset[1]
+    assetName = firstAsset[2]
+    assetVersion = firstAsset[3]
+    assert assetId == yDaiV2Address
+    assert assetName == "iearn DAI"
+    assert assetTypeId == "earn"
+    assert assetVersion == "2.0.0"
+
+
+def test_position_of(earnAdapter, management, accounts):
+    # Deposit into YFI vault
+    daiWhaleAddress = "0x19D3364A399d251E894aC732651be8B0E4e85001"  # DAI vault
+    trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
+    zapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
+    daiWhale = accounts.at(daiWhaleAddress, force=True)
+    dai = interface.IERC20(daiAddress)
+    dai.approve(yDaiV3Address, 2 ** 256 - 1, {"from": daiWhaleAddress})
+    daiSafe = interface.IEarnToken(yDaiV3Address)
+    daiSafe.deposit(1 * 10 ** 18, {"from": daiWhale})
+    daiSafe.approve(trustedMigratorAddress, 100, {"from": daiWhaleAddress})
+    userSafeBalance = daiSafe.balanceOf(daiWhaleAddress)
+    assert userSafeBalance > 0
+
+    # Test position
+    position = earnAdapter.positionOf(daiWhaleAddress, yDaiV3Address)
+    assetId = position[0]
+    balance = position[1]
+    balanceUsdc = position[2]
+    assert assetId == yDaiV3Address
+    assert balance == userSafeBalance
+    assert balanceUsdc > balance / 10 ** 18
+
+    # Test token position
+    tokenPosition = position[3]
+    tokenAddress = tokenPosition[0]
+    tokenBalance = tokenPosition[1]
+    tokenBalanceUsdc = tokenPosition[2]
+    assert tokenAddress == daiAddress
+    assert tokenBalance > 0
+    assert tokenBalanceUsdc > tokenBalance / 10 ** 18
+
+    # Test token allowances
+    tokenAllowances = tokenPosition[3]
+    owner = tokenAllowances[0][0]
+    spender = tokenAllowances[0][1]
+    allowance = tokenAllowances[0][2]
+    assert owner == daiWhaleAddress
+    assert spender == yDaiV3Address
+    assert allowance > 0
+
+    # Position allowances
+    positionAllowances = position[4]
+    owner = positionAllowances[0][0]
+    spender = positionAllowances[0][1]
+    allowance = positionAllowances[0][2]
+    assert owner == daiWhaleAddress
+    assert spender == trustedMigratorAddress
+    assert allowance == 100
+
+
+def test_positions_of(earnAdapter, accounts):
+    # Deposit into YFI vault
+    daiWhaleAddress = "0x19D3364A399d251E894aC732651be8B0E4e85001"  # DAI vault
+    trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
+    daiWhale = accounts.at(daiWhaleAddress, force=True)
+    dai = interface.IERC20(daiAddress)
+    dai.approve(yDaiV3Address, 2 ** 256 - 1, {"from": daiWhaleAddress})
+    daiSafe = interface.IEarnToken(yDaiV3Address)
+    daiSafe.deposit(1 * 10 ** 18, {"from": daiWhale})
+    userSafeBalance = daiSafe.balanceOf(daiWhaleAddress)
+    assert userSafeBalance > 0
+
+    # Test positions
+    positions = earnAdapter.positionsOf(daiWhaleAddress)
+    position = positions[0]
+    assetId = position[0]
+    balance = position[1]
+    assert assetId == yDaiV3Address
+    assert balance == userSafeBalance
+
+
+def test_asset_tvl(earnAdapter):
+    assetsAddresses = earnAdapter.assetsAddresses()
+    for address in assetsAddresses:
+        tvl = v2VaultsAdapter.assetTvl(address) / 10 ** 12
+        assert tvl > 0
+
+    # # Print TVL per asset
+    # print("--------")
+    # print("Earn TVL")
+    # print("--------")
+    # tvlList = []
+    # for address in assetsAddresses:
+    #     token = interface.IERC20(address)
+    #     tvl = earnAdapter.assetTvl(address) / 10 ** 6
+    #     tvlList.append({"symbol": token.symbol(), "tvl": tvl})
+    # sortedTvlItems = sorted(tvlList, key=itemgetter("tvl"), reverse=True)
+    # for item in sortedTvlItems:
+    #     print(item.get("symbol"), item.get("tvl"))
+
+
+def test_assets_tvl(earnAdapter):
+    tvl = earnAdapter.assetsTvl()
+    assert tvl > 0
+    # print("Total tvl", tvl / 10 ** 12)
+
+
+def test_set_position_spender_addresses(earnAdapter, management, rando):
+    ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
+    with brownie.reverts():
+        earnAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": rando})
+    earnAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": management})
+    assert earnAdapter.positionSpenderAddresses(0) == ethZapAddress
 

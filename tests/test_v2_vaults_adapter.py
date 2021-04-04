@@ -1,8 +1,7 @@
 import pytest
 import brownie
-from operator import itemgetter
-
 from brownie import interface, ZERO_ADDRESS
+from operator import itemgetter
 
 yfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
 yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
@@ -14,26 +13,20 @@ def v2VaultsAdapter(RegisteryAdapterV2Vault, managementList, oracle, management)
     v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
     trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
     positionSpenderAddresses = [trustedMigratorAddress]
-    v2VaultsAdapter = RegisteryAdapterV2Vault.deploy(
-        v2RegistryAddress,
-        oracle,
-        managementList,
-        positionSpenderAddresses,
-        {"from": management},
+    adapter = RegisteryAdapterV2Vault.deploy(
+        v2RegistryAddress, oracle, managementList, {"from": management},
     )
-    return v2VaultsAdapter
+    adapter.setPositionSpenderAddresses(positionSpenderAddresses, {"from": management})
+    return adapter
 
 
-def test_set_position_spender_addresses(v2VaultsAdapter, management, rando):
-    ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
-    with brownie.reverts():
-        v2VaultsAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": rando})
-    v2VaultsAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": management})
-    assert v2VaultsAdapter.positionSpenderAddresses(0) == ethZapAddress
-
-
-def test_registry_address(v2VaultsAdapter):
-    assert not v2VaultsAdapter.registryAddress() == ZERO_ADDRESS
+def test_interface(
+    v2VaultsAdapter, introspection, management, registryAdapterCommonInterface
+):
+    adapterImplementsCommonInterface = introspection.implementsInterface(
+        v2VaultsAdapter, registryAdapterCommonInterface
+    )
+    assert adapterImplementsCommonInterface
 
 
 def test_adapter_info(v2VaultsAdapter):
@@ -44,10 +37,8 @@ def test_adapter_info(v2VaultsAdapter):
     assert adapterInfo[3] == "vault"
 
 
-def test_assets_addresses(v2VaultsAdapter):
-    assetsAddresses = v2VaultsAdapter.assetsAddresses()
-    assert len(assetsAddresses) > 0
-    assert not assetsAddresses[0] == ZERO_ADDRESS
+def test_registry_address(v2VaultsAdapter):
+    assert not v2VaultsAdapter.registryAddress() == ZERO_ADDRESS
 
 
 def test_assets_length(v2VaultsAdapter):
@@ -55,13 +46,10 @@ def test_assets_length(v2VaultsAdapter):
     assert assetsLength > 0
 
 
-def test_interface(
-    v2VaultsAdapter, introspection, management, registryAdapterCommonInterface
-):
-    adapterImplementsCommonInterface = introspection.implementsInterface(
-        v2VaultsAdapter, registryAdapterCommonInterface
-    )
-    assert adapterImplementsCommonInterface
+def test_assets_addresses(v2VaultsAdapter):
+    assetsAddresses = v2VaultsAdapter.assetsAddresses()
+    assert len(assetsAddresses) > 0
+    assert not assetsAddresses[0] == ZERO_ADDRESS
 
 
 def test_asset(v2VaultsAdapter):
@@ -118,44 +106,9 @@ def test_asset_metadata(v2VaultsAdapter):
     assert emergencyShutdown == False
 
 
-def test_asset_tvl(v2VaultsAdapter):
-    assetsAddresses = v2VaultsAdapter.assetsAddresses()
-    for address in assetsAddresses:
-        tvl = v2VaultsAdapter.assetTvl(address) / 10 ** 12
-        assert tvl > 0
-
-    # Print TVL per asset
-    # print("-------------")
-    # print("V2 Vaults TVL")
-    # print("-------------")
-    # assetsAddresses = v2VaultsAdapter.assetsAddresses()
-    # tvlList = []
-    # for address in assetsAddresses:
-    #     token = interface.IERC20(address)
-    #     tvl = v2VaultsAdapter.assetTvl(address) / 10 ** 6
-    #     tvlList.append({"symbol": token.symbol(), "tvl": tvl})
-    # sortedTvlItems = sorted(tvlList, key=itemgetter("tvl"), reverse=True)
-    # for item in sortedTvlItems:
-    #     print(item.get("symbol"), item.get("tvl"))
-
-
-def test_assets_tvl(v2VaultsAdapter):
-    tvl = v2VaultsAdapter.assetsTvl()
-    assert tvl > 0
-    # print("Total tvl", tvl / 10 ** 12)
-
-
-def test_tokens(v2VaultsAdapter):
-    tokens = v2VaultsAdapter.tokens()
-    assetsLength = v2VaultsAdapter.assetsLength()
-    tokensLength = len(tokens)
-    assert tokensLength > 0
-    assert tokensLength < assetsLength
-
-
 def test_assets(v2VaultsAdapter):
     assets = v2VaultsAdapter.assets()
-    assert len(assets) > 0
+    assert len(assets) > 1
     firstAsset = assets[0]
     assetId = firstAsset[0]
     assetTypeId = firstAsset[1]
@@ -239,3 +192,38 @@ def test_positions_of(v2VaultsAdapter, accounts):
     assetId = position[0]
     assert len(positions) > 0
     assert assetId == v2YfiVaultAddress
+
+
+def test_asset_tvl(v2VaultsAdapter):
+    assetsAddresses = v2VaultsAdapter.assetsAddresses()
+    for address in assetsAddresses:
+        tvl = v2VaultsAdapter.assetTvl(address) / 10 ** 12
+        assert tvl > 0
+
+    # Print TVL per asset
+    # print("-------------")
+    # print("V2 Vaults TVL")
+    # print("-------------")
+    # assetsAddresses = v2VaultsAdapter.assetsAddresses()
+    # tvlList = []
+    # for address in assetsAddresses:
+    #     token = interface.IERC20(address)
+    #     tvl = v2VaultsAdapter.assetTvl(address) / 10 ** 6
+    #     tvlList.append({"symbol": token.symbol(), "tvl": tvl})
+    # sortedTvlItems = sorted(tvlList, key=itemgetter("tvl"), reverse=True)
+    # for item in sortedTvlItems:
+    #     print(item.get("symbol"), item.get("tvl"))
+
+
+def test_assets_tvl(v2VaultsAdapter):
+    tvl = v2VaultsAdapter.assetsTvl()
+    assert tvl > 0
+    # print("Total tvl", tvl / 10 ** 12)
+
+
+def test_set_position_spender_addresses(v2VaultsAdapter, management, rando):
+    ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
+    with brownie.reverts():
+        v2VaultsAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": rando})
+    v2VaultsAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": management})
+    assert v2VaultsAdapter.positionSpenderAddresses(0) == ethZapAddress
