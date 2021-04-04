@@ -6,6 +6,14 @@ from operator import itemgetter
 yfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
 yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
 usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+v2UsdcVaultV1Address = "0xe2F6b9773BF3A015E2aA70741Bde1498bdB9425b"
+v2UsdcVaultV2Address = "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9"
+ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
+v2YfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
+vestedYfiAddress = "0x42A28ADDC15E627d19e780c89043b4B1d3629D34"
+yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
+trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
+zapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 
 
 @pytest.fixture
@@ -53,8 +61,6 @@ def test_assets_addresses(v2VaultsAdapter):
 
 
 def test_asset(v2VaultsAdapter):
-    v2UsdcVaultV2Address = "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9"
-
     # test vault data
     asset = v2VaultsAdapter.asset(v2UsdcVaultV2Address)
     assetId = asset[0]
@@ -90,7 +96,6 @@ def test_asset(v2VaultsAdapter):
 
 def test_asset_metadata(v2VaultsAdapter):
     # Test vault metadata
-    v2UsdcVaultV1Address = "0xe2F6b9773BF3A015E2aA70741Bde1498bdB9425b"
     asset = v2VaultsAdapter.asset(v2UsdcVaultV1Address)
     metadata = asset[7]
     symbol = metadata[0]
@@ -123,11 +128,6 @@ def test_assets(v2VaultsAdapter):
 
 def test_position_of(v2VaultsAdapter, management, accounts):
     # Deposit into YFI vault
-    v2YfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
-    vestedYfiAddress = "0x42A28ADDC15E627d19e780c89043b4B1d3629D34"
-    yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
-    trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
-    zapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
     yfiAccount = accounts.at(vestedYfiAddress, force=True)
     yfi = interface.IERC20(yfiAddress)
     yfi.approve(v2YfiVaultAddress, 2 ** 256 - 1, {"from": vestedYfiAddress})
@@ -176,8 +176,6 @@ def test_position_of(v2VaultsAdapter, management, accounts):
 
 def test_positions_of(v2VaultsAdapter, accounts):
     # Deposit into YFI vault
-    v2YfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
-    vestedYfiAddress = "0x42A28ADDC15E627d19e780c89043b4B1d3629D34"
     yfiAccount = accounts.at(vestedYfiAddress, force=True)
     yfi = interface.IERC20(yfiAddress)
     yfi.approve(v2YfiVaultAddress, 2 ** 256 - 1, {"from": vestedYfiAddress})
@@ -222,7 +220,6 @@ def test_assets_tvl(v2VaultsAdapter):
 
 
 def test_set_position_spender_addresses(v2VaultsAdapter, management, rando):
-    ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
     with brownie.reverts():
         v2VaultsAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": rando})
     v2VaultsAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": management})
