@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.2;
 
-interface EarnToken {
+interface IEarnToken {
     function token() external view returns (address);
 
     function name() external view returns (string memory);
@@ -19,5 +19,14 @@ interface EarnToken {
 
     function calcPoolValueInToken() external view returns (uint256);
 
-    function aaveToken() external view returns (address);
+    function balanceOf(address account) external view returns (uint256);
+
+    function deposit(uint256 amount) external;
+
+    function approve(address spender, uint256 amount) external;
+
+    function allowance(address spender, address owner)
+        external
+        view
+        returns (uint256);
 }
