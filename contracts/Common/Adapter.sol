@@ -18,7 +18,7 @@ contract Adapter is Manageable {
 
     struct Position {
         address assetId;
-        string categoryId;
+        string typeId;
         uint256 balance;
         uint256 balanceUsdc;
         TokenPosition tokenPosition;
@@ -70,7 +70,7 @@ contract Adapter is Manageable {
         view
         returns (Allowance[] memory)
     {
-        IERC20 asset = IERC20(assetAddress);
+        IERC20 _asset = IERC20(assetAddress);
         uint256 numberOfSpenders = positionSpenderAddresses.length;
         Allowance[] memory allowances = new Allowance[](numberOfSpenders);
         for (
@@ -80,7 +80,7 @@ contract Adapter is Manageable {
         ) {
             address spenderAddress = positionSpenderAddresses[spenderIdx];
             uint256 allowanceAmount =
-                asset.allowance(accountAddress, spenderAddress);
+                _asset.allowance(accountAddress, spenderAddress);
             Allowance memory allowance =
                 Allowance({
                     owner: accountAddress,
@@ -92,7 +92,11 @@ contract Adapter is Manageable {
         return allowances;
     }
 
-    function token(address tokenAddress) internal view returns (Token memory) {
+    function tokenMetadata(address tokenAddress)
+        internal
+        view
+        returns (Token memory)
+    {
         IERC20 _token = IERC20(tokenAddress);
         return
             Token({

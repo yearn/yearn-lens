@@ -14,7 +14,6 @@ contract RegisteryAdapterV1Vault {
         address id;
         string typeId;
         string categoryId;
-        string subcategoryId;
     }
 
     struct Asset {
@@ -27,6 +26,7 @@ contract RegisteryAdapterV1Vault {
     // TODO: Inherit from standardized interface?
     struct Position {
         address assetId;
+        string typeId;
         uint256 depositedBalance;
         uint256 tokenBalance;
         uint256 tokenAllowance;
@@ -49,8 +49,7 @@ contract RegisteryAdapterV1Vault {
             AdapterInfo({
                 id: address(this),
                 typeId: "v1Vault",
-                categoryId: "deposit",
-                subcategoryId: "vault"
+                categoryId: "vault"
             });
     }
 
@@ -77,9 +76,8 @@ contract RegisteryAdapterV1Vault {
                 totalSupply: totalSupply,
                 pricePerShare: pricePerShare
             });
-        Asset memory asset =
+        return
             Asset({id: id, name: name, version: version, metadata: metadata});
-        return asset;
     }
 
     function assetsLength() public view returns (uint256) {
@@ -87,31 +85,34 @@ contract RegisteryAdapterV1Vault {
     }
 
     function assets() external view returns (Asset[] memory) {
-        address[] memory vaultAddresses = assetsAddresses();
-        uint256 numberOfVaults = vaultAddresses.length;
-        Asset[] memory assets = new Asset[](numberOfVaults);
+        address[] memory _assetsAddresses = assetsAddresses();
+        uint256 numberOfVaults = _assetsAddresses.length;
+        Asset[] memory _assets = new Asset[](numberOfVaults);
         for (uint256 i = 0; i < numberOfVaults; i++) {
-            address vaultAddress = vaultAddresses[i];
-            Asset memory asset = asset(vaultAddress);
-            assets[i] = asset;
+            address assetAddress = _assetsAddresses[i];
+            Asset memory _asset = asset(assetAddress);
+            _assets[i] = _asset;
         }
-        return assets;
+        return _assets;
     }
 
-    function positionOf(address accountAddress, address vaultAddress)
+    function positionOf(address accountAddress, address assetAddress)
         public
         view
         returns (Position memory)
     {
-        V1Vault vault = V1Vault(vaultAddress);
-        address tokenAddress = vault.token();
+        V1Vault _asset = V1Vault(assetAddress);
+        address tokenAddress = _asset.token();
         IERC20 token = IERC20(tokenAddress);
-        uint256 depositedBalance = vault.balanceOf(accountAddress);
+        uint256 depositedBalance =
+            (_asset.balanceOf(accountAddress) * _asset.getPricePerFullShare()) /
+                10**18;
         uint256 tokenBalance = token.balanceOf(accountAddress);
-        uint256 tokenAllowance = token.allowance(accountAddress, vaultAddress);
+        uint256 tokenAllowance = token.allowance(accountAddress, assetAddress);
         Position memory position =
             Position({
-                assetId: vaultAddress,
+                assetId: assetAddress,
+                typeId: "deposit",
                 depositedBalance: depositedBalance,
                 tokenBalance: tokenBalance,
                 tokenAllowance: tokenAllowance

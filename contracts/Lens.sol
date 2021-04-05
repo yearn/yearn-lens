@@ -146,8 +146,8 @@ contract Lens is Manageable {
     }
 
     function assetsAddresses() public view returns (address[] memory) {
-        uint256 assetsLength = assetsLength();
-        address[] memory assetsAddresses = new address[](assetsLength);
+        uint256 _assetsLength = assetsLength();
+        address[] memory _assetsAddresses = new address[](_assetsLength);
         uint256 assetIdx;
         for (
             uint256 adapterIdx = 0;
@@ -162,11 +162,11 @@ contract Lens is Manageable {
                 registryAssetIdx < assetAddresses.length;
                 registryAssetIdx++
             ) {
-                assetsAddresses[assetIdx] = assetAddresses[registryAssetIdx];
+                _assetsAddresses[assetIdx] = assetAddresses[registryAssetIdx];
                 assetIdx++;
             }
         }
-        return assetsAddresses;
+        return _assetsAddresses;
     }
 
     function assets() external view returns (IAdapter.Asset[] memory) {

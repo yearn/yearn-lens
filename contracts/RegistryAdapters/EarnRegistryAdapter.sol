@@ -55,46 +55,6 @@ contract RegistryAdapterEarn is Adapter {
         return positions;
     }
 
-    function positionOf(address accountAddress, address assetAddress)
-        public
-        view
-        returns (Position memory)
-    {
-        IERC20 asset = IERC20(assetAddress);
-        address tokenAddress = underlyingTokenAddress(assetAddress);
-        IERC20 token = IERC20(tokenAddress);
-        uint256 balance = asset.balanceOf(accountAddress);
-        uint256 balanceUsdc =
-            oracle.getNormalizedValueUsdc(tokenAddress, balance);
-        uint256 tokenBalance = token.balanceOf(accountAddress);
-        uint256 tokenBalanceUsdc =
-            oracle.getNormalizedValueUsdc(tokenAddress, tokenBalance);
-
-        Allowance[] memory _tokenPositionAllowances =
-            tokenPositionAllowances(accountAddress, tokenAddress, assetAddress);
-        Allowance[] memory _positionAllowances =
-            positionAllowances(accountAddress, assetAddress);
-
-        TokenPosition memory tokenPosition =
-            TokenPosition({
-                tokenId: tokenAddress,
-                balance: tokenBalance,
-                balanceUsdc: tokenBalanceUsdc,
-                allowances: _tokenPositionAllowances
-            });
-
-        Position memory position =
-            Position({
-                assetId: assetAddress,
-                categoryId: "deposit",
-                balance: balance,
-                balanceUsdc: balanceUsdc,
-                tokenPosition: tokenPosition,
-                allowances: _positionAllowances
-            });
-        return position;
-    }
-
     struct Asset {
         address id;
         string typeId;
@@ -170,7 +130,7 @@ contract RegistryAdapterEarn is Adapter {
                 version: "2.0.0",
                 balance: assetBalance(assetAddress),
                 balanceUsdc: assetTvl(assetAddress),
-                token: token(tokenAddress),
+                token: tokenMetadata(tokenAddress),
                 metadata: metadata
             });
     }
@@ -178,6 +138,46 @@ contract RegistryAdapterEarn is Adapter {
     function assetBalance(address assetAddress) public view returns (uint256) {
         IEarnToken earnToken = IEarnToken(assetAddress);
         return earnToken.calcPoolValueInToken();
+    }
+
+    function positionOf(address accountAddress, address assetAddress)
+        public
+        view
+        returns (Position memory)
+    {
+        IERC20 _asset = IERC20(assetAddress);
+        address tokenAddress = underlyingTokenAddress(assetAddress);
+        IERC20 token = IERC20(tokenAddress);
+        uint256 balance = _asset.balanceOf(accountAddress);
+        uint256 balanceUsdc =
+            oracle.getNormalizedValueUsdc(tokenAddress, balance);
+        uint256 tokenBalance = token.balanceOf(accountAddress);
+        uint256 tokenBalanceUsdc =
+            oracle.getNormalizedValueUsdc(tokenAddress, tokenBalance);
+
+        Allowance[] memory _tokenPositionAllowances =
+            tokenPositionAllowances(accountAddress, tokenAddress, assetAddress);
+        Allowance[] memory _positionAllowances =
+            positionAllowances(accountAddress, assetAddress);
+
+        TokenPosition memory tokenPosition =
+            TokenPosition({
+                tokenId: tokenAddress,
+                balance: tokenBalance,
+                balanceUsdc: tokenBalanceUsdc,
+                allowances: _tokenPositionAllowances
+            });
+
+        Position memory position =
+            Position({
+                assetId: assetAddress,
+                typeId: "deposit",
+                balance: balance,
+                balanceUsdc: balanceUsdc,
+                tokenPosition: tokenPosition,
+                allowances: _positionAllowances
+            });
+        return position;
     }
 
     function assetTvl(address assetAddress) public view returns (uint256) {

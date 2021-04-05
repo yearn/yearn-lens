@@ -39,62 +39,6 @@ contract RegisteryAdapterV2Vault is Adapter {
         return tvl;
     }
 
-    function positionsOf(address accountAddress)
-        external
-        view
-        returns (Position[] memory)
-    {
-        address[] memory _assetAddresses = assetsAddresses();
-        uint256 numberOfAssets = _assetAddresses.length;
-        Position[] memory positions = new Position[](numberOfAssets);
-        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
-            address assetAddress = _assetAddresses[assetIdx];
-            Position memory position = positionOf(accountAddress, assetAddress);
-            positions[assetIdx] = position;
-        }
-        return positions;
-    }
-
-    function positionOf(address accountAddress, address assetAddress)
-        public
-        view
-        returns (Position memory)
-    {
-        IERC20 asset = IERC20(assetAddress);
-        address tokenAddress = underlyingTokenAddress(assetAddress);
-        IERC20 token = IERC20(tokenAddress);
-        uint256 balance = asset.balanceOf(accountAddress);
-        uint256 balanceUsdc =
-            oracle.getNormalizedValueUsdc(tokenAddress, balance);
-        uint256 tokenBalance = token.balanceOf(accountAddress);
-        uint256 tokenBalanceUsdc =
-            oracle.getNormalizedValueUsdc(tokenAddress, tokenBalance);
-
-        Allowance[] memory _tokenPositionAllowances =
-            tokenPositionAllowances(accountAddress, tokenAddress, assetAddress);
-        Allowance[] memory _positionAllowances =
-            positionAllowances(accountAddress, assetAddress);
-
-        TokenPosition memory tokenPosition =
-            TokenPosition({
-                tokenId: tokenAddress,
-                balance: tokenBalance,
-                balanceUsdc: tokenBalanceUsdc,
-                allowances: _tokenPositionAllowances
-            });
-
-        Position memory position =
-            Position({
-                assetId: assetAddress,
-                categoryId: "deposit",
-                balance: balance,
-                balanceUsdc: balanceUsdc,
-                tokenPosition: tokenPosition,
-                allowances: _positionAllowances
-            });
-        return position;
-    }
-
     struct Asset {
         address id;
         string typeId;
@@ -210,7 +154,7 @@ contract RegisteryAdapterV2Vault is Adapter {
                 version: vault.apiVersion(),
                 balance: assetBalance(assetAddress),
                 balanceUsdc: assetTvl(assetAddress),
-                token: token(tokenAddress),
+                token: tokenMetadata(tokenAddress),
                 metadata: metadata
             });
         return _asset;
@@ -229,13 +173,72 @@ contract RegisteryAdapterV2Vault is Adapter {
         return tvl;
     }
 
+    function positionOf(address accountAddress, address assetAddress)
+        public
+        view
+        returns (Position memory)
+    {
+        V2Vault _asset = V2Vault(assetAddress);
+        uint8 assetDecimals = _asset.decimals();
+        address tokenAddress = underlyingTokenAddress(assetAddress);
+        IERC20 token = IERC20(tokenAddress);
+        uint256 balance =
+            (_asset.balanceOf(accountAddress) * _asset.pricePerShare()) /
+                10**assetDecimals;
+        uint256 balanceUsdc =
+            oracle.getNormalizedValueUsdc(tokenAddress, balance);
+        uint256 tokenBalance = token.balanceOf(accountAddress);
+        uint256 tokenBalanceUsdc =
+            oracle.getNormalizedValueUsdc(tokenAddress, tokenBalance);
+
+        Allowance[] memory _tokenPositionAllowances =
+            tokenPositionAllowances(accountAddress, tokenAddress, assetAddress);
+        Allowance[] memory _positionAllowances =
+            positionAllowances(accountAddress, assetAddress);
+
+        TokenPosition memory tokenPosition =
+            TokenPosition({
+                tokenId: tokenAddress,
+                balance: tokenBalance,
+                balanceUsdc: tokenBalanceUsdc,
+                allowances: _tokenPositionAllowances
+            });
+
+        Position memory position =
+            Position({
+                assetId: assetAddress,
+                typeId: "deposit",
+                balance: balance,
+                balanceUsdc: balanceUsdc,
+                tokenPosition: tokenPosition,
+                allowances: _positionAllowances
+            });
+        return position;
+    }
+
+    function positionsOf(address accountAddress)
+        external
+        view
+        returns (Position[] memory)
+    {
+        address[] memory _assetAddresses = assetsAddresses();
+        uint256 numberOfAssets = _assetAddresses.length;
+        Position[] memory positions = new Position[](numberOfAssets);
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = _assetAddresses[assetIdx];
+            Position memory position = positionOf(accountAddress, assetAddress);
+            positions[assetIdx] = position;
+        }
+        return positions;
+    }
+
     // function tokens() public view returns (Token[] memory) {
     //     IV2Registry registry = IV2Registry(registryAddress);
     //     uint256 numTokens = registry.numTokens();
     //     Token[] memory _tokens = new Token[](numTokens);
     //     for (uint256 tokenIdx = 0; tokenIdx < numTokens; tokenIdx++) {
     //         address tokenAddress = registry.tokens(tokenIdx);
-    //         Token memory _token = token(tokenAddress);
+    //         Token memory _token = tokenMetadata(tokenAddress);
     //         _tokens[tokenIdx] = _token;
     //     }
     //     return _tokens;

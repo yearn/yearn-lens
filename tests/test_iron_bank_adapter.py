@@ -28,8 +28,7 @@ def test_registry_address(ironBankAdapter):
 def test_adapter_info(ironBankAdapter):
     adapterInfo = ironBankAdapter.adapterInfo()
     assert adapterInfo[0] == "ironBank"
-    assert adapterInfo[1] == "deposit"
-    assert adapterInfo[2] == "lending"
+    assert adapterInfo[1] == "lending"
 
 
 def test_assets_addresses(ironBankAdapter):

@@ -3,117 +3,69 @@
 pragma solidity ^0.8.2;
 pragma experimental ABIEncoderV2;
 
-// Common imports
-import "../../interfaces/Common/IERC20.sol";
-import "../../interfaces/Common/IOracle.sol";
-
 // Adapter-specific imports
 import "../../interfaces/Cream/Unitroller.sol";
 import "../../interfaces/Cream/CyToken.sol";
 
-contract RegistryAdapterIronBank {
+// Common imports
+import "../../interfaces/Common/IERC20.sol";
+import "../Common/Adapter.sol";
+
+contract RegistryAdapterIronBank is Adapter {
     /**
      * Common code shared by all adapters
      */
-    address public registryAddress;
-    IOracle public oracle;
-
-    struct AdapterInfo {
-        string typeId;
-        string categoryId;
-        string subcategoryId;
-    }
-
-    struct Position {
-        address assetId;
-        uint256 balance;
-        uint256 balanceUsdc;
-        TokenPosition tokenPosition;
-    }
-
-    struct Token {
-        address id;
-        string name;
-        string symbol;
-        uint8 decimals;
-        uint256 priceUsdc;
-    }
-
-    struct TokenPosition {
-        address tokenId;
-        uint256 balance;
-        uint256 balanceUsdc;
-        Allowance[] allowances;
-    }
-
-    struct Allowance {
-        address owner;
-        address spender;
-        uint256 allowance;
-    }
-
-    constructor(address _registryAddress, address _oracleAddress) {
-        require(_registryAddress != address(0), "Missing registry address");
-        require(_oracleAddress != address(0), "Missing oracle address");
-        registryAddress = _registryAddress;
-        oracle = IOracle(_oracleAddress);
-    }
-
     function assets() external view returns (Asset[] memory) {
         address[] memory assetAddresses = assetsAddresses();
         uint256 numberOfAssets = assetAddresses.length;
         Asset[] memory _assets = new Asset[](numberOfAssets);
-        for (uint256 i = 0; i < numberOfAssets; i++) {
-            address assetAddress = assetAddresses[i];
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = assetAddresses[assetIdx];
             Asset memory _asset = asset(assetAddress);
-            _assets[i] = _asset;
+            _assets[assetIdx] = _asset;
         }
         return _assets;
-    }
-
-    function token(address tokenAddress) internal view returns (Token memory) {
-        IERC20 underlyingToken = IERC20(tokenAddress);
-        Token memory _token =
-            Token({
-                id: tokenAddress,
-                name: underlyingToken.name(),
-                symbol: underlyingToken.symbol(),
-                decimals: underlyingToken.decimals(),
-                priceUsdc: oracle.getPriceUsdcRecommended(tokenAddress)
-            });
-        return _token;
     }
 
     function assetsTvl() external view returns (uint256) {
         uint256 tvl;
         address[] memory assetAddresses = assetsAddresses();
         uint256 numberOfAssets = assetAddresses.length;
-        for (uint256 i = 0; i < numberOfAssets; i++) {
-            address assetAddress = assetAddresses[i];
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = assetAddresses[assetIdx];
             uint256 _assetTvl = assetTvl(assetAddress);
             tvl += _assetTvl;
         }
         return tvl;
     }
 
-    /**
-     * Iron Bank Adapter
-     */
-    AdapterInfo public adapterInfo =
-        AdapterInfo({
-            typeId: "ironBank",
-            categoryId: "deposit",
-            subcategoryId: "lending"
-        });
-
     struct Asset {
         address id;
+        string typeId;
         string name;
         string version;
         uint256 balance;
         uint256 balanceUsdc;
         Token token;
         // AssetMetadata metadata;
+    }
+
+    constructor(
+        address _registryAddress,
+        address _oracleAddress,
+        address _managementListAddress
+    ) Adapter(_registryAddress, _oracleAddress, _managementListAddress) {}
+
+    /**
+     * Iron Bank Adapter
+     */
+    function adapterInfo() public view returns (AdapterInfo memory) {
+        return
+            AdapterInfo({
+                id: address(this),
+                typeId: "ironBank",
+                categoryId: "lending"
+            });
     }
 
     struct AssetMetadata {
@@ -128,6 +80,16 @@ contract RegistryAdapterIronBank {
         uint256 borrowApyBips;
     }
 
+    function underlyingTokenAddress(address assetAddress)
+        public
+        view
+        returns (address)
+    {
+        CyToken cyToken = CyToken(assetAddress);
+        address tokenAddress = cyToken.underlying();
+        return tokenAddress;
+    }
+
     function assetsLength() public view returns (uint256) {
         address[] memory allMarkets = getAllMarkets();
         return allMarkets.length;
@@ -138,46 +100,10 @@ contract RegistryAdapterIronBank {
         return allMarkets;
     }
 
-    function assetBalance(address assetAddress) public view returns (uint256) {
-        CyToken cyToken = CyToken(assetAddress);
-        address underlyingTokenAddress = cyToken.underlying();
-        IERC20 underlyingToken = IERC20(underlyingTokenAddress);
-        uint256 cash = cyToken.getCash();
-        uint256 totalBorrows = cyToken.totalBorrows();
-        uint256 totalReserves = cyToken.totalReserves();
-        uint256 totalSupplied = (cash + totalBorrows - totalReserves);
-        return totalSupplied;
-    }
-
-    function assetTvl(address assetAddress) public view returns (uint256) {
-        CyToken cyToken = CyToken(assetAddress);
-        address underlyingTokenAddress = cyToken.underlying();
-        IERC20 underlyingToken = IERC20(underlyingTokenAddress);
-        uint256 totalSupplied = assetBalance(assetAddress);
-        uint256 underlyingDecimals = underlyingToken.decimals();
-        uint256 usdcDecimals = 6;
-        uint256 decimalsAdjustment;
-        if (underlyingDecimals >= usdcDecimals) {
-            decimalsAdjustment = underlyingDecimals - usdcDecimals;
-        } else {
-            decimalsAdjustment = usdcDecimals - underlyingDecimals;
-        }
-        uint256 price = oracle.getPriceUsdcRecommended(underlyingTokenAddress);
-        uint256 tvl;
-        if (decimalsAdjustment > 0) {
-            tvl =
-                (totalSupplied * price * (10**decimalsAdjustment)) /
-                10**(decimalsAdjustment + underlyingDecimals);
-        } else {
-            tvl = (totalSupplied * price) / 10**usdcDecimals;
-        }
-        return tvl;
-    }
-
     function asset(address assetAddress) public view returns (Asset memory) {
         CyToken cyToken = CyToken(assetAddress);
-        address underlyingTokenAddress = cyToken.underlying();
-        IERC20 underlyingToken = IERC20(underlyingTokenAddress);
+        address tokenAddress = underlyingTokenAddress(assetAddress);
+        IERC20 token = IERC20(tokenAddress);
         // AssetMetadata memory metadata =
         //     AssetMetadata({
         //         symbol: vault.symbol(),
@@ -191,29 +117,106 @@ contract RegistryAdapterIronBank {
         Asset memory _asset =
             Asset({
                 id: assetAddress,
-                name: underlyingToken.name(),
-                version: "1.0.0",
+                typeId: adapterInfo().typeId,
+                name: token.name(),
+                version: "2.0.0",
                 balance: assetBalance(assetAddress),
                 balanceUsdc: assetTvl(assetAddress),
-                token: token(underlyingTokenAddress)
+                token: tokenMetadata(tokenAddress)
                 // metadata: metadata
             });
         return _asset;
     }
 
-    function tokens() public view returns (Token[] memory) {}
+    function assetBalance(address assetAddress) public view returns (uint256) {
+        CyToken cyToken = CyToken(assetAddress);
+        uint256 cash = cyToken.getCash();
+        uint256 totalBorrows = cyToken.totalBorrows();
+        uint256 totalReserves = cyToken.totalReserves();
+        uint256 totalSupplied = (cash + totalBorrows - totalReserves);
+        return totalSupplied;
+    }
 
-    function positionOf(address accountAddress, address vaultAddress)
+    function assetTvl(address assetAddress) public view returns (uint256) {
+        CyToken cyToken = CyToken(assetAddress);
+        address tokenAddress = underlyingTokenAddress(assetAddress);
+        IERC20 token = IERC20(tokenAddress);
+        uint256 totalSupplied = assetBalance(assetAddress);
+        uint256 tokenDecimals = token.decimals();
+        uint256 usdcDecimals = 6;
+        uint256 decimalsAdjustment;
+        if (tokenDecimals >= usdcDecimals) {
+            decimalsAdjustment = tokenDecimals - usdcDecimals;
+        } else {
+            decimalsAdjustment = usdcDecimals - tokenDecimals;
+        }
+        uint256 price = oracle.getPriceUsdcRecommended(tokenAddress);
+        uint256 tvl;
+        if (decimalsAdjustment > 0) {
+            tvl =
+                (totalSupplied * price * (10**decimalsAdjustment)) /
+                10**(decimalsAdjustment + tokenDecimals);
+        } else {
+            tvl = (totalSupplied * price) / 10**usdcDecimals;
+        }
+        return tvl;
+    }
+
+    function positionOf(address accountAddress, address assetAddress)
         public
         view
         returns (Position memory)
-    {}
+    {
+        IERC20 _asset = IERC20(assetAddress);
+        address tokenAddress = underlyingTokenAddress(assetAddress);
+        IERC20 token = IERC20(tokenAddress);
+        uint256 balance = _asset.balanceOf(accountAddress);
+        uint256 balanceUsdc =
+            oracle.getNormalizedValueUsdc(tokenAddress, balance);
+        uint256 tokenBalance = token.balanceOf(accountAddress);
+        uint256 tokenBalanceUsdc =
+            oracle.getNormalizedValueUsdc(tokenAddress, tokenBalance);
+
+        Allowance[] memory _tokenPositionAllowances =
+            tokenPositionAllowances(accountAddress, tokenAddress, assetAddress);
+        Allowance[] memory _positionAllowances =
+            positionAllowances(accountAddress, assetAddress);
+
+        TokenPosition memory tokenPosition =
+            TokenPosition({
+                tokenId: tokenAddress,
+                balance: tokenBalance,
+                balanceUsdc: tokenBalanceUsdc,
+                allowances: _tokenPositionAllowances
+            });
+
+        Position memory position =
+            Position({
+                assetId: assetAddress,
+                typeId: "borrow",
+                balance: balance,
+                balanceUsdc: balanceUsdc,
+                tokenPosition: tokenPosition,
+                allowances: _positionAllowances
+            });
+        return position;
+    }
 
     function positionsOf(address accountAddress)
         external
         view
         returns (Position[] memory)
-    {}
+    {
+        address[] memory _assetAddresses = assetsAddresses();
+        uint256 numberOfAssets = _assetAddresses.length;
+        Position[] memory positions = new Position[](numberOfAssets);
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = _assetAddresses[assetIdx];
+            Position memory position = positionOf(accountAddress, assetAddress);
+            positions[assetIdx] = position;
+        }
+        return positions;
+    }
 
     function getAllMarkets() public view returns (address[] memory) {
         return Unitroller(registryAddress).getAllMarkets();
