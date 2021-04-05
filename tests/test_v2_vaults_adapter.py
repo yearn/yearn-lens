@@ -133,7 +133,11 @@ def test_position_of(v2VaultsAdapter, management, accounts):
     yfiVault = interface.V2Vault(v2YfiVaultAddress)
     yfiVault.deposit(1 * 10 ** 18, {"from": yfiAccount})
     yfiVault.approve(trustedMigratorAddress, 100, {"from": vestedYfiAddress})
-    userVaultBalance = yfiVault.balanceOf(vestedYfiAddress)
+    pricePerShare = yfiVault.pricePerShare()
+    decimals = yfiVault.decimals()
+    userVaultBalance = (
+        yfiVault.balanceOf(vestedYfiAddress) * pricePerShare / 10 ** decimals
+    )
     assert userVaultBalance > 0
 
     # Test position
@@ -144,7 +148,8 @@ def test_position_of(v2VaultsAdapter, management, accounts):
     balanceUsdc = position[3]
     assert assetId == v2YfiVaultAddress
     assert categoryId == "deposit"
-    assert balance == userVaultBalance
+    assert userVaultBalance >= balance - 100
+    assert userVaultBalance <= balance + 100
     assert balanceUsdc > balance / 10 ** 18
 
     # Test token position
@@ -182,7 +187,11 @@ def test_positions_of(v2VaultsAdapter, accounts):
     yfi.approve(v2YfiVaultAddress, 2 ** 256 - 1, {"from": vestedYfiAddress})
     yfiVault = interface.V2Vault(v2YfiVaultAddress)
     yfiVault.deposit(1 * 10 ** 18, {"from": yfiAccount})
-    userVaultBalance = yfiVault.balanceOf(vestedYfiAddress)
+    pricePerShare = yfiVault.pricePerShare()
+    decimals = yfiVault.decimals()
+    userVaultBalance = (
+        yfiVault.balanceOf(vestedYfiAddress) * pricePerShare / 10 ** decimals
+    )
     assert userVaultBalance > 0
 
     # Test positions
