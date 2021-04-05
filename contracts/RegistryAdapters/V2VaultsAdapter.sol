@@ -86,6 +86,7 @@ contract RegisteryAdapterV2Vault is Adapter {
         Position memory position =
             Position({
                 assetId: assetAddress,
+                categoryId: "deposit",
                 balance: balance,
                 balanceUsdc: balanceUsdc,
                 tokenPosition: tokenPosition,
@@ -119,8 +120,7 @@ contract RegisteryAdapterV2Vault is Adapter {
             AdapterInfo({
                 id: address(this),
                 typeId: "v2Vault",
-                categoryId: "deposit",
-                subcategoryId: "vault"
+                categoryId: "vault"
             });
     }
 
@@ -180,6 +180,7 @@ contract RegisteryAdapterV2Vault is Adapter {
 
     function asset(address assetAddress) public view returns (Asset memory) {
         V2Vault vault = V2Vault(assetAddress);
+        address tokenAddress = underlyingTokenAddress(assetAddress);
         IV2Registry registry = IV2Registry(registryAddress);
         uint256 totalSupply = vault.totalSupply();
         uint256 pricePerShare = 0;
@@ -187,7 +188,6 @@ contract RegisteryAdapterV2Vault is Adapter {
         if (vaultHasShares) {
             pricePerShare = vault.pricePerShare();
         }
-        address tokenAddress = underlyingTokenAddress(assetAddress);
 
         address latestVaultAddress = registry.latestVault(tokenAddress);
         bool migrationAvailable = latestVaultAddress != assetAddress;

@@ -14,11 +14,11 @@ contract Adapter is Manageable {
         address id;
         string typeId;
         string categoryId;
-        string subcategoryId;
     }
 
     struct Position {
         address assetId;
+        string categoryId;
         uint256 balance;
         uint256 balanceUsdc;
         TokenPosition tokenPosition;

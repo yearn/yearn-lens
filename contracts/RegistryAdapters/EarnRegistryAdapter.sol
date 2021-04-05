@@ -86,6 +86,7 @@ contract RegistryAdapterEarn is Adapter {
         Position memory position =
             Position({
                 assetId: assetAddress,
+                categoryId: "deposit",
                 balance: balance,
                 balanceUsdc: balanceUsdc,
                 tokenPosition: tokenPosition,
@@ -119,8 +120,7 @@ contract RegistryAdapterEarn is Adapter {
             AdapterInfo({
                 id: address(this),
                 typeId: "earn",
-                categoryId: "deposit",
-                subcategoryId: "safe"
+                categoryId: "safe"
             });
     }
 

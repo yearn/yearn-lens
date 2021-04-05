@@ -41,8 +41,7 @@ def test_adapter_info(v2VaultsAdapter):
     adapterInfo = v2VaultsAdapter.adapterInfo()
     assert adapterInfo[0] == v2VaultsAdapter
     assert adapterInfo[1] == "v2Vault"
-    assert adapterInfo[2] == "deposit"
-    assert adapterInfo[3] == "vault"
+    assert adapterInfo[2] == "vault"
 
 
 def test_registry_address(v2VaultsAdapter):
@@ -140,14 +139,16 @@ def test_position_of(v2VaultsAdapter, management, accounts):
     # Test position
     position = v2VaultsAdapter.positionOf(vestedYfiAddress, v2YfiVaultAddress)
     assetId = position[0]
-    balance = position[1]
-    balanceUsdc = position[2]
+    categoryId = position[1]
+    balance = position[2]
+    balanceUsdc = position[3]
     assert assetId == v2YfiVaultAddress
+    assert categoryId == "deposit"
     assert balance == userVaultBalance
     assert balanceUsdc > balance / 10 ** 18
 
     # Test token position
-    tokenPosition = position[3]
+    tokenPosition = position[4]
     tokenAddress = tokenPosition[0]
     tokenBalance = tokenPosition[1]
     tokenBalanceUsdc = tokenPosition[2]
@@ -165,7 +166,7 @@ def test_position_of(v2VaultsAdapter, management, accounts):
     assert allowance > 0
 
     # Position allowances
-    positionAllowances = position[4]
+    positionAllowances = position[5]
     owner = positionAllowances[0][0]
     spender = positionAllowances[0][1]
     allowance = positionAllowances[0][2]

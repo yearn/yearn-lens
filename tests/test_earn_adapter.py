@@ -24,8 +24,7 @@ def test_adapter_info(earnAdapter):
     adapterInfo = earnAdapter.adapterInfo()
     assert adapterInfo[0] == earnAdapter
     assert adapterInfo[1] == "earn"
-    assert adapterInfo[2] == "deposit"
-    assert adapterInfo[3] == "safe"
+    assert adapterInfo[2] == "safe"
 
 
 def test_registry_address(earnAdapter):
@@ -110,14 +109,16 @@ def test_position_of(earnAdapter, management, accounts):
     # Test position
     position = earnAdapter.positionOf(daiWhaleAddress, yDaiV3Address)
     assetId = position[0]
-    balance = position[1]
+    categoryId = position[1]
+    balance = position[2]
     balanceUsdc = position[2]
     assert assetId == yDaiV3Address
+    assert categoryId == "deposit"
     assert balance == userSafeBalance
     assert balanceUsdc > balance / 10 ** 18
 
     # Test token position
-    tokenPosition = position[3]
+    tokenPosition = position[4]
     tokenAddress = tokenPosition[0]
     tokenBalance = tokenPosition[1]
     tokenBalanceUsdc = tokenPosition[2]
@@ -135,7 +136,7 @@ def test_position_of(earnAdapter, management, accounts):
     assert allowance > 0
 
     # Position allowances
-    positionAllowances = position[4]
+    positionAllowances = position[5]
     owner = positionAllowances[0][0]
     spender = positionAllowances[0][1]
     allowance = positionAllowances[0][2]
