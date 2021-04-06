@@ -106,7 +106,7 @@ contract CalculationsCurve {
         return tokenHasCurvePool;
     }
 
-    function tokenIsBasic(address tokenAddress) public view returns (bool) {
+    function isBasicToken(address tokenAddress) public view returns (bool) {
         for (
             uint256 basicTokenIdx = 0;
             basicTokenIdx < basicTokenAddresses.length;
@@ -140,7 +140,7 @@ contract CalculationsCurve {
             if (coinAddress == address(0)) {
                 break;
             }
-            if (tokenIsBasic(coinAddress)) {
+            if (isBasicToken(coinAddress)) {
                 preferredCoinAddress = coinAddress;
                 break;
             }
