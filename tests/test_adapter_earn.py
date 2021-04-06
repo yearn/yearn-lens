@@ -109,11 +109,11 @@ def test_position_of(earnAdapter, management, accounts):
     # Test position
     position = earnAdapter.positionOf(daiWhaleAddress, yDaiV3Address)
     assetId = position[0]
-    categoryId = position[1]
+    typeId = position[1]
     balance = position[2]
-    balanceUsdc = position[2]
+    balanceUsdc = position[3]
     assert assetId == yDaiV3Address
-    assert categoryId == "deposit"
+    assert typeId == "deposit"
     assert balance == userSafeBalance
     assert balanceUsdc > balance / 10 ** 18
 
@@ -159,9 +159,11 @@ def test_positions_of(earnAdapter, accounts):
     positions = earnAdapter.positionsOf(daiWhaleAddress)
     position = positions[0]
     assetId = position[0]
-    balance = position[1]
+    typeId = position[1]
+    balance = position[2]
     assert len(positions) > 1
     assert assetId == yDaiV2Address
+    assert typeId == "deposit"
     assert balance == userSafeBalance
 
 

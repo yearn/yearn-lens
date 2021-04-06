@@ -194,8 +194,17 @@ def test_positions_of(v2VaultsAdapter, accounts):
     )
     assert userVaultBalance > 0
 
-    # Test positions
+    # Test positionsOf(address)
     positions = v2VaultsAdapter.positionsOf(vestedYfiAddress)
+    position = positions[0]
+    assetId = position[0]
+    assert len(positions) > 0
+    assert assetId == v2YfiVaultAddress
+
+    # Test positionsOf(address, [...address])
+    positions = v2VaultsAdapter.positionsOf(
+        vestedYfiAddress, [v2YfiVaultAddress, v2UsdcVaultV2Address]
+    )
     position = positions[0]
     assetId = position[0]
     assert len(positions) > 0
