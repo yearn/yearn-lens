@@ -24,7 +24,10 @@ interface ICurveRegistry {
 }
 
 interface IOracle {
-    function getPriceUsdc(address tokenAddress) external view returns (uint256);
+    function getPriceUsdcRecommended(address tokenAddress)
+        external
+        view
+        returns (uint256);
 
     function usdcAddress() external view returns (address);
 }
@@ -33,8 +36,23 @@ contract CalculationsCurve {
     address public curveRegistryAddress;
     address public oracleAddress;
     ICurveRegistry curveRegistry;
-    address zeroAddress = 0x0000000000000000000000000000000000000000;
     IOracle oracle;
+
+    address daiAddress = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address wethAddress = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address ethAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address wbtcAddress = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+    address eursAddress = 0xdB25f211AB05b1c97D595516F45794528a807ad8;
+    address linkAddress = 0x514910771AF9Ca656af840dff83E8264EcF986CA;
+
+    address[] basicTokenAddresses = [
+        daiAddress,
+        wethAddress,
+        ethAddress,
+        wbtcAddress,
+        eursAddress,
+        linkAddress
+    ];
 
     constructor(address _curveRegistryAddress, address _oracleAddress) {
         curveRegistryAddress = _curveRegistryAddress;
@@ -66,9 +84,9 @@ contract CalculationsCurve {
     {
         address poolAddress =
             curveRegistry.get_pool_from_lp_token(curveLpTokenAddress);
-        address firstUnderlyingCoinAddress =
-            getFirstUnderlyingCoinFromPool(poolAddress);
-        uint256 basePrice = oracle.getPriceUsdc(firstUnderlyingCoinAddress);
+        address underlyingCoinAddress = getUnderlyingCoinFromPool(poolAddress);
+        uint256 basePrice =
+            oracle.getPriceUsdcRecommended(underlyingCoinAddress);
         return basePrice;
     }
 
@@ -84,19 +102,50 @@ contract CalculationsCurve {
     function isCurveLpToken(address tokenAddress) public view returns (bool) {
         address poolAddress =
             curveRegistry.get_pool_from_lp_token(tokenAddress);
-        bool tokenHasCurvePool = poolAddress != zeroAddress;
+        bool tokenHasCurvePool = poolAddress != address(0);
         return tokenHasCurvePool;
     }
 
-    function getFirstUnderlyingCoinFromPool(address poolAddress)
+    function tokenIsBasic(address tokenAddress) public view returns (bool) {
+        for (
+            uint256 basicTokenIdx = 0;
+            basicTokenIdx < basicTokenAddresses.length;
+            basicTokenIdx++
+        ) {
+            address basicTokenAddress = basicTokenAddresses[basicTokenIdx];
+            if (tokenAddress == basicTokenAddress) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function getUnderlyingCoinFromPool(address poolAddress)
         public
         view
         returns (address)
     {
         address[8] memory coins =
             curveRegistry.get_underlying_coins(poolAddress);
-        address firstCoin = coins[0];
-        return firstCoin;
+
+        // Use first coin from pool and if that is empty (due to error) fall back to second coin
+        address preferredCoinAddress = coins[0];
+        if (preferredCoinAddress == address(0)) {
+            preferredCoinAddress = coins[1];
+        }
+
+        // Look for preferred coins (basic coins)
+        for (uint256 coinIdx = 0; coinIdx < 8; coinIdx++) {
+            address coinAddress = coins[coinIdx];
+            if (coinAddress == address(0)) {
+                break;
+            }
+            if (tokenIsBasic(coinAddress)) {
+                preferredCoinAddress = coinAddress;
+                break;
+            }
+        }
+        return preferredCoinAddress;
     }
 
     function getPriceUsdc(address assetAddress) public view returns (uint256) {
