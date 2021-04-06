@@ -146,7 +146,7 @@ contract RegisteryAdapterV2Vault is Adapter {
                 emergencyShutdown: vault.emergencyShutdown()
             });
 
-        Asset memory _asset =
+        return
             Asset({
                 id: assetAddress,
                 typeId: adapterInfo().typeId,
@@ -157,7 +157,6 @@ contract RegisteryAdapterV2Vault is Adapter {
                 token: tokenMetadata(tokenAddress),
                 metadata: metadata
             });
-        return _asset;
     }
 
     function assetBalance(address assetAddress) public view returns (uint256) {
@@ -216,20 +215,27 @@ contract RegisteryAdapterV2Vault is Adapter {
         return position;
     }
 
+    function positionsOf(
+        address accountAddress,
+        address[] memory _assetsAddresses
+    ) public view returns (Position[] memory) {
+        uint256 numberOfAssets = _assetsAddresses.length;
+        Position[] memory positions = new Position[](numberOfAssets);
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = _assetsAddresses[assetIdx];
+            Position memory position = positionOf(accountAddress, assetAddress);
+            positions[assetIdx] = position;
+        }
+        return positions;
+    }
+
     function positionsOf(address accountAddress)
         external
         view
         returns (Position[] memory)
     {
-        address[] memory _assetAddresses = assetsAddresses();
-        uint256 numberOfAssets = _assetAddresses.length;
-        Position[] memory positions = new Position[](numberOfAssets);
-        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
-            address assetAddress = _assetAddresses[assetIdx];
-            Position memory position = positionOf(accountAddress, assetAddress);
-            positions[assetIdx] = position;
-        }
-        return positions;
+        address[] memory _assetsAddresses = assetsAddresses();
+        return positionsOf(accountAddress, _assetsAddresses);
     }
 
     // function tokens() public view returns (Token[] memory) {
