@@ -109,22 +109,18 @@ def test_asset_metadata(v1VaultsAdapter):
 
 
 def test_assets(v1VaultsAdapter):
-
-    assetsAddresses = v1VaultsAdapter.assetsAddresses()
-
-
-assets = v1VaultsAdapter.assets()
-assert len(assets) > 1
-usdcVault = assets[2]
-assetId = usdcVault[0]
-assetTypeId = usdcVault[1]
-assetName = usdcVault[2]
-assetVersion = usdcVault[3]
-assert assetId == usdcVaultAddress
-assert assetName == "yearn USD//C"
-assert assetTypeId == "v1Vault"
-assert assetVersion == "1.0.0"
-print(assets)
+    assets = v1VaultsAdapter.assets()
+    assert len(assets) > 1
+    usdcVault = assets[2]
+    assetId = usdcVault[0]
+    assetTypeId = usdcVault[1]
+    assetName = usdcVault[2]
+    assetVersion = usdcVault[3]
+    assert assetId == usdcVaultAddress
+    assert assetName == "yearn USD//C"
+    assert assetTypeId == "v1Vault"
+    assert assetVersion == "1.0.0"
+    print(assets)
 
 
 def test_position_of(v1VaultsAdapter, management, accounts):
