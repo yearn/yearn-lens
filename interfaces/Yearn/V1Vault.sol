@@ -24,4 +24,13 @@ interface V1Vault {
     function totalSupply() external view returns (uint256);
 
     function balanceOf(address account) external view returns (uint256);
+
+    function deposit(uint256 amount) external;
+
+    function approve(address spender, uint256 amount) external;
+
+    function allowance(address spender, address owner)
+        external
+        view
+        returns (uint256);
 }

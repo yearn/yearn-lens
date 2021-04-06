@@ -39,22 +39,6 @@ contract RegistryAdapterEarn is Adapter {
         return tvl;
     }
 
-    function positionsOf(address accountAddress)
-        external
-        view
-        returns (Position[] memory)
-    {
-        address[] memory _assetAddresses = assetsAddresses();
-        uint256 numberOfAssets = _assetAddresses.length;
-        Position[] memory positions = new Position[](numberOfAssets);
-        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
-            address assetAddress = _assetAddresses[assetIdx];
-            Position memory position = positionOf(accountAddress, assetAddress);
-            positions[assetIdx] = position;
-        }
-        return positions;
-    }
-
     struct Asset {
         address id;
         string typeId;
@@ -186,5 +170,28 @@ contract RegistryAdapterEarn is Adapter {
         uint256 amount = earnToken.calcPoolValueInToken();
         uint256 tvl = oracle.getNormalizedValueUsdc(tokenAddress, amount);
         return tvl;
+    }
+
+    function positionsOf(
+        address accountAddress,
+        address[] memory _assetsAddresses
+    ) public view returns (Position[] memory) {
+        uint256 numberOfAssets = _assetsAddresses.length;
+        Position[] memory positions = new Position[](numberOfAssets);
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = _assetsAddresses[assetIdx];
+            Position memory position = positionOf(accountAddress, assetAddress);
+            positions[assetIdx] = position;
+        }
+        return positions;
+    }
+
+    function positionsOf(address accountAddress)
+        external
+        view
+        returns (Position[] memory)
+    {
+        address[] memory _assetsAddresses = assetsAddresses();
+        return positionsOf(accountAddress, _assetsAddresses);
     }
 }
