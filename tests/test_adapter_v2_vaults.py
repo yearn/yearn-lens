@@ -61,6 +61,7 @@ def test_set_asset_deprecated(v2VaultsAdapter, management):
     v2VaultsAdapter.assetDeprecated(v2YfiVaultAddress) == True
     assert newAssetsLength == originalAssetsLength - 1
     v2VaultsAdapter.setAssetDeprecated(v2YfiVaultAddress, False, {"from": management})
+    newAssetsLength = v2VaultsAdapter.assetsLength()
     assert newAssetsLength == originalAssetsLength
     v2VaultsAdapter.assetDeprecated(v2YfiVaultAddress) == False
 
