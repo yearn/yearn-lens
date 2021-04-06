@@ -15,16 +15,24 @@ contract RegistryAdapterEarn is Adapter {
     /**
      * Common code shared by all adapters
      */
-    function assets() external view returns (Asset[] memory) {
-        address[] memory assetAddresses = assetsAddresses();
-        uint256 numberOfAssets = assetAddresses.length;
+    function assets(address[] memory _assetsAddresses)
+        public
+        view
+        returns (Asset[] memory)
+    {
+        uint256 numberOfAssets = _assetsAddresses.length;
         Asset[] memory _assets = new Asset[](numberOfAssets);
         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
-            address assetAddress = assetAddresses[assetIdx];
+            address assetAddress = _assetsAddresses[assetIdx];
             Asset memory _asset = asset(assetAddress);
             _assets[assetIdx] = _asset;
         }
         return _assets;
+    }
+
+    function assets() external view returns (Asset[] memory) {
+        address[] memory _assetsAddresses = assetsAddresses();
+        return assets(_assetsAddresses);
     }
 
     function assetsTvl() external view returns (uint256) {
@@ -55,6 +63,32 @@ contract RegistryAdapterEarn is Adapter {
         address _oracleAddress,
         address _managementListAddress
     ) Adapter(_registryAddress, _oracleAddress, _managementListAddress) {}
+
+    /**
+     * Common code shared by v1 vaults, v2 vaults and earn
+     */
+    function positionsOf(
+        address accountAddress,
+        address[] memory _assetsAddresses
+    ) public view returns (Position[] memory) {
+        uint256 numberOfAssets = _assetsAddresses.length;
+        Position[] memory positions = new Position[](numberOfAssets);
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = _assetsAddresses[assetIdx];
+            Position memory position = positionOf(accountAddress, assetAddress);
+            positions[assetIdx] = position;
+        }
+        return positions;
+    }
+
+    function positionsOf(address accountAddress)
+        external
+        view
+        returns (Position[] memory)
+    {
+        address[] memory _assetsAddresses = assetsAddresses();
+        return positionsOf(accountAddress, _assetsAddresses);
+    }
 
     /**
      * Earn Adapter
@@ -170,28 +204,5 @@ contract RegistryAdapterEarn is Adapter {
         uint256 amount = earnToken.calcPoolValueInToken();
         uint256 tvl = oracle.getNormalizedValueUsdc(tokenAddress, amount);
         return tvl;
-    }
-
-    function positionsOf(
-        address accountAddress,
-        address[] memory _assetsAddresses
-    ) public view returns (Position[] memory) {
-        uint256 numberOfAssets = _assetsAddresses.length;
-        Position[] memory positions = new Position[](numberOfAssets);
-        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
-            address assetAddress = _assetsAddresses[assetIdx];
-            Position memory position = positionOf(accountAddress, assetAddress);
-            positions[assetIdx] = position;
-        }
-        return positions;
-    }
-
-    function positionsOf(address accountAddress)
-        external
-        view
-        returns (Position[] memory)
-    {
-        address[] memory _assetsAddresses = assetsAddresses();
-        return positionsOf(accountAddress, _assetsAddresses);
     }
 }

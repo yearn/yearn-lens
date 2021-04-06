@@ -15,32 +15,25 @@ contract RegisteryAdapterV1Vault is Adapter {
     /**
      * Common code shared by all adapters
      */
-    function assets() external view returns (Asset[] memory) {
-        address[] memory _assetsAddresses = assetsAddresses();
+    function assets(address[] memory _assetsAddresses)
+        public
+        view
+        returns (Asset[] memory)
+    {
         uint256 numberOfAssets = _assetsAddresses.length;
         Asset[] memory _assets = new Asset[](numberOfAssets);
         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
-            address _assetsAddress = _assetsAddresses[assetIdx];
-            Asset memory _asset = asset(_assetsAddress);
+            address assetAddress = _assetsAddresses[assetIdx];
+            Asset memory _asset = asset(assetAddress);
             _assets[assetIdx] = _asset;
         }
         return _assets;
     }
 
-    // function assets(address[] memory _assetsAddresses)
-    //     external
-    //     view
-    //     returns (Asset[] memory)
-    // {
-    //     uint256 numberOfAssets = _assetsAddresses.length;
-    //     Asset[] memory _assets = new Asset[](numberOfAssets);
-    //     for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
-    //         address _assetsAddresses = _assetsAddresses[assetIdx];
-    //         Asset memory _asset = asset(assetAddress);
-    //         _assets[assetIdx] = _asset;
-    //     }
-    //     return _assets;
-    // }
+    function assets() external view returns (Asset[] memory) {
+        address[] memory _assetsAddresses = assetsAddresses();
+        return assets(_assetsAddresses);
+    }
 
     function assetsTvl() external view returns (uint256) {
         uint256 tvl;
@@ -72,6 +65,32 @@ contract RegisteryAdapterV1Vault is Adapter {
     ) Adapter(_registryAddress, _oracleAddress, _managementListAddress) {}
 
     /**
+     * Common code shared by v1 vaults, v2 vaults and earn
+     */
+    function positionsOf(
+        address accountAddress,
+        address[] memory _assetsAddresses
+    ) public view returns (Position[] memory) {
+        uint256 numberOfAssets = _assetsAddresses.length;
+        Position[] memory positions = new Position[](numberOfAssets);
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = _assetsAddresses[assetIdx];
+            Position memory position = positionOf(accountAddress, assetAddress);
+            positions[assetIdx] = position;
+        }
+        return positions;
+    }
+
+    function positionsOf(address accountAddress)
+        external
+        view
+        returns (Position[] memory)
+    {
+        address[] memory _assetsAddresses = assetsAddresses();
+        return positionsOf(accountAddress, _assetsAddresses);
+    }
+
+    /**
      * V1 Vaults Adapter
      */
     function adapterInfo() public view returns (AdapterInfo memory) {
@@ -84,9 +103,11 @@ contract RegisteryAdapterV1Vault is Adapter {
     }
 
     struct AssetMetadata {
-        uint256 totalAssets;
-        uint256 totalSupply;
+        string symbol;
         uint256 pricePerShare;
+        bool migrationAvailable;
+        address latestVaultAddress;
+        uint256 totalSupply;
     }
 
     function underlyingTokenAddress(address assetAddress)
@@ -125,9 +146,11 @@ contract RegisteryAdapterV1Vault is Adapter {
 
         AssetMetadata memory metadata =
             AssetMetadata({
-                totalAssets: totalAssets,
-                totalSupply: totalSupply,
-                pricePerShare: pricePerShare
+                symbol: vault.symbol(),
+                pricePerShare: pricePerShare,
+                migrationAvailable: false,
+                latestVaultAddress: address(0),
+                totalSupply: totalSupply
             });
         return
             Asset({
@@ -195,28 +218,5 @@ contract RegisteryAdapterV1Vault is Adapter {
                 allowances: _positionAllowances
             });
         return position;
-    }
-
-    function positionsOf(
-        address accountAddress,
-        address[] memory _assetsAddresses
-    ) public view returns (Position[] memory) {
-        uint256 numberOfAssets = _assetsAddresses.length;
-        Position[] memory positions = new Position[](numberOfAssets);
-        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
-            address assetAddress = _assetsAddresses[assetIdx];
-            Position memory position = positionOf(accountAddress, assetAddress);
-            positions[assetIdx] = position;
-        }
-        return positions;
-    }
-
-    function positionsOf(address accountAddress)
-        external
-        view
-        returns (Position[] memory)
-    {
-        address[] memory _assetsAddresses = assetsAddresses();
-        return positionsOf(accountAddress, _assetsAddresses);
     }
 }
