@@ -3,47 +3,77 @@
 pragma solidity ^0.8.2;
 pragma experimental ABIEncoderV2;
 
+// Adapter-specific imports
 import "../../interfaces/Yearn/V1Vault.sol";
 import "../../interfaces/Yearn/V1Registry.sol";
+
+// Common imports
 import "../../interfaces/Common/IERC20.sol";
+import "../Common/Adapter.sol";
 
-contract RegisteryAdapterV1Vault {
-    address public registryAddress;
+contract RegisteryAdapterV1Vault is Adapter {
+    /**
+     * Common code shared by all adapters
+     */
+    function assets() external view returns (Asset[] memory) {
+        address[] memory _assetsAddresses = assetsAddresses();
+        uint256 numberOfAssets = _assetsAddresses.length;
+        Asset[] memory _assets = new Asset[](numberOfAssets);
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address _assetsAddress = _assetsAddresses[assetIdx];
+            Asset memory _asset = asset(_assetsAddress);
+            _assets[assetIdx] = _asset;
+        }
+        return _assets;
+    }
 
-    struct AdapterInfo {
-        address id;
-        string typeId;
-        string categoryId;
+    // function assets(address[] memory _assetsAddresses)
+    //     external
+    //     view
+    //     returns (Asset[] memory)
+    // {
+    //     uint256 numberOfAssets = _assetsAddresses.length;
+    //     Asset[] memory _assets = new Asset[](numberOfAssets);
+    //     for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+    //         address _assetsAddresses = _assetsAddresses[assetIdx];
+    //         Asset memory _asset = asset(assetAddress);
+    //         _assets[assetIdx] = _asset;
+    //     }
+    //     return _assets;
+    // }
+
+    function assetsTvl() external view returns (uint256) {
+        uint256 tvl;
+        address[] memory assetAddresses = assetsAddresses();
+        uint256 numberOfAssets = assetAddresses.length;
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = assetAddresses[assetIdx];
+            uint256 _assetTvl = assetTvl(assetAddress);
+            tvl += _assetTvl;
+        }
+        return tvl;
     }
 
     struct Asset {
-        string name;
         address id;
+        string typeId;
+        string name;
         string version;
+        uint256 balance;
+        uint256 balanceUsdc;
+        Token token;
         AssetMetadata metadata;
     }
 
-    // TODO: Inherit from standardized interface?
-    struct Position {
-        address assetId;
-        string typeId;
-        uint256 depositedBalance;
-        uint256 tokenBalance;
-        uint256 tokenAllowance;
-    }
+    constructor(
+        address _registryAddress,
+        address _oracleAddress,
+        address _managementListAddress
+    ) Adapter(_registryAddress, _oracleAddress, _managementListAddress) {}
 
-    struct AssetMetadata {
-        address controller;
-        uint256 totalAssets;
-        uint256 totalSupply;
-        uint256 pricePerShare;
-    }
-
-    constructor(address _registryAddress) {
-        require(_registryAddress != address(0), "Missing registry address");
-        registryAddress = _registryAddress;
-    }
-
+    /**
+     * V1 Vaults Adapter
+     */
     function adapterInfo() public view returns (AdapterInfo memory) {
         return
             AdapterInfo({
@@ -53,47 +83,76 @@ contract RegisteryAdapterV1Vault {
             });
     }
 
-    function assetsAddresses() public view returns (address[] memory) {
-        return V1Registry(registryAddress).getVaults();
+    struct AssetMetadata {
+        uint256 totalAssets;
+        uint256 totalSupply;
+        uint256 pricePerShare;
     }
 
-    function asset(address id) public view returns (Asset memory) {
-        V1Vault vault = V1Vault(id);
-        string memory name = vault.name();
-        uint256 totalAssets = vault.balance();
-        uint256 totalSupply = vault.totalSupply();
-        string memory version = "0.00";
-        uint256 pricePerShare = 0;
-        bool vaultHasShares = totalSupply != 0;
-        if (vaultHasShares) {
-            pricePerShare = vault.getPricePerFullShare();
-        }
-
-        AssetMetadata memory metadata =
-            AssetMetadata({
-                controller: id,
-                totalAssets: totalAssets,
-                totalSupply: totalSupply,
-                pricePerShare: pricePerShare
-            });
-        return
-            Asset({id: id, name: name, version: version, metadata: metadata});
+    function underlyingTokenAddress(address assetAddress)
+        public
+        view
+        returns (address)
+    {
+        V1Vault vault = V1Vault(assetAddress);
+        address tokenAddress = vault.token();
+        return tokenAddress;
     }
 
     function assetsLength() public view returns (uint256) {
         return V1Registry(registryAddress).getVaultsLength();
     }
 
-    function assets() external view returns (Asset[] memory) {
-        address[] memory _assetsAddresses = assetsAddresses();
-        uint256 numberOfVaults = _assetsAddresses.length;
-        Asset[] memory _assets = new Asset[](numberOfVaults);
-        for (uint256 i = 0; i < numberOfVaults; i++) {
-            address assetAddress = _assetsAddresses[i];
-            Asset memory _asset = asset(assetAddress);
-            _assets[i] = _asset;
+    function assetsAddresses() public view returns (address[] memory) {
+        return V1Registry(registryAddress).getVaults();
+    }
+
+    function asset(address assetAddress) public view returns (Asset memory) {
+        V1Vault vault = V1Vault(assetAddress);
+        address tokenAddress = underlyingTokenAddress(assetAddress);
+        string memory name = vault.name();
+        uint256 totalAssets = vault.balance();
+        uint256 totalSupply = vault.totalSupply();
+        string memory version = "1.0.0";
+        uint256 pricePerShare = 0;
+        bool vaultHasShares = totalSupply != 0;
+        if (vaultHasShares) {
+            pricePerShare = vault.getPricePerFullShare();
         }
-        return _assets;
+
+        // address latestVaultAddress = registry.latestVault(tokenAddress);
+        // bool migrationAvailable = latestVaultAddress != assetAddress;
+
+        AssetMetadata memory metadata =
+            AssetMetadata({
+                totalAssets: totalAssets,
+                totalSupply: totalSupply,
+                pricePerShare: pricePerShare
+            });
+        return
+            Asset({
+                id: assetAddress,
+                typeId: adapterInfo().typeId,
+                name: vault.name(),
+                version: version,
+                balance: assetBalance(assetAddress),
+                balanceUsdc: assetTvl(assetAddress),
+                token: tokenMetadata(tokenAddress),
+                metadata: metadata
+            });
+    }
+
+    function assetBalance(address assetAddress) public view returns (uint256) {
+        V1Vault vault = V1Vault(assetAddress);
+        return vault.balance();
+    }
+
+    function assetTvl(address assetAddress) public view returns (uint256) {
+        V1Vault vault = V1Vault(assetAddress);
+        address tokenAddress = underlyingTokenAddress(assetAddress);
+        uint256 amount = assetBalance(assetAddress);
+        uint256 tvl = oracle.getNormalizedValueUsdc(tokenAddress, amount);
+        return tvl;
     }
 
     function positionOf(address accountAddress, address assetAddress)
@@ -102,22 +161,54 @@ contract RegisteryAdapterV1Vault {
         returns (Position memory)
     {
         V1Vault _asset = V1Vault(assetAddress);
-        address tokenAddress = _asset.token();
+        address tokenAddress = underlyingTokenAddress(assetAddress);
         IERC20 token = IERC20(tokenAddress);
-        uint256 depositedBalance =
+        uint256 balance =
             (_asset.balanceOf(accountAddress) * _asset.getPricePerFullShare()) /
                 10**18;
+        uint256 balanceUsdc =
+            oracle.getNormalizedValueUsdc(tokenAddress, balance);
         uint256 tokenBalance = token.balanceOf(accountAddress);
-        uint256 tokenAllowance = token.allowance(accountAddress, assetAddress);
+        uint256 tokenBalanceUsdc =
+            oracle.getNormalizedValueUsdc(tokenAddress, tokenBalance);
+
+        Allowance[] memory _tokenPositionAllowances =
+            tokenPositionAllowances(accountAddress, tokenAddress, assetAddress);
+        Allowance[] memory _positionAllowances =
+            positionAllowances(accountAddress, assetAddress);
+
+        TokenPosition memory tokenPosition =
+            TokenPosition({
+                tokenId: tokenAddress,
+                balance: tokenBalance,
+                balanceUsdc: tokenBalanceUsdc,
+                allowances: _tokenPositionAllowances
+            });
+
         Position memory position =
             Position({
                 assetId: assetAddress,
                 typeId: "deposit",
-                depositedBalance: depositedBalance,
-                tokenBalance: tokenBalance,
-                tokenAllowance: tokenAllowance
+                balance: balance,
+                balanceUsdc: balanceUsdc,
+                tokenPosition: tokenPosition,
+                allowances: _positionAllowances
             });
         return position;
+    }
+
+    function positionsOf(
+        address accountAddress,
+        address[] memory _assetsAddresses
+    ) public view returns (Position[] memory) {
+        uint256 numberOfAssets = _assetsAddresses.length;
+        Position[] memory positions = new Position[](numberOfAssets);
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = _assetsAddresses[assetIdx];
+            Position memory position = positionOf(accountAddress, assetAddress);
+            positions[assetIdx] = position;
+        }
+        return positions;
     }
 
     function positionsOf(address accountAddress)
@@ -125,15 +216,7 @@ contract RegisteryAdapterV1Vault {
         view
         returns (Position[] memory)
     {
-        address[] memory vaultAddresses = assetsAddresses();
-        uint256 numberOfVaults = vaultAddresses.length;
-        Position[] memory positions = new Position[](numberOfVaults);
-        for (uint256 i = 0; i < numberOfVaults; i++) {
-            address vaultAddress = vaultAddresses[i];
-            Position memory position = positionOf(accountAddress, vaultAddress);
-
-            positions[i] = position;
-        }
-        return positions;
+        address[] memory _assetsAddresses = assetsAddresses();
+        return positionsOf(accountAddress, _assetsAddresses);
     }
 }
