@@ -96,7 +96,7 @@ contract RegisteryAdapterV2Vault is Adapter {
             uint256 numVaultsForToken = registry.numVaults(currentToken);
             numVaults += numVaultsForToken;
         }
-        return numVaults;
+        return numVaults - numberOfDeprecatedAssets;
     }
 
     function assetsAddresses() public view returns (address[] memory) {
@@ -115,8 +115,10 @@ contract RegisteryAdapterV2Vault is Adapter {
             ) {
                 address currentVaultAddress =
                     registry.vaults(currentTokenAddress, vaultTokenIdx);
-                vaultAddresses[currentVaultIdx] = currentVaultAddress;
-                currentVaultIdx++;
+                if (assetDeprecated[currentVaultAddress] == false) {
+                    vaultAddresses[currentVaultIdx] = currentVaultAddress;
+                    currentVaultIdx++;
+                }
             }
         }
         return vaultAddresses;

@@ -9,6 +9,8 @@ contract Adapter is Manageable {
     IOracle public oracle;
     address public registryAddress;
     address[] public positionSpenderAddresses;
+    mapping(address => bool) public assetDeprecated;
+    uint256 public numberOfDeprecatedAssets;
 
     struct AdapterInfo {
         address id;
@@ -106,6 +108,22 @@ contract Adapter is Manageable {
                 decimals: _token.decimals(),
                 priceUsdc: oracle.getPriceUsdcRecommended(tokenAddress)
             });
+    }
+
+    function setAssetDeprecated(address assetAddress, bool newDeprecationStatus)
+        public
+        onlyManagers
+    {
+        bool currentDeprecationStatus = assetDeprecated[assetAddress];
+        if (currentDeprecationStatus == newDeprecationStatus) {
+            revert("Adapter: Unable to change asset deprecation status");
+        }
+        if (newDeprecationStatus == true) {
+            numberOfDeprecatedAssets++;
+        } else {
+            numberOfDeprecatedAssets--;
+        }
+        assetDeprecated[assetAddress] = newDeprecationStatus;
     }
 
     function setPositionSpenderAddresses(address[] memory addresses)

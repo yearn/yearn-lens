@@ -53,6 +53,18 @@ def test_assets_length(v2VaultsAdapter):
     assert assetsLength > 0
 
 
+def test_set_asset_deprecated(v2VaultsAdapter, management):
+    originalAssetsLength = v2VaultsAdapter.assetsLength()
+    assert originalAssetsLength > 0
+    v2VaultsAdapter.setAssetDeprecated(v2YfiVaultAddress, True, {"from": management})
+    newAssetsLength = v2VaultsAdapter.assetsLength()
+    v2VaultsAdapter.assetDeprecated(v2YfiVaultAddress) == True
+    assert newAssetsLength == originalAssetsLength - 1
+    v2VaultsAdapter.setAssetDeprecated(v2YfiVaultAddress, False, {"from": management})
+    assert newAssetsLength == originalAssetsLength
+    v2VaultsAdapter.assetDeprecated(v2YfiVaultAddress) == False
+
+
 def test_assets_addresses(v2VaultsAdapter):
     assetsAddresses = v2VaultsAdapter.assetsAddresses()
     assert len(assetsAddresses) > 0
