@@ -3,6 +3,7 @@ from brownie import (
     RegisteryAdapterV2Vault,
     RegistryAdapterEarn,
     ManagementList,
+    Lens,
     RegistryAdapterIronBank,
     GenericRegistry,
     accounts,
@@ -78,9 +79,24 @@ def main():
         comptrollerAddress, oracleAddress, managementListAddress, {"from": management}
     )
 
-    # print("Management List: ", managementListAddress)
-    # print("Earn Registry:   ", earnRegistry)
-    print("Earn Adapter:    ", earnAdapter)
-    print("V1 Adapter:      ", v1Adapter)
-    print("V2 Adapter:      ", v2Adapter)
-    print("IB Adapter:      ", ironBankAdapter)
+    lens = Lens.deploy(managementListAddress, {"from": management})
+    lens.addAdapter(v1Adapter, {"from": management})
+    lens.addAdapter(v2Adapter, {"from": management})
+    lens.addAdapter(earnAdapter, {"from": management})
+    lens.addAdapter(ironBankAdapter, {"from": management})
+
+    helperAddress = "0x5AACD0D03096039aC4381CD814637e9FB7C34a6f"
+    pricesHelperAddress = "0x5D63a8584D91EBc5033D022AfD6c5A7c7FDDc99B"
+    allowancesHelperAddress = "0x4218E20DB87023049Fc582Aaa4bD47a3611A20Ab"
+
+    print("Management List:   ", managementListAddress)
+    print("Oracle:            ", oracleAddress)
+    print("Helper:            ", helperAddress)
+    print("Prices Helper:     ", pricesHelperAddress)
+    print("Allowances Helper: ", allowancesHelperAddress)
+    print("Earn Registry:     ", earnRegistry)
+    print("Earn Adapter:      ", earnAdapter)
+    print("V1 Adapter:        ", v1Adapter)
+    print("V2 Adapter:        ", v2Adapter)
+    print("IB Adapter:        ", ironBankAdapter)
+    print("Lens:              ", lens)
