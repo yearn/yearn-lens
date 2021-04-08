@@ -33,7 +33,7 @@ def main():
     )
 
     # Deploy v2 adapter
-    v2RegistryAddress = "0xaF0A409307dF49Dac36f55DA2238A1E3a3679365"
+    v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
     v2Adapter = RegisteryAdapterV2Vault.deploy(
         v2RegistryAddress, oracleAddress, managementListAddress, {"from": management}
     )
