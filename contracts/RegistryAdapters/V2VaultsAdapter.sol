@@ -15,24 +15,44 @@ contract RegisteryAdapterV2Vault is Adapter {
     /**
      * Common code shared by all adapters
      */
-    function assets(address[] memory _assetsAddresses)
+    function assetsStatic(address[] memory _assetsAddresses)
         public
         view
-        returns (Asset[] memory)
+        returns (AssetStatic[] memory)
     {
         uint256 numberOfAssets = _assetsAddresses.length;
-        Asset[] memory _assets = new Asset[](numberOfAssets);
+        AssetStatic[] memory _assets = new AssetStatic[](numberOfAssets);
         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
             address assetAddress = _assetsAddresses[assetIdx];
-            Asset memory _asset = asset(assetAddress);
+            AssetStatic memory _asset = assetStatic(assetAddress);
             _assets[assetIdx] = _asset;
         }
         return _assets;
     }
 
-    function assets() external view returns (Asset[] memory) {
+    function assetsDynamic(address[] memory _assetsAddresses)
+        public
+        view
+        returns (AssetDynamic[] memory)
+    {
+        uint256 numberOfAssets = _assetsAddresses.length;
+        AssetDynamic[] memory _assets = new AssetDynamic[](numberOfAssets);
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = _assetsAddresses[assetIdx];
+            AssetDynamic memory _asset = assetDynamic(assetAddress);
+            _assets[assetIdx] = _asset;
+        }
+        return _assets;
+    }
+
+    function assetsStatic() external view returns (AssetStatic[] memory) {
         address[] memory _assetsAddresses = assetsAddresses();
-        return assets(_assetsAddresses);
+        return assetsStatic(_assetsAddresses);
+    }
+
+    function assetsDynamic() external view returns (AssetDynamic[] memory) {
+        address[] memory _assetsAddresses = assetsAddresses();
+        return assetsDynamic(_assetsAddresses);
     }
 
     function assetsTvl() external view returns (uint256) {
@@ -47,14 +67,10 @@ contract RegisteryAdapterV2Vault is Adapter {
         return tvl;
     }
 
-    struct Asset {
-        address id;
-        string typeId;
-        string name;
-        string version;
-        uint256 balance;
-        uint256 balanceUsdc;
-        Token token;
+    struct AssetDynamic {
+        address assetId;
+        address tokenId;
+        TokenAmount underlyingTokenBalance; // Amount of underlying token in the asset
         AssetMetadata metadata;
     }
 
@@ -158,7 +174,28 @@ contract RegisteryAdapterV2Vault is Adapter {
         return vaultAddresses;
     }
 
-    function asset(address assetAddress) public view returns (Asset memory) {
+    function assetStatic(address assetAddress)
+        public
+        view
+        returns (AssetStatic memory)
+    {
+        V2Vault vault = V2Vault(assetAddress);
+        address tokenAddress = underlyingTokenAddress(assetAddress);
+        return
+            AssetStatic({
+                id: assetAddress,
+                typeId: adapterInfo().typeId,
+                name: vault.name(),
+                version: vault.apiVersion(),
+                token: tokenMetadata(tokenAddress)
+            });
+    }
+
+    function assetDynamic(address assetAddress)
+        public
+        view
+        returns (AssetDynamic memory)
+    {
         V2Vault vault = V2Vault(assetAddress);
         address tokenAddress = underlyingTokenAddress(assetAddress);
         IV2Registry registry = IV2Registry(registryAddress);
@@ -182,16 +219,18 @@ contract RegisteryAdapterV2Vault is Adapter {
                 emergencyShutdown: vault.emergencyShutdown()
             });
 
+        TokenAmount memory underlyingTokenBalance =
+            TokenAmount({
+                amount: assetBalance(assetAddress),
+                amountUsdc: assetTvl(assetAddress)
+            });
+
         return
-            Asset({
-                id: assetAddress,
-                typeId: adapterInfo().typeId,
-                name: vault.name(),
-                version: vault.apiVersion(),
-                balance: assetBalance(assetAddress),
-                balanceUsdc: assetTvl(assetAddress),
-                token: tokenMetadata(tokenAddress),
-                metadata: metadata
+            AssetDynamic({
+                assetId: assetAddress,
+                tokenId: tokenAddress,
+                metadata: metadata,
+                underlyingTokenBalance: underlyingTokenBalance
             });
     }
 
@@ -201,7 +240,6 @@ contract RegisteryAdapterV2Vault is Adapter {
     }
 
     function assetTvl(address assetAddress) public view returns (uint256) {
-        V2Vault vault = V2Vault(assetAddress);
         address tokenAddress = underlyingTokenAddress(assetAddress);
         uint256 amount = assetBalance(assetAddress);
         uint256 tvl = oracle.getNormalizedValueUsdc(tokenAddress, amount);
@@ -217,38 +255,38 @@ contract RegisteryAdapterV2Vault is Adapter {
         uint8 assetDecimals = _asset.decimals();
         address tokenAddress = underlyingTokenAddress(assetAddress);
         IERC20 token = IERC20(tokenAddress);
-        uint256 balance =
-            (_asset.balanceOf(accountAddress) * _asset.pricePerShare()) /
-                10**assetDecimals;
-        uint256 balanceUsdc =
-            oracle.getNormalizedValueUsdc(tokenAddress, balance);
-        uint256 tokenBalance = token.balanceOf(accountAddress);
-        uint256 tokenBalanceUsdc =
-            oracle.getNormalizedValueUsdc(tokenAddress, tokenBalance);
+        uint256 balance = _asset.balanceOf(accountAddress);
+        uint256 _accountTokenBalance =
+            (balance * _asset.pricePerShare()) / 10**assetDecimals;
+        uint256 _underlyingTokenBalance = token.balanceOf(accountAddress);
 
-        Allowance[] memory _tokenPositionAllowances =
-            tokenPositionAllowances(accountAddress, tokenAddress, assetAddress);
-        Allowance[] memory _positionAllowances =
-            positionAllowances(accountAddress, assetAddress);
-
-        TokenPosition memory tokenPosition =
-            TokenPosition({
-                tokenId: tokenAddress,
-                balance: tokenBalance,
-                balanceUsdc: tokenBalanceUsdc,
-                allowances: _tokenPositionAllowances
-            });
-
-        Position memory position =
+        return
             Position({
                 assetId: assetAddress,
+                tokenId: tokenAddress,
                 typeId: "deposit",
                 balance: balance,
-                balanceUsdc: balanceUsdc,
-                tokenPosition: tokenPosition,
-                allowances: _positionAllowances
+                underlyingTokenBalance: TokenAmount({
+                    amount: _underlyingTokenBalance,
+                    amountUsdc: oracle.getNormalizedValueUsdc(
+                        tokenAddress,
+                        _underlyingTokenBalance
+                    )
+                }),
+                accountTokenBalance: TokenAmount({
+                    amount: _accountTokenBalance,
+                    amountUsdc: oracle.getNormalizedValueUsdc(
+                        tokenAddress,
+                        _accountTokenBalance
+                    )
+                }),
+                tokenAllowances: tokenAllowances(
+                    accountAddress,
+                    tokenAddress,
+                    assetAddress
+                ),
+                assetAllowances: assetAllowances(accountAddress, assetAddress)
             });
-        return position;
     }
 
     // function tokens() public view returns (Token[] memory) {

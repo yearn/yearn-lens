@@ -72,44 +72,51 @@ def test_assets_addresses(v2VaultsAdapter):
     assert not assetsAddresses[0] == ZERO_ADDRESS
 
 
-def test_asset(v2VaultsAdapter):
+def test_asset_static(v2VaultsAdapter):
     # test vault data
-    asset = v2VaultsAdapter.asset(v2UsdcVaultV2Address)
-    assetId = asset[0]
-    assetTypeId = asset[1]
-    name = asset[2]
-    version = asset[3]
-    balance = asset[4]
-    balanceUsdc = asset[5]
+    assetStatic = v2VaultsAdapter.assetStatic(v2UsdcVaultV2Address)
+    assetId = assetStatic[0]
+    assetTypeId = assetStatic[1]
+    name = assetStatic[2]
+    version = assetStatic[3]
     assert assetId == v2UsdcVaultV2Address
     assert name == "USDC yVault"
     assert version == "0.3.0"
-    assert balance > 0
-    assert balanceUsdc > balance / 10 ** 18
 
-    # Test token metadata
-    token = asset[6]
+    # # Test token
+    token = assetStatic[4]
     tokenId = token[0]
     tokenName = token[1]
     tokenSymbol = token[2]
     tokenDecimals = token[3]
-    tokenPriceUsdc = token[4]
-    tolerance = 5000000  # $5.00
-    estimatedBalanceUsdc = tokenPriceUsdc * balance / 10 ** 6
+
     assert tokenId == usdcAddress
     assert tokenName == "USD Coin"
     assert tokenSymbol == "USDC"
     assert tokenDecimals == 6
+
+
+def test_asset_dynamic(v2VaultsAdapter, oracle):
+    assetDynamic = v2VaultsAdapter.assetDynamic(v2UsdcVaultV1Address)
+    assetId = assetDynamic[0]
+    tokenId = assetDynamic[1]
+    underlyingTokenBalance = assetDynamic[2]
+    metadata = assetDynamic[3]
+
+    # Test vault underlying balances
+    tokenPriceUsdc = oracle.getPriceUsdcRecommended(tokenId)
+    balance = underlyingTokenBalance[0]
+    balanceUsdc = underlyingTokenBalance[1]
+    tolerance = 5000000  # $5.00
+    estimatedBalanceUsdc = tokenPriceUsdc * balance / 10 ** 6
     assert tokenPriceUsdc > 900000
     assert tokenPriceUsdc < 1100000
+    assert balance > 0
     assert estimatedBalanceUsdc >= balanceUsdc - tolerance
     assert estimatedBalanceUsdc <= balanceUsdc + tolerance
+    # assert balanceUsdc > balance / 10 ** 6 # This assumes the price of USDC >= 1
 
-
-def test_asset_metadata(v2VaultsAdapter):
     # Test vault metadata
-    asset = v2VaultsAdapter.asset(v2UsdcVaultV1Address)
-    metadata = asset[7]
     symbol = metadata[0]
     pricePerShare = metadata[1]
     migrationAvailable = metadata[2]
@@ -123,8 +130,8 @@ def test_asset_metadata(v2VaultsAdapter):
     assert emergencyShutdown == False
 
 
-def test_assets(v2VaultsAdapter):
-    assets = v2VaultsAdapter.assets()
+def test_assets_static(v2VaultsAdapter):
+    assets = v2VaultsAdapter.assetsStatic()
     assert len(assets) > 1
     firstAsset = assets[0]
     assetId = firstAsset[0]
@@ -138,7 +145,22 @@ def test_assets(v2VaultsAdapter):
     # print(assets)
 
 
-def test_position_of(v2VaultsAdapter, management, accounts):
+def test_assets_dynamic(v2VaultsAdapter):
+    assets = v2VaultsAdapter.assetsStatic()
+    assert len(assets) > 1
+    firstAsset = assets[0]
+    assetId = firstAsset[0]
+    assetTypeId = firstAsset[1]
+    assetName = firstAsset[2]
+    assetVersion = firstAsset[3]
+    assert assetId == yfiVaultAddress
+    assert assetName == "YFI yVault"
+    assert assetTypeId == "v2Vault"
+    assert assetVersion == "0.3.2"
+    # print(assets)
+
+
+def test_position_of(v2VaultsAdapter, oracle, management, accounts):
     # Deposit into YFI vault
     yfiAccount = accounts.at(vestedYfiAddress, force=True)
     yfi = interface.IERC20(yfiAddress)
@@ -148,34 +170,41 @@ def test_position_of(v2VaultsAdapter, management, accounts):
     yfiVault.approve(trustedMigratorAddress, 100, {"from": vestedYfiAddress})
     pricePerShare = yfiVault.pricePerShare()
     decimals = yfiVault.decimals()
-    userVaultBalance = (
-        yfiVault.balanceOf(vestedYfiAddress) * pricePerShare / 10 ** decimals
-    )
-    assert userVaultBalance > 0
-
-    # Test position
+    userVaultBalanceShares = yfiVault.balanceOf(vestedYfiAddress)
+    userVaultBalance = userVaultBalanceShares * pricePerShare / 10 ** decimals
+    userVaultBalanceUsdc = oracle.getNormalizedValueUsdc(yfiAddress, userVaultBalance)
+    assert userVaultBalanceShares > 0
     position = v2VaultsAdapter.positionOf(vestedYfiAddress, v2YfiVaultAddress)
-    assetId = position[0]
-    categoryId = position[1]
-    balance = position[2]
-    balanceUsdc = position[3]
-    assert assetId == v2YfiVaultAddress
-    assert categoryId == "deposit"
-    assert userVaultBalance >= balance - 100
-    assert userVaultBalance <= balance + 100
-    assert balanceUsdc > balance / 10 ** 18
 
-    # Test token position
-    tokenPosition = position[4]
-    tokenAddress = tokenPosition[0]
-    tokenBalance = tokenPosition[1]
-    tokenBalanceUsdc = tokenPosition[2]
-    assert tokenAddress == yfiAddress
-    assert tokenBalance > 0
-    assert tokenBalanceUsdc > tokenBalance / 10 ** 18
+    # Test basic info
+    assetId = position[0]
+    tokenId = position[1]
+    typeId = position[2]
+    balance = position[3]
+    assert assetId == v2YfiVaultAddress
+    assert tokenId == yfiAddress
+    assert typeId == "deposit"
+    assert balance == userVaultBalanceShares
+
+    # Test account asset balance
+    underlyingTokenBalance = position[4]
+    underlyingTokenBalanceAmount = underlyingTokenBalance[0]
+    underlyingTokenBalanceAmountUsdc = underlyingTokenBalance[1]
+    assert userVaultBalanceUsdc >= underlyingTokenBalanceAmountUsdc - 100
+    assert userVaultBalanceUsdc <= underlyingTokenBalanceAmountUsdc + 100
+    assert underlyingTokenBalanceAmountUsdc > underlyingTokenBalanceAmount / 10 ** 18
+
+    # Test account token balance
+    accountTokenBalance = position[5]
+    accountTokenBalanceAmount = accountTokenBalance[0]
+    accountTokenBalanceAmountUsdc = accountTokenBalance[1]
+    assert accountTokenBalanceAmount == yfi.balanceOf(vestedYfiAddress)
+    assert accountTokenBalanceAmountUsdc == oracle.getNormalizedValueUsdc(
+        yfiAddress, accountTokenBalanceAmount
+    )
 
     # Test token allowances
-    tokenAllowances = tokenPosition[3]
+    tokenAllowances = position[6]
     owner = tokenAllowances[0][0]
     spender = tokenAllowances[0][1]
     allowance = tokenAllowances[0][2]
@@ -184,7 +213,7 @@ def test_position_of(v2VaultsAdapter, management, accounts):
     assert allowance > 0
 
     # Position allowances
-    positionAllowances = position[5]
+    positionAllowances = position[7]
     owner = positionAllowances[0][0]
     spender = positionAllowances[0][1]
     allowance = positionAllowances[0][2]
@@ -193,19 +222,20 @@ def test_position_of(v2VaultsAdapter, management, accounts):
     assert allowance == 100
 
 
-def test_positions_of(v2VaultsAdapter, accounts):
+def test_positions_of(v2VaultsAdapter, oracle, accounts):
     # Deposit into YFI vault
     yfiAccount = accounts.at(vestedYfiAddress, force=True)
     yfi = interface.IERC20(yfiAddress)
     yfi.approve(v2YfiVaultAddress, 2 ** 256 - 1, {"from": vestedYfiAddress})
     yfiVault = interface.V2Vault(v2YfiVaultAddress)
     yfiVault.deposit(1 * 10 ** 18, {"from": yfiAccount})
+    yfiVault.approve(trustedMigratorAddress, 100, {"from": vestedYfiAddress})
     pricePerShare = yfiVault.pricePerShare()
     decimals = yfiVault.decimals()
-    userVaultBalance = (
-        yfiVault.balanceOf(vestedYfiAddress) * pricePerShare / 10 ** decimals
-    )
-    assert userVaultBalance > 0
+    userVaultBalanceShares = yfiVault.balanceOf(vestedYfiAddress)
+    userVaultBalance = userVaultBalanceShares * pricePerShare / 10 ** decimals
+    userVaultBalanceUsdc = oracle.getNormalizedValueUsdc(yfiAddress, userVaultBalance)
+    assert userVaultBalanceShares > 0
 
     # Test positionsOf(address)
     positions = v2VaultsAdapter.positionsOf(vestedYfiAddress)
