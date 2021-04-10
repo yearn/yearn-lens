@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.2;
 
-interface V2Vault {
+interface IV2Vault {
     function token() external view returns (address);
 
     function name() external view returns (string memory);
@@ -18,6 +18,8 @@ interface V2Vault {
     function apiVersion() external view returns (string memory);
 
     function totalSupply() external view returns (uint256);
+
+    function withdrawalQueue(uint256 arg0) external view returns (address);
 
     function balanceOf(address account) external view returns (uint256);
 
