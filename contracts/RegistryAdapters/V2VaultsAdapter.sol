@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.2;
-pragma experimental ABIEncoderV2;
 
 // Adapter-specific imports
 import "../../interfaces/Yearn/IV2Vault.sol";
@@ -9,6 +8,7 @@ import "../../interfaces/Yearn/IV2Registry.sol";
 
 // Common imports
 import "../../interfaces/Common/IERC20.sol";
+import "../../interfaces/Common/IHelper.sol";
 import "../Common/Adapter.sol";
 
 contract RegisteryAdapterV2Vault is Adapter {
@@ -69,16 +69,31 @@ contract RegisteryAdapterV2Vault is Adapter {
 
     struct AssetDynamic {
         address assetId;
+        string typeId;
         address tokenId;
-        TokenAmount underlyingTokenBalance; // Amount of underlying token in the asset
+        TokenAmount underlyingTokenBalance;
+        TokenAmount delegatedBalance;
         AssetMetadata metadata;
+    }
+
+    struct TokenAmount {
+        uint256 amount;
+        uint256 amountUsdc;
     }
 
     constructor(
         address _registryAddress,
         address _oracleAddress,
-        address _managementListAddress
-    ) Adapter(_registryAddress, _oracleAddress, _managementListAddress) {}
+        address _managementListAddress,
+        address _helperAddress
+    )
+        Adapter(
+            _registryAddress,
+            _oracleAddress,
+            _managementListAddress,
+            _helperAddress
+        )
+    {}
 
     /**
      * Common code shared by v1 vaults, v2 vaults and earn
@@ -227,12 +242,27 @@ contract RegisteryAdapterV2Vault is Adapter {
                 amountUsdc: assetTvl(assetAddress)
             });
 
+        uint256 delegatedBalanceAmount =
+            IHelper(helperAddress).assetStrategiesDelegatedBalance(
+                assetAddress
+            );
+        TokenAmount memory delegatedBalance =
+            TokenAmount({
+                amount: delegatedBalanceAmount,
+                amountUsdc: oracle.getNormalizedValueUsdc(
+                    tokenAddress,
+                    delegatedBalanceAmount
+                )
+            });
+
         return
             AssetDynamic({
                 assetId: assetAddress,
+                typeId: adapterInfo().typeId,
                 tokenId: tokenAddress,
-                metadata: metadata,
-                underlyingTokenBalance: underlyingTokenBalance
+                underlyingTokenBalance: underlyingTokenBalance,
+                delegatedBalance: delegatedBalance,
+                metadata: metadata
             });
     }
 
