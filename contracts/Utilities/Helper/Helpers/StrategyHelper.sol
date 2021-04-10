@@ -216,7 +216,7 @@ contract StrategiesHelper {
         ) {
             address strategyAddress = _assetStrategiesAddresses[strategyIdx];
             IV2Strategy _strategy = IV2Strategy(strategyAddress);
-            uint256 strategyDelegatedBalance = _strategy.estimatedTotalAssets();
+            uint256 strategyDelegatedBalance = _strategy.delegatedAssets();
             strategiesDelegatedBalance += strategyDelegatedBalance;
         }
         return strategiesDelegatedBalance;
