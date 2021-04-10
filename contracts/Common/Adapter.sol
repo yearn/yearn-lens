@@ -18,28 +18,38 @@ contract Adapter is Manageable {
         string categoryId;
     }
 
+    struct TokenAmount {
+        uint256 amount;
+        uint256 amountUsdc;
+    }
+
+    /**
+     * High level information about an asset
+     */
+    struct AssetStatic {
+        address id; // Asset address
+        string typeId; // Asset typeId (for example "v2Vault" or "ironBankMarket")
+        string name; // Asset Name
+        string version; // Asset version
+        Token token;
+    }
+
     struct Position {
         address assetId;
+        address tokenId;
         string typeId;
         uint256 balance;
-        uint256 balanceUsdc;
-        TokenPosition tokenPosition;
-        Allowance[] allowances;
+        TokenAmount accountTokenBalance;
+        TokenAmount underlyingTokenBalance;
+        Allowance[] tokenAllowances;
+        Allowance[] assetAllowances;
     }
 
     struct Token {
-        address id;
-        string name;
-        string symbol;
-        uint8 decimals;
-        uint256 priceUsdc;
-    }
-
-    struct TokenPosition {
-        address tokenId;
-        uint256 balance;
-        uint256 balanceUsdc;
-        Allowance[] allowances;
+        address id; // token address
+        string name; // token name
+        string symbol; // token symbol
+        uint8 decimals; // token decimals
     }
 
     struct Allowance {
@@ -48,7 +58,7 @@ contract Adapter is Manageable {
         uint256 amount;
     }
 
-    function tokenPositionAllowances(
+    function tokenAllowances(
         address accountAddress,
         address tokenAddress,
         address assetAddress
@@ -67,7 +77,7 @@ contract Adapter is Manageable {
         return allowances;
     }
 
-    function positionAllowances(address accountAddress, address assetAddress)
+    function assetAllowances(address accountAddress, address assetAddress)
         public
         view
         returns (Allowance[] memory)
@@ -105,8 +115,7 @@ contract Adapter is Manageable {
                 id: tokenAddress,
                 name: _token.name(),
                 symbol: _token.symbol(),
-                decimals: _token.decimals(),
-                priceUsdc: oracle.getPriceUsdcRecommended(tokenAddress)
+                decimals: _token.decimals()
             });
     }
 
