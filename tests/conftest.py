@@ -22,10 +22,17 @@ def registryAdapterCommonInterface():
         "assetsAddresses()",
         "assetsTvl()",
         "assetTvl(address)",
-        "asset(address)",
-        "assets()",
+        "assetStatic(address)",
+        "assetDynamic(address)",
+        "assetBalance(address)",
+        "assetsStatic()",
+        "assetsStatic(address[])",
+        "assetsDynamic()",
+        "assetsDynamic(address[])",
+        "assetTvl(address)",
         "positionOf(address,address)",
         "positionsOf(address)",
+        "underlyingTokenAddress(address)"
         # "tokens()",
     ]
 
@@ -33,6 +40,21 @@ def registryAdapterCommonInterface():
 @pytest.fixture
 def introspection(Introspection, management):
     return Introspection.deploy({"from": management})
+
+
+@pytest.fixture
+def pricesHelper(PricesHelper, management, managementList, oracle):
+    return PricesHelper.deploy(oracle, managementList, {"from": management})
+
+
+@pytest.fixture
+def allowancesHelper(AllowancesHelper, management):
+    return AllowancesHelper.deploy({"from": management})
+
+
+@pytest.fixture
+def addressMergeHelper(AddressMergeHelper, management):
+    return AddressMergeHelper.deploy({"from": management})
 
 
 @pytest.fixture
