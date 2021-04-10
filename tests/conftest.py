@@ -44,7 +44,7 @@ def introspection(Introspection, management):
 
 @pytest.fixture
 def pricesHelper(PricesHelper, management, managementList, oracle):
-    return PricesHelper.deploy(oracle, managementList, {"from": management})
+    return PricesHelper.deploy(oracle, {"from": management})
 
 
 @pytest.fixture
@@ -55,6 +55,37 @@ def allowancesHelper(AllowancesHelper, management):
 @pytest.fixture
 def addressMergeHelper(AddressMergeHelper, management):
     return AddressMergeHelper.deploy({"from": management})
+
+
+@pytest.fixture
+def helperInternal(Helper, managementList, management):
+    return Helper.deploy(managementList, {"from": management})
+
+
+@pytest.fixture
+def strategiesHelper(StrategiesHelper, v2VaultsAdapter, helperInternal, management):
+    return StrategiesHelper.deploy(
+        v2VaultsAdapter, helperInternal, {"from": management}
+    )
+
+
+@pytest.fixture
+def helper(
+    helperInternal,
+    management,
+    managementList,
+    oracle,
+    allowancesHelper,
+    pricesHelper,
+    addressMergeHelper,
+    strategiesHelper,
+):
+
+    helperInternal.setHelpers(
+        [allowancesHelper, pricesHelper, addressMergeHelper, strategiesHelper],
+        {"from": management},
+    )
+    return helperInternal
 
 
 @pytest.fixture
@@ -170,6 +201,20 @@ def earnAdapter(RegistryAdapterEarn, earnRegistry, management, managementList, o
     positionSpenderAddresses = [trustedMigratorAddress]
     adapter = RegistryAdapterEarn.deploy(
         earnRegistry, oracle, managementList, {"from": management},
+    )
+    adapter.setPositionSpenderAddresses(positionSpenderAddresses, {"from": management})
+    return adapter
+
+
+@pytest.fixture
+def v2VaultsAdapter(
+    RegisteryAdapterV2Vault, managementList, oracle, helperInternal, management
+):
+    v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
+    trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
+    positionSpenderAddresses = [trustedMigratorAddress]
+    adapter = RegisteryAdapterV2Vault.deploy(
+        v2RegistryAddress, oracle, managementList, helperInternal, {"from": management},
     )
     adapter.setPositionSpenderAddresses(positionSpenderAddresses, {"from": management})
     return adapter
