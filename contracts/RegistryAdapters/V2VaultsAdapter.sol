@@ -4,7 +4,7 @@ pragma solidity ^0.8.2;
 pragma experimental ABIEncoderV2;
 
 // Adapter-specific imports
-import "../../interfaces/Yearn/V2Vault.sol";
+import "../../interfaces/Yearn/IV2Vault.sol";
 import "../../interfaces/Yearn/IV2Registry.sol";
 
 // Common imports
@@ -132,7 +132,7 @@ contract RegisteryAdapterV2Vault is Adapter {
         view
         returns (address)
     {
-        V2Vault vault = V2Vault(assetAddress);
+        IV2Vault vault = IV2Vault(assetAddress);
         address tokenAddress = vault.token();
         return tokenAddress;
     }
@@ -151,7 +151,7 @@ contract RegisteryAdapterV2Vault is Adapter {
 
     function assetsAddresses() public view returns (address[] memory) {
         uint256 numVaults = assetsLength();
-        address[] memory vaultAddresses = new address[](numVaults);
+        address[] memory _assetsAddresses = new address[](numVaults);
         IV2Registry registry = IV2Registry(registryAddress);
         uint256 numTokens = registry.numTokens();
         uint256 currentVaultIdx;
@@ -163,15 +163,17 @@ contract RegisteryAdapterV2Vault is Adapter {
                 vaultTokenIdx < numVaultsForToken;
                 vaultTokenIdx++
             ) {
-                address currentVaultAddress =
+                address currentAssetAddress =
                     registry.vaults(currentTokenAddress, vaultTokenIdx);
-                if (assetDeprecated[currentVaultAddress] == false) {
-                    vaultAddresses[currentVaultIdx] = currentVaultAddress;
+                bool assetIsNotDeprecated =
+                    assetDeprecated[currentAssetAddress] == false;
+                if (assetIsNotDeprecated) {
+                    _assetsAddresses[currentVaultIdx] = currentAssetAddress;
                     currentVaultIdx++;
                 }
             }
         }
-        return vaultAddresses;
+        return _assetsAddresses;
     }
 
     function assetStatic(address assetAddress)
@@ -179,7 +181,7 @@ contract RegisteryAdapterV2Vault is Adapter {
         view
         returns (AssetStatic memory)
     {
-        V2Vault vault = V2Vault(assetAddress);
+        IV2Vault vault = IV2Vault(assetAddress);
         address tokenAddress = underlyingTokenAddress(assetAddress);
         return
             AssetStatic({
@@ -196,7 +198,7 @@ contract RegisteryAdapterV2Vault is Adapter {
         view
         returns (AssetDynamic memory)
     {
-        V2Vault vault = V2Vault(assetAddress);
+        IV2Vault vault = IV2Vault(assetAddress);
         address tokenAddress = underlyingTokenAddress(assetAddress);
         IV2Registry registry = IV2Registry(registryAddress);
         uint256 totalSupply = vault.totalSupply();
@@ -235,7 +237,7 @@ contract RegisteryAdapterV2Vault is Adapter {
     }
 
     function assetBalance(address assetAddress) public view returns (uint256) {
-        V2Vault vault = V2Vault(assetAddress);
+        IV2Vault vault = IV2Vault(assetAddress);
         return vault.totalAssets();
     }
 
@@ -251,7 +253,7 @@ contract RegisteryAdapterV2Vault is Adapter {
         view
         returns (Position memory)
     {
-        V2Vault _asset = V2Vault(assetAddress);
+        IV2Vault _asset = IV2Vault(assetAddress);
         uint8 assetDecimals = _asset.decimals();
         address tokenAddress = underlyingTokenAddress(assetAddress);
         IERC20 token = IERC20(tokenAddress);
