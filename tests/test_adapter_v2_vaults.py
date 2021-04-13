@@ -17,12 +17,14 @@ zapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 
 
 @pytest.fixture
-def v2VaultsAdapter(RegisteryAdapterV2Vault, managementList, oracle, management):
+def v2VaultsAdapter(
+    RegisteryAdapterV2Vault, managementList, oracle, helper, management
+):
     v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
     trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
     positionSpenderAddresses = [trustedMigratorAddress]
     adapter = RegisteryAdapterV2Vault.deploy(
-        v2RegistryAddress, oracle, managementList, {"from": management},
+        v2RegistryAddress, oracle, managementList, helper, {"from": management},
     )
     adapter.setPositionSpenderAddresses(positionSpenderAddresses, {"from": management})
     return adapter
@@ -40,12 +42,12 @@ def test_interface(
 def test_adapter_info(v2VaultsAdapter):
     adapterInfo = v2VaultsAdapter.adapterInfo()
     assert adapterInfo[0] == v2VaultsAdapter
-    assert adapterInfo[1] == "v2Vault"
-    assert adapterInfo[2] == "vault"
+    assert adapterInfo[1] == "VAULT_V2"
+    assert adapterInfo[2] == "VAULT"
 
 
 def test_registry_address(v2VaultsAdapter):
-    assert not v2VaultsAdapter.registryAddress() == ZERO_ADDRESS
+    assert not v2VaultsAdapter.registry() == ZERO_ADDRESS
 
 
 def test_assets_length(v2VaultsAdapter):
@@ -99,9 +101,11 @@ def test_asset_static(v2VaultsAdapter):
 def test_asset_dynamic(v2VaultsAdapter, oracle):
     assetDynamic = v2VaultsAdapter.assetDynamic(v2UsdcVaultV1Address)
     assetId = assetDynamic[0]
-    tokenId = assetDynamic[1]
-    underlyingTokenBalance = assetDynamic[2]
-    metadata = assetDynamic[3]
+    typeId = assetDynamic[1]
+    tokenId = assetDynamic[2]
+    underlyingTokenBalance = assetDynamic[3]
+    delegatedBalance = assetDynamic[4]
+    metadata = assetDynamic[5]
 
     # Test vault underlying balances
     tokenPriceUsdc = oracle.getPriceUsdcRecommended(tokenId)
@@ -140,7 +144,7 @@ def test_assets_static(v2VaultsAdapter):
     assetVersion = firstAsset[3]
     assert assetId == yfiVaultAddress
     assert assetName == "YFI yVault"
-    assert assetTypeId == "v2Vault"
+    assert assetTypeId == "VAULT_V2"
     assert assetVersion == "0.3.2"
     # print(assets)
 
@@ -155,7 +159,7 @@ def test_assets_dynamic(v2VaultsAdapter):
     assetVersion = firstAsset[3]
     assert assetId == yfiVaultAddress
     assert assetName == "YFI yVault"
-    assert assetTypeId == "v2Vault"
+    assert assetTypeId == "VAULT_V2"
     assert assetVersion == "0.3.2"
     # print(assets)
 
@@ -165,7 +169,7 @@ def test_position_of(v2VaultsAdapter, oracle, management, accounts):
     yfiAccount = accounts.at(vestedYfiAddress, force=True)
     yfi = interface.IERC20(yfiAddress)
     yfi.approve(v2YfiVaultAddress, 2 ** 256 - 1, {"from": vestedYfiAddress})
-    yfiVault = interface.V2Vault(v2YfiVaultAddress)
+    yfiVault = interface.IV2Vault(v2YfiVaultAddress)
     yfiVault.deposit(1 * 10 ** 18, {"from": yfiAccount})
     yfiVault.approve(trustedMigratorAddress, 100, {"from": vestedYfiAddress})
     pricePerShare = yfiVault.pricePerShare()
@@ -227,7 +231,7 @@ def test_positions_of(v2VaultsAdapter, oracle, accounts):
     yfiAccount = accounts.at(vestedYfiAddress, force=True)
     yfi = interface.IERC20(yfiAddress)
     yfi.approve(v2YfiVaultAddress, 2 ** 256 - 1, {"from": vestedYfiAddress})
-    yfiVault = interface.V2Vault(v2YfiVaultAddress)
+    yfiVault = interface.IV2Vault(v2YfiVaultAddress)
     yfiVault.deposit(1 * 10 ** 18, {"from": yfiAccount})
     yfiVault.approve(trustedMigratorAddress, 100, {"from": vestedYfiAddress})
     pricePerShare = yfiVault.pricePerShare()
