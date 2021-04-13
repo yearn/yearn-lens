@@ -17,7 +17,9 @@ def managementList(ManagementList, management):
 @pytest.fixture
 def registryAdapterCommonInterface():
     return [
-        "registryAddress()",
+        "registry()",
+        "oracle()",
+        "helper()",
         "assetsLength()",
         "assetsAddresses()",
         "assetsTvl()",
@@ -32,8 +34,7 @@ def registryAdapterCommonInterface():
         "assetTvl(address)",
         "positionOf(address,address)",
         "positionsOf(address)",
-        "underlyingTokenAddress(address)"
-        # "tokens()",
+        "underlyingTokenAddress(address)",
     ]
 
 
