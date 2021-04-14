@@ -54,6 +54,11 @@ interface IOracle {
         external
         view
         returns (uint256);
+
+    function getPriceUsdcRecommended(address tokenAddress)
+        external
+        view
+        returns (uint256);
 }
 
 interface IERC20 {
@@ -149,7 +154,6 @@ contract RegisteryAdapterV2Vault is Manageable {
         string typeId; // Asset typeId (for example "VAULT_V2" or "IRON_BANK_MARKET")
         address tokenId; // Underlying token address;
         TokenAmount underlyingTokenBalance; // Underlying token balances
-        TokenAmount delegatedBalance; // Delegated balances
         AssetMetadata metadata; // Metadata specific to the asset type of this adapter
     }
 
@@ -157,10 +161,22 @@ contract RegisteryAdapterV2Vault is Manageable {
      * Static token data
      */
     struct Token {
-        address id; // token address
-        string name; // token name
-        string symbol; // token symbol
-        uint8 decimals; // token decimals
+        address id; // Token address
+        string name; // Token name
+        string symbol; // Token symbol
+        uint8 decimals; // Token decimals
+    }
+
+    /**
+     * TVL breakdown for an asset
+     */
+    struct AssetTvl {
+        address assetId; // Asset address
+        address tokenId; // Token address
+        uint256 tokenPriceUsdc; // Token price in USDC
+        TokenAmount underlyingTokenBalance; // Amount of underlying token in asset
+        TokenAmount delegatedBalance; // Amount of underlying token balance that is delegated
+        TokenAmount adjustedBalance; // TVL = underlyingTokenBalance - delegatedBalance
     }
 
     /**
@@ -260,11 +276,12 @@ contract RegisteryAdapterV2Vault is Manageable {
      * This is useful for determining whether or not a user has token approvals
      * to allow depositing into an asset
      */
-    function tokenAllowances(
-        address accountAddress,
-        address tokenAddress,
-        address assetAddress
-    ) public view returns (Allowance[] memory) {
+    function tokenAllowances(address accountAddress, address assetAddress)
+        public
+        view
+        returns (Allowance[] memory)
+    {
+        address tokenAddress = underlyingTokenAddress(assetAddress);
         address[] memory tokenAddresses = new address[](1);
         address[] memory assetAddresses = new address[](1);
         tokenAddresses[0] = tokenAddress;
@@ -352,16 +369,33 @@ contract RegisteryAdapterV2Vault is Manageable {
     /**
      * Fetch TVL for adapter
      */
-    function assetsTvl() external view returns (uint256) {
+    function assetsTvlUsdc() external view returns (uint256) {
         uint256 tvl;
         address[] memory assetAddresses = assetsAddresses();
         uint256 numberOfAssets = assetAddresses.length;
         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
             address assetAddress = assetAddresses[assetIdx];
-            uint256 _assetTvl = assetTvl(assetAddress);
+            uint256 _assetTvl = assetTvlUsdc(assetAddress);
             tvl += _assetTvl;
         }
         return tvl;
+    }
+
+    /**
+     * Fetch TVL for adapter
+     */
+    function assetsTvl() external view returns (AssetTvl[] memory) {
+        uint256 tvl;
+        address[] memory _assetsAddresses = assetsAddresses();
+        uint256 numberOfAssets = _assetsAddresses.length;
+
+        AssetTvl[] memory tvlData = new AssetTvl[](numberOfAssets);
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = _assetsAddresses[assetIdx];
+            AssetTvl memory tvl = assetTvl(assetAddress);
+            tvlData[assetIdx] = tvl;
+        }
+        return tvlData;
     }
 
     /**
@@ -550,22 +584,9 @@ contract RegisteryAdapterV2Vault is Manageable {
                 emergencyShutdown: vault.emergencyShutdown()
             });
 
+        uint256 balance = assetBalance(assetAddress);
         TokenAmount memory underlyingTokenBalance =
-            TokenAmount({
-                amount: assetBalance(assetAddress),
-                amountUsdc: assetTvl(assetAddress)
-            });
-
-        uint256 delegatedBalanceAmount =
-            helper.assetStrategiesDelegatedBalance(assetAddress);
-        TokenAmount memory delegatedBalance =
-            TokenAmount({
-                amount: delegatedBalanceAmount,
-                amountUsdc: oracle.getNormalizedValueUsdc(
-                    tokenAddress,
-                    delegatedBalanceAmount
-                )
-            });
+            tokenAmount(balance, tokenAddress);
 
         return
             AssetDynamic({
@@ -573,7 +594,6 @@ contract RegisteryAdapterV2Vault is Manageable {
                 typeId: adapterInfo().typeId,
                 tokenId: tokenAddress,
                 underlyingTokenBalance: underlyingTokenBalance,
-                delegatedBalance: delegatedBalance,
                 metadata: metadata
             });
     }
@@ -600,26 +620,31 @@ contract RegisteryAdapterV2Vault is Manageable {
                 tokenId: tokenAddress,
                 typeId: "DEPOSIT",
                 balance: balance,
-                underlyingTokenBalance: TokenAmount({
-                    amount: _underlyingTokenBalance,
-                    amountUsdc: oracle.getNormalizedValueUsdc(
-                        tokenAddress,
-                        _underlyingTokenBalance
-                    )
-                }),
-                accountTokenBalance: TokenAmount({
-                    amount: _accountTokenBalance,
-                    amountUsdc: oracle.getNormalizedValueUsdc(
-                        tokenAddress,
-                        _accountTokenBalance
-                    )
-                }),
-                tokenAllowances: tokenAllowances(
-                    accountAddress,
-                    tokenAddress,
-                    assetAddress
+                underlyingTokenBalance: tokenAmount(
+                    _underlyingTokenBalance,
+                    tokenAddress
                 ),
+                accountTokenBalance: tokenAmount(
+                    _accountTokenBalance,
+                    tokenAddress
+                ),
+                tokenAllowances: tokenAllowances(accountAddress, assetAddress),
                 assetAllowances: assetAllowances(accountAddress, assetAddress)
+            });
+    }
+
+    /**
+     * Internal method for constructing a TokenAmount struct given a token balance and address
+     */
+    function tokenAmount(uint256 amount, address tokenAddress)
+        internal
+        view
+        returns (TokenAmount memory)
+    {
+        return
+            TokenAmount({
+                amount: amount,
+                amountUsdc: oracle.getNormalizedValueUsdc(tokenAddress, amount)
             });
     }
 
@@ -632,15 +657,62 @@ contract RegisteryAdapterV2Vault is Manageable {
     }
 
     /**
-     * Fetch TVL of an asset
+     * Fetch TVL of an asset in USDC
      */
-    function assetTvl(address assetAddress) public view returns (uint256) {
+    function assetTvlUsdc(address assetAddress) public view returns (uint256) {
         address tokenAddress = underlyingTokenAddress(assetAddress);
-        uint256 amount = assetBalance(assetAddress);
+        uint256 underlyingBalanceAmount = assetBalance(assetAddress);
         uint256 delegatedBalanceAmount =
             helper.assetStrategiesDelegatedBalance(assetAddress);
-        amount -= delegatedBalanceAmount;
-        uint256 tvl = oracle.getNormalizedValueUsdc(tokenAddress, amount);
-        return tvl;
+        uint256 adjustedBalanceAmount =
+            underlyingBalanceAmount - delegatedBalanceAmount;
+        uint256 adjustedBalanceUsdc =
+            oracle.getNormalizedValueUsdc(tokenAddress, adjustedBalanceAmount);
+        return adjustedBalanceUsdc;
+    }
+
+    /**
+     * Fetch TVL breakdown of an asset
+     */
+    function assetTvl(address assetAddress)
+        public
+        view
+        returns (AssetTvl memory)
+    {
+        address tokenAddress = underlyingTokenAddress(assetAddress);
+        uint256 underlyingBalanceAmount = assetBalance(assetAddress);
+        uint256 delegatedBalanceAmount =
+            helper.assetStrategiesDelegatedBalance(assetAddress);
+        uint256 adjustedBalance =
+            underlyingBalanceAmount - delegatedBalanceAmount;
+        return
+            AssetTvl({
+                assetId: assetAddress,
+                tokenId: tokenAddress,
+                tokenPriceUsdc: oracle.getPriceUsdcRecommended(tokenAddress),
+                underlyingTokenBalance: tokenAmount(
+                    underlyingBalanceAmount,
+                    tokenAddress
+                ),
+                delegatedBalance: tokenAmount(
+                    delegatedBalanceAmount,
+                    tokenAddress
+                ),
+                adjustedBalance: tokenAmount(adjustedBalance, tokenAddress)
+            });
+    }
+
+    /**
+     * Fetch a unique list of tokens for this adapter
+     */
+    function tokens() public view returns (Token[] memory) {
+        uint256 numTokens = registry.numTokens();
+        Token[] memory _tokens = new Token[](numTokens);
+        for (uint256 tokenIdx = 0; tokenIdx < numTokens; tokenIdx++) {
+            address tokenAddress = registry.tokens(tokenIdx);
+            Token memory _token = tokenMetadata(tokenAddress);
+            _tokens[tokenIdx] = _token;
+        }
+        return _tokens;
     }
 }

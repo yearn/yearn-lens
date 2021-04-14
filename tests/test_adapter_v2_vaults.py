@@ -104,8 +104,7 @@ def test_asset_dynamic(v2VaultsAdapter, oracle):
     typeId = assetDynamic[1]
     tokenId = assetDynamic[2]
     underlyingTokenBalance = assetDynamic[3]
-    delegatedBalance = assetDynamic[4]
-    metadata = assetDynamic[5]
+    metadata = assetDynamic[4]
 
     # Test vault underlying balances
     tokenPriceUsdc = oracle.getPriceUsdcRecommended(tokenId)
@@ -187,7 +186,7 @@ def test_position_of(v2VaultsAdapter, oracle, management, accounts):
     balance = position[3]
     assert assetId == v2YfiVaultAddress
     assert tokenId == yfiAddress
-    assert typeId == "deposit"
+    assert typeId == "DEPOSIT"
     assert balance == userVaultBalanceShares
 
     # Test account asset balance
@@ -258,10 +257,10 @@ def test_positions_of(v2VaultsAdapter, oracle, accounts):
     assert assetId == v2YfiVaultAddress
 
 
-def test_asset_tvl(v2VaultsAdapter):
+def test_asset_tvl_usdc(v2VaultsAdapter):
     assetsAddresses = v2VaultsAdapter.assetsAddresses()
     for address in assetsAddresses:
-        tvl = v2VaultsAdapter.assetTvl(address) / 10 ** 12
+        tvl = v2VaultsAdapter.assetTvlUsdc(address) / 10 ** 12
         assert tvl > 0
 
     # Print TVL per asset
@@ -272,17 +271,23 @@ def test_asset_tvl(v2VaultsAdapter):
     # tvlList = []
     # for address in assetsAddresses:
     #     token = interface.IERC20(address)
-    #     tvl = v2VaultsAdapter.assetTvl(address) / 10 ** 6
+    #     tvl = v2VaultsAdapter.assetTvlUsdc(address) / 10 ** 6
     #     tvlList.append({"symbol": token.symbol(), "tvl": tvl})
     # sortedTvlItems = sorted(tvlList, key=itemgetter("tvl"), reverse=True)
     # for item in sortedTvlItems:
     #     print(item.get("symbol"), item.get("tvl"))
 
 
-def test_assets_tvl(v2VaultsAdapter):
-    tvl = v2VaultsAdapter.assetsTvl()
+def test_assets_tvl_usdc(v2VaultsAdapter):
+    tvl = v2VaultsAdapter.assetsTvlUsdc()
     assert tvl > 0
     # print("Total tvl", tvl / 10 ** 12)
+
+
+# def test_asset_tvl(v2VaultsAdapter):
+#     assetsAddresses = v2VaultsAdapter.assetsAddresses()
+#     for address in assetsAddresses:
+#         print(v2VaultsAdapter.assetTvl(address))
 
 
 def test_set_position_spender_addresses(v2VaultsAdapter, management, rando):
