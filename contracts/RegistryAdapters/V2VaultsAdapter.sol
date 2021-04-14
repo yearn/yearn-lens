@@ -3,6 +3,7 @@
  */
 
 // SPDX-License-Identifier: MIT
+import "../Utilities/Manageable.sol";
 
 pragma solidity ^0.8.2;
 
@@ -92,27 +93,27 @@ interface IHelper {
     ) external view returns (Allowance[] memory);
 }
 
-interface ManagementList {
-    function isManager(address accountAddress) external returns (bool);
-}
+// interface ManagementList {
+//     function isManager(address accountAddress) external returns (bool);
+// }
 
-/*******************************************************
- *                     Management List                 *
- *******************************************************/
+// /*******************************************************
+//  *                     Management List                 *
+//  *******************************************************/
 
-contract Manageable {
-    ManagementList public managementList;
+// contract Manageable {
+//     ManagementList public managementList;
 
-    constructor(address _managementListAddress) {
-        managementList = ManagementList(_managementListAddress);
-    }
+//     constructor(address _managementListAddress) {
+//         managementList = ManagementList(_managementListAddress);
+//     }
 
-    modifier onlyManagers() {
-        bool isManager = managementList.isManager(msg.sender);
-        require(isManager, "ManagementList: caller is not a manager");
-        _;
-    }
-}
+//     modifier onlyManagers() {
+//         bool isManager = managementList.isManager(msg.sender);
+//         require(isManager, "ManagementList: caller is not a manager");
+//         _;
+//     }
+// }
 
 /*******************************************************
  *                     Adapter Logic                   *
