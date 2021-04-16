@@ -18,15 +18,21 @@ zapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 
 @pytest.fixture
 def v2VaultsAdapter(
-    RegisteryAdapterV2Vault, managementList, oracle, helper, management
+    RegisteryAdapterV2Vault,
+    managementList,
+    v2AddressesGenerator,
+    oracle,
+    helper,
+    management,
 ):
-    v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
     trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
     positionSpenderAddresses = [trustedMigratorAddress]
     adapter = RegisteryAdapterV2Vault.deploy(
-        v2RegistryAddress, oracle, managementList, helper, {"from": management},
+        oracle, managementList, helper, v2AddressesGenerator, {"from": management},
     )
-    adapter.setPositionSpenderAddresses(positionSpenderAddresses, {"from": management})
+    v2AddressesGenerator.setPositionSpenderAddresses(
+        positionSpenderAddresses, {"from": management}
+    )
     return adapter
 
 
@@ -55,17 +61,21 @@ def test_assets_length(v2VaultsAdapter):
     assert assetsLength > 0
 
 
-def test_set_asset_deprecated(v2VaultsAdapter, management):
+def test_set_asset_deprecated(v2VaultsAdapter, v2AddressesGenerator, management):
     originalAssetsLength = v2VaultsAdapter.assetsLength()
     assert originalAssetsLength > 0
-    v2VaultsAdapter.setAssetDeprecated(v2YfiVaultAddress, True, {"from": management})
+    v2AddressesGenerator.setAssetDeprecated(
+        v2YfiVaultAddress, True, {"from": management}
+    )
     newAssetsLength = v2VaultsAdapter.assetsLength()
-    v2VaultsAdapter.assetDeprecated(v2YfiVaultAddress) == True
+    v2AddressesGenerator.assetDeprecated(v2YfiVaultAddress) == True
     assert newAssetsLength == originalAssetsLength - 1
-    v2VaultsAdapter.setAssetDeprecated(v2YfiVaultAddress, False, {"from": management})
+    v2AddressesGenerator.setAssetDeprecated(
+        v2YfiVaultAddress, False, {"from": management}
+    )
     newAssetsLength = v2VaultsAdapter.assetsLength()
     assert newAssetsLength == originalAssetsLength
-    v2VaultsAdapter.assetDeprecated(v2YfiVaultAddress) == False
+    v2AddressesGenerator.assetDeprecated(v2YfiVaultAddress) == False
 
 
 def test_assets_addresses(v2VaultsAdapter):
@@ -290,8 +300,14 @@ def test_assets_tvl_usdc(v2VaultsAdapter):
 #         print(v2VaultsAdapter.assetTvl(address))
 
 
-def test_set_position_spender_addresses(v2VaultsAdapter, management, rando):
+def test_set_position_spender_addresses(
+    v2VaultsAdapter, v2AddressesGenerator, management, rando
+):
     with brownie.reverts():
-        v2VaultsAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": rando})
-    v2VaultsAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": management})
-    assert v2VaultsAdapter.positionSpenderAddresses(0) == ethZapAddress
+        v2AddressesGenerator.setPositionSpenderAddresses(
+            [ethZapAddress], {"from": rando}
+        )
+    v2AddressesGenerator.setPositionSpenderAddresses(
+        [ethZapAddress], {"from": management}
+    )
+    assert v2AddressesGenerator.positionSpenderAddresses(0) == ethZapAddress

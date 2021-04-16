@@ -9,10 +9,10 @@ ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 
 @pytest.fixture
 def v2VaultsGenerator(
-    AddressesGenerator_VAULT_V2, managementList, oracle, helper, management
+    AddressesGeneratorV2Vaults, managementList, oracle, helper, management
 ):
     v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
-    generator = AddressesGenerator_VAULT_V2.deploy(
+    generator = AddressesGeneratorV2Vaults.deploy(
         v2RegistryAddress, managementList, {"from": management},
     )
     return generator

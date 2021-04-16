@@ -22,7 +22,6 @@ def registryAdapterCommonInterface():
         "helper()",
         "assetsLength()",
         "assetsAddresses()",
-        "assetTvl(address)",
         "assetStatic(address)",
         "assetDynamic(address)",
         "assetBalance(address)",
@@ -30,10 +29,6 @@ def registryAdapterCommonInterface():
         "assetsStatic(address[])",
         "assetsDynamic()",
         "assetsDynamic(address[])",
-        "assetTvl(address)",
-        "assetsTvl()",
-        "assetTvlUsdc(address)",
-        "assetsTvlUsdc()",
         "positionOf(address,address)",
         "positionsOf(address)",
         "underlyingTokenAddress(address)",
@@ -48,6 +43,27 @@ def introspection(Introspection, management):
 @pytest.fixture
 def pricesHelper(PricesHelper, management, managementList, oracle):
     return PricesHelper.deploy(oracle, {"from": management})
+
+
+@pytest.fixture
+def delegationMapping(DelegatedBalanceMapping, management, managementList):
+    return DelegatedBalanceMapping.deploy(managementList, {"from": management})
+
+
+@pytest.fixture
+def v2AddressesGenerator(
+    AddressesGeneratorV2Vaults, management, managementList, oracle
+):
+    v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
+    generator = AddressesGeneratorV2Vaults.deploy(
+        v2RegistryAddress, managementList, {"from": management}
+    )
+    trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
+    positionSpenderAddresses = [trustedMigratorAddress]
+    generator.setPositionSpenderAddresses(
+        positionSpenderAddresses, {"from": management}
+    )
+    return generator
 
 
 @pytest.fixture
@@ -120,6 +136,8 @@ def oracle(
     oBtcAddress = "0x8064d9Ae6cDf087b1bcd5BDf3531bD5d8C537a68"
     wbtcAddress = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
 
+    return Oracle.at("0x83d95e0d5f402511db06817aff3f9ea88224b030")
+
     oracle = Oracle.deploy(managementList, usdcAddress, {"from": management})
 
     oracle.addTokenAliases(
@@ -132,10 +150,6 @@ def oracle(
             [oBtcAddress, wbtcAddress],
         ],
         {"from": management},
-    )
-
-    calculationsYearnVaults = CalculationsYearnVaults.deploy(
-        oracle, {"from": management}
     )
 
     calculationsSushiswap = CalculationsSushiswap.deploy(
@@ -153,12 +167,7 @@ def oracle(
         unitrollerAddress, oracle, {"from": management}
     )
     oracle.setCalculations(
-        [
-            calculationsCurve,
-            calculationsYearnVaults,
-            calculationsIronBank,
-            calculationsSushiswap,
-        ]
+        [calculationsCurve, calculationsIronBank, calculationsSushiswap,]
     )
     return oracle
 
@@ -199,6 +208,46 @@ def earnRegistry(GenericRegistry, management):
 
 
 @pytest.fixture
+def v2VaultsAddressesGenerator(
+    AddressesGeneratorV2Vaults, managementList, management,
+):
+    registryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
+    return AddressesGeneratorV2Vaults.deploy(
+        registryAddress, managementList, {"from": management},
+    )
+
+
+@pytest.fixture
+def v1VaultsAddressesGenerator(
+    AddressesGeneratorV1Vaults, managementList, management,
+):
+    registryAddress = "0x3eE41C098f9666ed2eA246f4D2558010e59d63A0"
+    return AddressesGeneratorV1Vaults.deploy(
+        registryAddress, managementList, {"from": management},
+    )
+
+
+@pytest.fixture
+def ironBankAddressesGenerator(
+    AddressesGeneratorIronBank, managementList, management,
+):
+    registryAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
+    return AddressesGeneratorIronBank.deploy(
+        registryAddress, managementList, {"from": management},
+    )
+
+
+@pytest.fixture
+def earnAddressesGenerator(
+    AddressesGeneratorEarn, managementList, management,
+):
+    registryAddress = "0x62a4e0E7574E5407656A65CC8DbDf70f3C6EB04B"
+    return AddressesGeneratorEarn.deploy(
+        registryAddress, managementList, {"from": management},
+    )
+
+
+@pytest.fixture
 def earnAdapter(RegistryAdapterEarn, earnRegistry, management, managementList, oracle):
     trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
     positionSpenderAddresses = [trustedMigratorAddress]
@@ -211,16 +260,20 @@ def earnAdapter(RegistryAdapterEarn, earnRegistry, management, managementList, o
 
 @pytest.fixture
 def v2VaultsAdapter(
-    RegisteryAdapterV2Vault, managementList, oracle, helperInternal, management
+    RegisteryAdapterV2Vault,
+    managementList,
+    v2AddressesGenerator,
+    oracle,
+    helperInternal,
+    management,
 ):
-    v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
-    trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
-    positionSpenderAddresses = [trustedMigratorAddress]
-    adapter = RegisteryAdapterV2Vault.deploy(
-        v2RegistryAddress, oracle, managementList, helperInternal, {"from": management},
+    return RegisteryAdapterV2Vault.deploy(
+        oracle,
+        managementList,
+        helperInternal,
+        v2AddressesGenerator,
+        {"from": management},
     )
-    adapter.setPositionSpenderAddresses(positionSpenderAddresses, {"from": management})
-    return adapter
 
 
 @pytest.fixture

@@ -7,29 +7,42 @@ import "../Utilities/Manageable.sol";
 /*******************************************************
  *                       Interfaces                    *
  *******************************************************/
-interface IV2Registry {
-    function numTokens() external view returns (uint256);
+interface IV1Registry {
+    function getVaults() external view returns (address[] memory);
 
-    function numVaults(address token) external view returns (uint256);
-
-    function tokens(uint256 tokenIdx) external view returns (address);
-
-    function latestVault(address token) external view returns (address);
-
-    function vaults(address token, uint256 tokenIdx)
-        external
-        view
-        returns (address);
+    function getVaultsLength() external view returns (uint256);
 }
+
+// interface ManagementList {
+//     function isManager(address accountAddress) external returns (bool);
+// }
+
+// /*******************************************************
+//  *                     Management List                 *
+//  *******************************************************/
+
+// contract Manageable {
+//     ManagementList public managementList;
+
+//     constructor(address _managementListAddress) {
+//         managementList = ManagementList(_managementListAddress);
+//     }
+
+//     modifier onlyManagers() {
+//         bool isManager = managementList.isManager(msg.sender);
+//         require(isManager, "ManagementList: caller is not a manager");
+//         _;
+//     }
+// }
 
 /*******************************************************
  *                    Generator Logic                  *
  *******************************************************/
-contract AddressesGenerator_VAULT_V2 is Manageable {
+contract AddressesGeneratorV1Vaults is Manageable {
     mapping(address => bool) public assetDeprecated; // Support for deprecating assets. If an asset is deprecated it will not appear is results
     uint256 public numberOfDeprecatedAssets; // Used to keep track of the number of deprecated assets for an adapter
     address[] public positionSpenderAddresses; // A settable list of spender addresses with which to fetch asset allowances
-    IV2Registry public registry; // The registry is used to fetch the list of vaults and migration data
+    IV1Registry public registry; // The registry is used to fetch the list of assets
 
     /**
      * Information about the generator
@@ -51,7 +64,7 @@ contract AddressesGenerator_VAULT_V2 is Manageable {
             "Missing management list address"
         );
         require(_registryAddress != address(0), "Missing registry address");
-        registry = IV2Registry(_registryAddress);
+        registry = IV1Registry(_registryAddress);
     }
 
     /**
@@ -84,6 +97,14 @@ contract AddressesGenerator_VAULT_V2 is Manageable {
     }
 
     /**
+     * Set registry address
+     */
+    function setRegistryAddress(address _registryAddress) public onlyManagers {
+        require(_registryAddress != address(0), "Missing registry address");
+        registry = IV1Registry(_registryAddress);
+    }
+
+    /**
      * Fetch a list of position spender addresses
      */
     function getPositionSpenderAddresses()
@@ -101,7 +122,7 @@ contract AddressesGenerator_VAULT_V2 is Manageable {
         return
             GeneratorInfo({
                 id: address(this),
-                typeId: "VAULT_V2",
+                typeId: "VAULT_V1",
                 categoryId: "VAULT"
             });
     }
@@ -110,42 +131,37 @@ contract AddressesGenerator_VAULT_V2 is Manageable {
      * Fetch the total number of assets
      */
     function assetsLength() public view returns (uint256) {
-        uint256 numTokens = registry.numTokens();
-        uint256 numVaults;
-        for (uint256 tokenIdx = 0; tokenIdx < numTokens; tokenIdx++) {
-            address currentToken = registry.tokens(tokenIdx);
-            uint256 numVaultsForToken = registry.numVaults(currentToken);
-            numVaults += numVaultsForToken;
-        }
-        return numVaults - numberOfDeprecatedAssets;
+        return registry.getVaultsLength() - numberOfDeprecatedAssets;
     }
 
     /**
      * Fetch all asset addresses
      */
     function assetsAddresses() public view returns (address[] memory) {
-        uint256 numVaults = assetsLength();
-        address[] memory _assetsAddresses = new address[](numVaults);
-        uint256 numTokens = registry.numTokens();
-        uint256 currentVaultIdx;
-        for (uint256 tokenIdx = 0; tokenIdx < numTokens; tokenIdx++) {
-            address currentTokenAddress = registry.tokens(tokenIdx);
-            uint256 numVaultsForToken = registry.numVaults(currentTokenAddress);
-            for (
-                uint256 vaultTokenIdx = 0;
-                vaultTokenIdx < numVaultsForToken;
-                vaultTokenIdx++
-            ) {
-                address currentAssetAddress =
-                    registry.vaults(currentTokenAddress, vaultTokenIdx);
-                bool assetIsNotDeprecated =
-                    assetDeprecated[currentAssetAddress] == false;
-                if (assetIsNotDeprecated) {
-                    _assetsAddresses[currentVaultIdx] = currentAssetAddress;
-                    currentVaultIdx++;
-                }
+        address[] memory originalAddresses = registry.getVaults();
+        uint256 _numberOfAssets = originalAddresses.length;
+        uint256 _filteredAssetsLength = assetsLength();
+        if (_numberOfAssets == _filteredAssetsLength) {
+            return originalAddresses;
+        }
+        uint256 currentAssetIdx;
+        for (uint256 assetIdx = 0; assetIdx < _numberOfAssets; assetIdx++) {
+            address currentAssetAddress = originalAddresses[assetIdx];
+            bool assetIsNotDeprecated =
+                assetDeprecated[currentAssetAddress] == false;
+            if (assetIsNotDeprecated) {
+                originalAddresses[currentAssetIdx] = currentAssetAddress;
+                currentAssetIdx++;
             }
         }
-        return _assetsAddresses;
+        bytes memory encodedAddresses = abi.encode(originalAddresses);
+        assembly {
+            // Manually truncate the filtered list
+            mstore(add(encodedAddresses, 0x40), _filteredAssetsLength)
+        }
+        address[] memory filteredAddresses =
+            abi.decode(encodedAddresses, (address[]));
+
+        return filteredAddresses;
     }
 }

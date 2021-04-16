@@ -49,6 +49,19 @@ interface IV2Registry {
         returns (address);
 }
 
+interface IAddressesGenerator {
+    function assetsAddresses() external view returns (address[] memory);
+
+    function assetsLength() external view returns (uint256);
+
+    function registry() external view returns (address);
+
+    function getPositionSpenderAddresses()
+        external
+        view
+        returns (address[] memory);
+}
+
 interface IOracle {
     function getNormalizedValueUsdc(address tokenAddress, uint256 amount)
         external
@@ -129,11 +142,8 @@ contract RegisteryAdapterV2Vault is Manageable {
      *******************************************************/
 
     IOracle public oracle; // The oracle is used to fetch USDC normalized pricing data
-    IV2Registry public registry; // The registry is used to fetch the list of vaults and migration data
     IHelper public helper; // A helper utility is used for batch allowance fetching and address array merging
-    address[] public positionSpenderAddresses; // A settable list of spender addresses with which to fetch asset allowances
-    mapping(address => bool) public assetDeprecated; // Support for deprecating assets. If an asset is deprecated it will not appear is results
-    uint256 public numberOfDeprecatedAssets; // Used to keep track of the number of deprecated assets for an adapter
+    IAddressesGenerator public addressesGenerator; // A utility for fetching assets addresses and length
 
     /**
      * High level static information about an asset
@@ -165,18 +175,6 @@ contract RegisteryAdapterV2Vault is Manageable {
         string name; // Token name
         string symbol; // Token symbol
         uint8 decimals; // Token decimals
-    }
-
-    /**
-     * TVL breakdown for an asset
-     */
-    struct AssetTvl {
-        address assetId; // Asset address
-        address tokenId; // Token address
-        uint256 tokenPriceUsdc; // Token price in USDC
-        TokenAmount underlyingTokenBalance; // Amount of underlying token in asset
-        TokenAmount delegatedBalance; // Amount of underlying token balance that is delegated
-        TokenAmount adjustedBalance; // TVL = underlyingTokenBalance - delegatedBalance
     }
 
     /**
@@ -313,7 +311,7 @@ contract RegisteryAdapterV2Vault is Manageable {
                 helper.allowances(
                     accountAddress,
                     assetAddresses,
-                    positionSpenderAddresses
+                    addressesGenerator.getPositionSpenderAddresses()
                 )
             );
         return abi.decode(allowances, (Allowance[]));
@@ -338,84 +336,22 @@ contract RegisteryAdapterV2Vault is Manageable {
     }
 
     /**
-     * Deprecate or undeprecate an asset. Deprecated assets will not appear in any adapter method call response
-     */
-    function setAssetDeprecated(address assetAddress, bool newDeprecationStatus)
-        public
-        onlyManagers
-    {
-        bool currentDeprecationStatus = assetDeprecated[assetAddress];
-        if (currentDeprecationStatus == newDeprecationStatus) {
-            revert("Adapter: Unable to change asset deprecation status");
-        }
-        if (newDeprecationStatus == true) {
-            numberOfDeprecatedAssets++;
-        } else {
-            numberOfDeprecatedAssets--;
-        }
-        assetDeprecated[assetAddress] = newDeprecationStatus;
-    }
-
-    /**
-     * Set position spender addresses. Used by `assetAllowances(address,address)`.
-     */
-    function setPositionSpenderAddresses(address[] memory addresses)
-        public
-        onlyManagers
-    {
-        positionSpenderAddresses = addresses;
-    }
-
-    /**
-     * Fetch TVL for adapter
-     */
-    function assetsTvlUsdc() external view returns (uint256) {
-        uint256 tvl;
-        address[] memory assetAddresses = assetsAddresses();
-        uint256 numberOfAssets = assetAddresses.length;
-        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
-            address assetAddress = assetAddresses[assetIdx];
-            uint256 _assetTvl = assetTvlUsdc(assetAddress);
-            tvl += _assetTvl;
-        }
-        return tvl;
-    }
-
-    /**
-     * Fetch TVL for adapter
-     */
-    function assetsTvl() external view returns (AssetTvl[] memory) {
-        uint256 tvl;
-        address[] memory _assetsAddresses = assetsAddresses();
-        uint256 numberOfAssets = _assetsAddresses.length;
-
-        AssetTvl[] memory tvlData = new AssetTvl[](numberOfAssets);
-        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
-            address assetAddress = _assetsAddresses[assetIdx];
-            AssetTvl memory tvl = assetTvl(assetAddress);
-            tvlData[assetIdx] = tvl;
-        }
-        return tvlData;
-    }
-
-    /**
      * Configure adapter
      */
     constructor(
-        address _registryAddress,
         address _oracleAddress,
         address _managementListAddress,
-        address _helperAddress
+        address _helperAddress,
+        address _addressesGeneratorAddress
     ) Manageable(_managementListAddress) {
         require(
             _managementListAddress != address(0),
             "Missing management list address"
         );
-        require(_registryAddress != address(0), "Missing registry address");
         require(_oracleAddress != address(0), "Missing oracle address");
-        registry = IV2Registry(_registryAddress);
         oracle = IOracle(_oracleAddress);
         helper = IHelper(_helperAddress);
+        addressesGenerator = IAddressesGenerator(_addressesGeneratorAddress);
     }
 
     /*******************************************************
@@ -495,43 +431,14 @@ contract RegisteryAdapterV2Vault is Manageable {
      * Fetch the total number of assets for this adapter
      */
     function assetsLength() public view returns (uint256) {
-        uint256 numTokens = registry.numTokens();
-        uint256 numVaults;
-        for (uint256 tokenIdx = 0; tokenIdx < numTokens; tokenIdx++) {
-            address currentToken = registry.tokens(tokenIdx);
-            uint256 numVaultsForToken = registry.numVaults(currentToken);
-            numVaults += numVaultsForToken;
-        }
-        return numVaults - numberOfDeprecatedAssets;
+        return addressesGenerator.assetsLength();
     }
 
     /**
      * Fetch all asset addresses for this adapter
      */
     function assetsAddresses() public view returns (address[] memory) {
-        uint256 numVaults = assetsLength();
-        address[] memory _assetsAddresses = new address[](numVaults);
-        uint256 numTokens = registry.numTokens();
-        uint256 currentVaultIdx;
-        for (uint256 tokenIdx = 0; tokenIdx < numTokens; tokenIdx++) {
-            address currentTokenAddress = registry.tokens(tokenIdx);
-            uint256 numVaultsForToken = registry.numVaults(currentTokenAddress);
-            for (
-                uint256 vaultTokenIdx = 0;
-                vaultTokenIdx < numVaultsForToken;
-                vaultTokenIdx++
-            ) {
-                address currentAssetAddress =
-                    registry.vaults(currentTokenAddress, vaultTokenIdx);
-                bool assetIsNotDeprecated =
-                    assetDeprecated[currentAssetAddress] == false;
-                if (assetIsNotDeprecated) {
-                    _assetsAddresses[currentVaultIdx] = currentAssetAddress;
-                    currentVaultIdx++;
-                }
-            }
-        }
-        return _assetsAddresses;
+        return addressesGenerator.assetsAddresses();
     }
 
     /**
@@ -571,7 +478,8 @@ contract RegisteryAdapterV2Vault is Manageable {
             pricePerShare = vault.pricePerShare();
         }
 
-        address latestVaultAddress = registry.latestVault(tokenAddress);
+        address latestVaultAddress =
+            IV2Registry(registry()).latestVault(tokenAddress);
         bool migrationAvailable = latestVaultAddress != assetAddress;
 
         AssetMetadata memory metadata =
@@ -657,55 +565,17 @@ contract RegisteryAdapterV2Vault is Manageable {
     }
 
     /**
-     * Fetch TVL of an asset in USDC
+     * Fetch registry address from addresses generator
      */
-    function assetTvlUsdc(address assetAddress) public view returns (uint256) {
-        address tokenAddress = underlyingTokenAddress(assetAddress);
-        uint256 underlyingBalanceAmount = assetBalance(assetAddress);
-        uint256 delegatedBalanceAmount =
-            helper.assetStrategiesDelegatedBalance(assetAddress);
-        uint256 adjustedBalanceAmount =
-            underlyingBalanceAmount - delegatedBalanceAmount;
-        uint256 adjustedBalanceUsdc =
-            oracle.getNormalizedValueUsdc(tokenAddress, adjustedBalanceAmount);
-        return adjustedBalanceUsdc;
-    }
-
-    /**
-     * Fetch TVL breakdown of an asset
-     */
-    function assetTvl(address assetAddress)
-        public
-        view
-        returns (AssetTvl memory)
-    {
-        address tokenAddress = underlyingTokenAddress(assetAddress);
-        uint256 underlyingBalanceAmount = assetBalance(assetAddress);
-        uint256 delegatedBalanceAmount =
-            helper.assetStrategiesDelegatedBalance(assetAddress);
-        uint256 adjustedBalance =
-            underlyingBalanceAmount - delegatedBalanceAmount;
-        return
-            AssetTvl({
-                assetId: assetAddress,
-                tokenId: tokenAddress,
-                tokenPriceUsdc: oracle.getPriceUsdcRecommended(tokenAddress),
-                underlyingTokenBalance: tokenAmount(
-                    underlyingBalanceAmount,
-                    tokenAddress
-                ),
-                delegatedBalance: tokenAmount(
-                    delegatedBalanceAmount,
-                    tokenAddress
-                ),
-                adjustedBalance: tokenAmount(adjustedBalance, tokenAddress)
-            });
+    function registry() public view returns (address) {
+        return addressesGenerator.registry();
     }
 
     /**
      * Fetch a unique list of tokens for this adapter
      */
     function tokens() public view returns (Token[] memory) {
+        IV2Registry registry = IV2Registry(registry());
         uint256 numTokens = registry.numTokens();
         Token[] memory _tokens = new Token[](numTokens);
         for (uint256 tokenIdx = 0; tokenIdx < numTokens; tokenIdx++) {
