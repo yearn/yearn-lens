@@ -1,6 +1,7 @@
 from brownie import (
     # RegisteryAdapterV1Vault,
     RegisteryAdapterV2Vault,
+    AddressesGeneratorV2Vaults,
     # RegistryAdapterEarn,
     ManagementList,
     # Lens,
@@ -33,13 +34,18 @@ def main():
     #     positionSpenderAddresses, {"from": management}
     # )
 
-    # Deploy v2 adapter
+    # Deploy v2 generator & adapter
+
     v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
+    v2Generator = AddressesGeneratorV2Vaults.deploy(
+        v2RegistryAddress, managementListAddress, {"from": management},
+    )
+
     v2Adapter = RegisteryAdapterV2Vault.deploy(
-        v2RegistryAddress,
         oracleAddress,
         managementListAddress,
         helperAddress,
+        v2Generator,
         {"from": management},
     )
 
@@ -102,6 +108,7 @@ def main():
     # print("Earn Registry:     ", earnRegistry)
     # print("Earn Adapter:      ", earnAdapter)
     # print("V1 Adapter:        ", v1Adapter)
+    print("V2 Generator:      ", v2Generator)
     print("V2 Adapter:        ", v2Adapter)
     # print("IB Adapter:        ", ironBankAdapter)
     # print("Lens:              ", lens)
