@@ -7,20 +7,6 @@ yDaiV2Address = "0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01"
 ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 
 
-@pytest.fixture
-def v1VaultTvlAdapter(
-    TvlAdapterV1Vaults,
-    v1VaultsAddressesGenerator,
-    delegationMapping,
-    managementList,
-    oracle,
-    management,
-):
-    return TvlAdapterV1Vaults.deploy(
-        oracle, v1VaultsAddressesGenerator, delegationMapping, {"from": management},
-    )
-
-
 def test_generator_info(v1VaultTvlAdapter):
     adapterInfo = v1VaultTvlAdapter.adapterInfo()
     assert adapterInfo[0] == v1VaultTvlAdapter

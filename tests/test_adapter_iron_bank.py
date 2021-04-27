@@ -8,95 +8,136 @@ yfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
 yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
 usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
 
-cyDaiAddress = "0x8e595470Ed749b85C6F7669de83EAe304C2ec68F"
+cyUsdcAddress = "0x76Eb2FE28b36B3ee97F3Adae0C69606eeDB2A37c"
 daiAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
 
 
 @pytest.fixture
-def ironBankAdapter(RegistryAdapterIronBank, oracle, gov):
+def ironBankAdapter(
+    RegistryAdapterIronBank,
+    oracle,
+    managementList,
+    helper,
+    ironBankAddressesGenerator,
+    gov,
+):
     comptrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
     ironBankAdapter = RegistryAdapterIronBank.deploy(
-        comptrollerAddress, oracle, {"from": gov}
+        oracle, managementList, helper, ironBankAddressesGenerator, {"from": gov}
     )
     return ironBankAdapter
 
 
-def test_registry_address(ironBankAdapter):
-    assert not ironBankAdapter.registryAddress() == ZERO_ADDRESS
+# def test_interface(
+#     ironBankAdapter, introspection, management, registryAdapterCommonInterface
+# ):
+#     adapterImplementsCommonInterface = introspection.implementsInterface(
+#         ironBankAdapter, registryAdapterCommonInterface
+#     )
+#     assert adapterImplementsCommonInterface
 
 
-def test_adapter_info(ironBankAdapter):
-    adapterInfo = ironBankAdapter.adapterInfo()
-    assert adapterInfo[0] == "ironBank"
-    assert adapterInfo[1] == "lending"
+# def test_adapter_info(ironBankAdapter):
+#     adapterInfo = ironBankAdapter.adapterInfo()
+#     assert adapterInfo[0] == ironBankAdapter
+#     assert adapterInfo[1] == "IRON_BANK_MARKET"
+#     assert adapterInfo[2] == "LENDING"
 
 
-def test_assets_addresses(ironBankAdapter):
-    assetsAddresses = ironBankAdapter.assetsAddresses()
-    assert len(assetsAddresses) > 0
-    assert not assetsAddresses[0] == ZERO_ADDRESS
+# def test_registry_address(ironBankAdapter):
+#     assert not ironBankAdapter.registry() == ZERO_ADDRESS
 
 
-def test_assets_length(ironBankAdapter):
-    assetsLength = ironBankAdapter.assetsLength()
-    assert assetsLength > 0
+# def test_assets_length(ironBankAdapter):
+#     assetsLength = ironBankAdapter.assetsLength()
+#     assert assetsLength > 0
 
 
-def test_asset(ironBankAdapter):
-    asset = ironBankAdapter.asset(cyDaiAddress)
-    assetId = asset[0]
-    name = asset[1]
-    version = asset[2]
-    balance = asset[3]
-    balanceUsdc = asset[4]
-    tolerance = 5000000  # $5.00
-    assert assetId == cyDaiAddress
-    assert name == "Dai Stablecoin"
-    assert version == "1.0.0"
-    assert balance > 0
-    assert balanceUsdc > balance / 10 ** 18
+# # test_set_asset_deprecated
+
+
+# def test_assets_addresses(ironBankAdapter):
+#     assetsAddresses = ironBankAdapter.assetsAddresses()
+#     assert len(assetsAddresses) > 0
+#     assert not assetsAddresses[0] == ZERO_ADDRESS
+
+
+def test_asset_static(ironBankAdapter):
+    assetStatic = ironBankAdapter.assetStatic(cyUsdcAddress)
+    assetId = assetStatic[0]
+    assetTypeId = assetStatic[1]
+    name = assetStatic[2]
+    version = assetStatic[3]
+    assert assetId == cyUsdcAddress
+    assert name == "Yearn USD Coin"
+    assert version == "2.0.0"
 
     # Test token metadata
-    token = asset[5]
+    token = assetStatic[4]
     tokenId = token[0]
     tokenName = token[1]
     tokenSymbol = token[2]
     tokenDecimals = token[3]
-    tokenPriceUsdc = token[4]
-    assert tokenId == daiAddress
-    assert tokenName == "Dai Stablecoin"
-    assert tokenSymbol == "DAI"
-    assert tokenDecimals == 18
+
+    assert tokenId == usdcAddress
+    assert tokenName == "USD Coin"
+    assert tokenSymbol == "USDC"
+    assert tokenDecimals == 6
+
+
+def test_asset_dynamic(ironBankAdapter, oracle):
+    assetDynamic = ironBankAdapter.assetDynamic(cyUsdcAddress)
+    assetId = assetDynamic[0]
+    typeId = assetDynamic[1]
+    tokenId = assetDynamic[2]
+    underlyingTokenBalance = assetDynamic[3]
+    # metadata = assetDynamic[4]
+
+    # Test vault underlying balances
+    tokenPriceUsdc = oracle.getPriceUsdcRecommended(tokenId)
+    balance = underlyingTokenBalance[0]
+    balanceUsdc = underlyingTokenBalance[1]
+    tolerance = 5000000  # $5.00
+    estimatedBalanceUsdc = tokenPriceUsdc * balance / 10 ** 6
     assert tokenPriceUsdc > 900000
     assert tokenPriceUsdc < 1100000
-    estimatedBalanceUsdc = tokenPriceUsdc * balance / 10 ** 18
+    assert balance > 0
     assert estimatedBalanceUsdc >= balanceUsdc - tolerance
     assert estimatedBalanceUsdc <= balanceUsdc + tolerance
 
-
-def test_asset_tvl(ironBankAdapter):
-    cyDaiTvl = ironBankAdapter.assetTvl(cyDaiAddress)
-    assert cyDaiTvl > 0
-
-    # Print TVL per asset
-    print("-------------")
-    print("Iron Bank TVL")
-    print("-------------")
-    assetsAddresses = ironBankAdapter.assetsAddresses()
-    tvlList = []
-    for address in assetsAddresses:
-        token = interface.IERC20(address)
-        tvl = ironBankAdapter.assetTvl(address) / 10 ** 6
-        tvlList.append({"symbol": token.symbol(), "tvl": tvl})
-    sortedTvlItems = sorted(tvlList, key=itemgetter("tvl"), reverse=True)
-    for item in sortedTvlItems:
-        print(item.get("symbol"), item.get("tvl"))
+    # Test market metadata
 
 
-def test_assets_tvl(ironBankAdapter):
-    tvl = ironBankAdapter.assetsTvl()
-    assert tvl > 0
-    print("Total TVL:", tvl / 10 ** 6)
+def test_assets_static(ironBankAdapter):
+    assets = ironBankAdapter.assetsStatic()
+    assert len(assets) > 1
+    firstAsset = assets[0]
+    assetId = firstAsset[0]
+    assetTypeId = firstAsset[1]
+    assetName = firstAsset[2]
+    assetVersion = firstAsset[3]
+    assert assetId == yfiVaultAddress
+    assert assetName == "YFI yVault"
+    assert assetTypeId == "VAULT_V2"
+    assert assetVersion == "0.3.2"
+    # print(assets)
+
+
+# assets dynamic
+
+# def test_assets_dynamic(ironBankAdapter):
+#     assets = ironBankAdapter.assetsStatic()
+#     assert len(assets) > 1
+#     firstAsset = assets[0]
+#     assetId = firstAsset[0]
+#     assetTypeId = firstAsset[1]
+#     assetName = firstAsset[2]
+#     assetVersion = firstAsset[3]
+#     assert assetId == yfiVaultAddress
+#     assert assetName == "YFI yVault"
+#     assert assetTypeId == "VAULT_V2"
+#     assert assetVersion == "0.3.2"
+#     # print(assets)
 
 
 # def test_tokens(ironBankAdapter):

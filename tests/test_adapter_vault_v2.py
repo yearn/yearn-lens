@@ -1,6 +1,6 @@
 import pytest
 import brownie
-from brownie import interface, ZERO_ADDRESS
+from brownie import interface, Contract, ZERO_ADDRESS
 from operator import itemgetter
 
 yfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
@@ -24,16 +24,43 @@ def v2VaultsAdapter(
     oracle,
     helper,
     management,
+    v2VaultsTvlAdapter,
 ):
     trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
     positionSpenderAddresses = [trustedMigratorAddress]
     adapter = RegisteryAdapterV2Vault.deploy(
-        oracle, managementList, helper, v2AddressesGenerator, {"from": management},
+        oracle,
+        helper,
+        v2AddressesGenerator,
+        v2VaultsTvlAdapter,
+        {"from": management},
     )
     v2AddressesGenerator.setPositionSpenderAddresses(
         positionSpenderAddresses, {"from": management}
     )
     return adapter
+
+
+def test_update_slot(v2VaultsAdapter, chad, management):
+    print("mgmt", management, chad, v2VaultsAdapter.oracle())
+    print(v2VaultsAdapter.getSlot(0))
+    oldOracle = v2VaultsAdapter.oracle()
+    v2VaultsAdapter.updateSlot(
+        "0x0000000000000000000000000000000000000000000000000000000000000001",
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        {"from": management},
+    )
+    assert v2VaultsAdapter.oracle() != oldOracle
+    v2VaultsAdapter.updateSlot(
+        "0x0000000000000000000000000000000000000000000000000000000000000001",
+        "0x00000000000000000000000083d95e0D5f402511dB06817Aff3f9eA88224B030",
+        {"from": management},
+    )
+    assert v2VaultsAdapter.oracle() == oldOracle
+
+
+def test_asset_user_metadata(v2VaultsAdapter):
+    assetUserMetadata = v2VaultsAdapter.assetUserMetadata(v2UsdcVaultV2Address)
 
 
 def test_interface(
@@ -173,7 +200,7 @@ def test_assets_dynamic(v2VaultsAdapter):
     # print(assets)
 
 
-def test_position_of(v2VaultsAdapter, oracle, management, accounts):
+def test_asset_positions_of(v2VaultsAdapter, oracle, management, accounts):
     # Deposit into YFI vault
     yfiAccount = accounts.at(vestedYfiAddress, force=True)
     yfi = interface.IERC20(yfiAddress)
@@ -187,7 +214,8 @@ def test_position_of(v2VaultsAdapter, oracle, management, accounts):
     userVaultBalance = userVaultBalanceShares * pricePerShare / 10 ** decimals
     userVaultBalanceUsdc = oracle.getNormalizedValueUsdc(yfiAddress, userVaultBalance)
     assert userVaultBalanceShares > 0
-    position = v2VaultsAdapter.positionOf(vestedYfiAddress, v2YfiVaultAddress)
+    positions = v2VaultsAdapter.assetPositionsOf(vestedYfiAddress, v2YfiVaultAddress)
+    position = positions[0]
 
     # Test basic info
     assetId = position[0]
@@ -235,7 +263,7 @@ def test_position_of(v2VaultsAdapter, oracle, management, accounts):
     assert allowance == 100
 
 
-def test_positions_of(v2VaultsAdapter, oracle, accounts):
+def test_assets_positions_of(v2VaultsAdapter, oracle, accounts):
     # Deposit into YFI vault
     yfiAccount = accounts.at(vestedYfiAddress, force=True)
     yfi = interface.IERC20(yfiAddress)
@@ -251,53 +279,20 @@ def test_positions_of(v2VaultsAdapter, oracle, accounts):
     assert userVaultBalanceShares > 0
 
     # Test positionsOf(address)
-    positions = v2VaultsAdapter.positionsOf(vestedYfiAddress)
+    positions = v2VaultsAdapter.assetsPositionsOf(vestedYfiAddress)
     position = positions[0]
     assetId = position[0]
     assert len(positions) > 0
     assert assetId == v2YfiVaultAddress
 
     # Test positionsOf(address, [...address])
-    positions = v2VaultsAdapter.positionsOf(
+    positions = v2VaultsAdapter.assetsPositionsOf(
         vestedYfiAddress, [v2YfiVaultAddress, v2UsdcVaultV2Address]
     )
     position = positions[0]
     assetId = position[0]
     assert len(positions) > 0
     assert assetId == v2YfiVaultAddress
-
-
-def test_asset_tvl_usdc(v2VaultsAdapter):
-    assetsAddresses = v2VaultsAdapter.assetsAddresses()
-    for address in assetsAddresses:
-        tvl = v2VaultsAdapter.assetTvlUsdc(address) / 10 ** 12
-        assert tvl > 0
-
-    # Print TVL per asset
-    # print("-------------")
-    # print("V2 Vaults TVL")
-    # print("-------------")
-    # assetsAddresses = v2VaultsAdapter.assetsAddresses()
-    # tvlList = []
-    # for address in assetsAddresses:
-    #     token = interface.IERC20(address)
-    #     tvl = v2VaultsAdapter.assetTvlUsdc(address) / 10 ** 6
-    #     tvlList.append({"symbol": token.symbol(), "tvl": tvl})
-    # sortedTvlItems = sorted(tvlList, key=itemgetter("tvl"), reverse=True)
-    # for item in sortedTvlItems:
-    #     print(item.get("symbol"), item.get("tvl"))
-
-
-def test_assets_tvl_usdc(v2VaultsAdapter):
-    tvl = v2VaultsAdapter.assetsTvlUsdc()
-    assert tvl > 0
-    # print("Total tvl", tvl / 10 ** 12)
-
-
-# def test_asset_tvl(v2VaultsAdapter):
-#     assetsAddresses = v2VaultsAdapter.assetsAddresses()
-#     for address in assetsAddresses:
-#         print(v2VaultsAdapter.assetTvl(address))
 
 
 def test_set_position_spender_addresses(

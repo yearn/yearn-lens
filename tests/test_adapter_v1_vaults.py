@@ -15,115 +15,155 @@ zapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 
 
 @pytest.fixture
-def v1VaultsAdapter(RegisteryAdapterV1Vault, managementList, oracle, management):
+def v1VaultsAdapter(
+    RegisteryAdapterV1Vault,
+    helper,
+    v1VaultsAddressesGenerator,
+    v1VaultTvlAdapter,
+    managementList,
+    oracle,
+    management,
+):
     v1RegistryAddress = "0x3eE41C098f9666ed2eA246f4D2558010e59d63A0"
     trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
     positionSpenderAddresses = [trustedMigratorAddress]
     adapter = RegisteryAdapterV1Vault.deploy(
-        v1RegistryAddress, oracle, managementList, {"from": management},
+        oracle,
+        helper,
+        v1VaultsAddressesGenerator,
+        v1VaultTvlAdapter,
+        {"from": management},
     )
-    adapter.setPositionSpenderAddresses(positionSpenderAddresses, {"from": management})
     return adapter
 
 
-def test_interface(
-    v1VaultsAdapter, introspection, management, registryAdapterCommonInterface
-):
-    adapterImplementsCommonInterface = introspection.implementsInterface(
-        v1VaultsAdapter, registryAdapterCommonInterface
-    )
-    assert adapterImplementsCommonInterface
+# def test_interface(
+#     v1VaultsAdapter, introspection, management, registryAdapterCommonInterface
+# ):
+#     adapterImplementsCommonInterface = introspection.implementsInterface(
+#         v1VaultsAdapter, registryAdapterCommonInterface
+#     )
+#     assert adapterImplementsCommonInterface
 
 
-def test_adapter_info(v1VaultsAdapter):
-    adapterInfo = v1VaultsAdapter.adapterInfo()
-    assert adapterInfo[0] == v1VaultsAdapter
-    assert adapterInfo[1] == "v1Vault"
-    assert adapterInfo[2] == "vault"
+# def test_adapter_info(v1VaultsAdapter):
+#     adapterInfo = v1VaultsAdapter.adapterInfo()
+#     assert adapterInfo[0] == v1VaultsAdapter
+#     assert adapterInfo[1] == "VAULT_V1"
+#     assert adapterInfo[2] == "VAULT"
 
 
-def test_registry_address(v1VaultsAdapter):
-    assert not v1VaultsAdapter.registryAddress() == ZERO_ADDRESS
+# def test_registry_address(v1VaultsAdapter):
+#     assert not v1VaultsAdapter.registry() == ZERO_ADDRESS
 
 
-def test_assets_length(v1VaultsAdapter):
-    assetsLength = v1VaultsAdapter.assetsLength()
-    assert assetsLength > 0
+# def test_assets_length(v1VaultsAdapter):
+#     assetsLength = v1VaultsAdapter.assetsLength()
+#     assert assetsLength > 0
 
 
-def test_assets_addresses(v1VaultsAdapter):
-    assetsAddresses = v1VaultsAdapter.assetsAddresses()
-    assert len(assetsAddresses) > 0
-    assert not assetsAddresses[0] == ZERO_ADDRESS
+# def test_assets_addresses(v1VaultsAdapter):
+#     assetsAddresses = v1VaultsAdapter.assetsAddresses()
+#     assert len(assetsAddresses) > 0
+#     assert not assetsAddresses[0] == ZERO_ADDRESS
 
 
-def test_asset(v1VaultsAdapter):
-    # test vault data
-    asset = v1VaultsAdapter.asset(usdcVaultAddress)
-    assetId = asset[0]
-    assetTypeId = asset[1]
-    name = asset[2]
-    version = asset[3]
-    balance = asset[4]
-    balanceUsdc = asset[5]
-    assert assetId == usdcVaultAddress
-    assert name == "yearn USD//C"
-    assert version == "1.0.0"
-    assert balance > 0
-    assert balanceUsdc > balance / 10 ** 18
+# def test_asset_static(v1VaultsAdapter):
+#     # test vault data
+#     assetStatic = v1VaultsAdapter.assetStatic(usdcVaultAddress)
+#     assetId = assetStatic[0]
+#     assetTypeId = assetStatic[1]
+#     name = assetStatic[2]
+#     version = assetStatic[3]
+#     assert assetId == usdcVaultAddress
+#     assert name == "yearn USD//C"
+#     assert version == "1.0.0"
 
-    # Test token metadata
-    token = asset[6]
-    tokenId = token[0]
-    tokenName = token[1]
-    tokenSymbol = token[2]
-    tokenDecimals = token[3]
-    tokenPriceUsdc = token[4]
-    tolerance = 5000000  # $5.00
-    estimatedBalanceUsdc = tokenPriceUsdc * balance / 10 ** 6
-    assert tokenId == usdcAddress
-    assert tokenName == "USD Coin"
-    assert tokenSymbol == "USDC"
-    assert tokenDecimals == 6
-    assert tokenPriceUsdc > 900000
-    assert tokenPriceUsdc < 1100000
-    assert estimatedBalanceUsdc >= balanceUsdc - tolerance
-    assert estimatedBalanceUsdc <= balanceUsdc + tolerance
+#     # # Test token
+#     token = assetStatic[4]
+#     tokenId = token[0]
+#     tokenName = token[1]
+#     tokenSymbol = token[2]
+#     tokenDecimals = token[3]
+
+#     assert tokenId == usdcAddress
+#     assert tokenName == "USD Coin"
+#     assert tokenSymbol == "USDC"
+#     assert tokenDecimals == 6
 
 
-def test_asset_metadata(v1VaultsAdapter):
-    # Test vault metadata
-    asset = v1VaultsAdapter.asset(usdcVaultAddress)
-    metadata = asset[7]
-    symbol = metadata[0]
-    pricePerShare = metadata[1]
-    migrationAvailable = metadata[2]
-    latestVaultAddress = metadata[3]
-    depositLimit = metadata[4]
-    emergencyShutdown = metadata[5]
-    assert migrationAvailable == True
-    assert latestVaultAddress != usdcVaultAddress
-    assert latestVaultAddress != ZERO_ADDRESS
-    assert depositLimit > 0
-    assert emergencyShutdown == False
+# def test_asset_dynamic(v1VaultsAdapter, oracle):
+#     assetDynamic = v1VaultsAdapter.assetDynamic(usdcVaultAddress)
+#     assetId = assetDynamic[0]
+#     typeId = assetDynamic[1]
+#     tokenId = assetDynamic[2]
+#     underlyingTokenBalance = assetDynamic[3]
+#     metadata = assetDynamic[4]
+
+#     # Test vault underlying balances
+#     tokenPriceUsdc = oracle.getPriceUsdcRecommended(tokenId)
+#     balance = underlyingTokenBalance[0]
+#     balanceUsdc = underlyingTokenBalance[1]
+#     tolerance = 5000000  # $5.00
+#     estimatedBalanceUsdc = tokenPriceUsdc * balance / 10 ** 6
+#     assert tokenPriceUsdc > 900000
+#     assert tokenPriceUsdc < 1100000
+#     assert balance > 0
+#     assert estimatedBalanceUsdc >= balanceUsdc - tolerance
+#     assert estimatedBalanceUsdc <= balanceUsdc + tolerance
 
 
-def test_assets(v1VaultsAdapter):
-    assets = v1VaultsAdapter.assets()
-    assert len(assets) > 1
-    usdcVault = assets[2]
-    assetId = usdcVault[0]
-    assetTypeId = usdcVault[1]
-    assetName = usdcVault[2]
-    assetVersion = usdcVault[3]
-    assert assetId == usdcVaultAddress
-    assert assetName == "yearn USD//C"
-    assert assetTypeId == "v1Vault"
-    assert assetVersion == "1.0.0"
-    print(assets)
+# assert balanceUsdc > balance / 10 ** 6 # This assumes the price of USDC >= 1
+
+# Test vault metadata
+# symbol = metadata[0]
+# pricePerShare = metadata[1]
+# migrationAvailable = metadata[2]
+# latestVaultAddress = metadata[3]
+# depositLimit = metadata[4]
+# emergencyShutdown = metadata[5]
+# assert migrationAvailable == True
+# assert latestVaultAddress != v2UsdcVaultV1Address
+# assert latestVaultAddress != ZERO_ADDRESS
+# assert depositLimit > 0
+# assert emergencyShutdown == False
 
 
-def test_position_of(v1VaultsAdapter, management, accounts):
+# def test_asset_metadata(v1VaultsAdapter):
+#     # Test vault metadata
+#     asset = v1VaultsAdapter.asset(usdcVaultAddress)
+#     metadata = asset[7]
+#     symbol = metadata[0]
+#     pricePerShare = metadata[1]
+#     migrationAvailable = metadata[2]
+#     latestVaultAddress = metadata[3]
+#     depositLimit = metadata[4]
+#     emergencyShutdown = metadata[5]
+#     assert migrationAvailable == True
+#     assert latestVaultAddress != usdcVaultAddress
+#     assert latestVaultAddress != ZERO_ADDRESS
+#     assert depositLimit > 0
+#     assert emergencyShutdown == False
+
+
+# def test_assets_static(v1VaultsAdapter):
+#     assets = v1VaultsAdapter.assetsStatic()
+#     assert len(assets) > 1
+#     usdcVault = assets[2]
+#     assetId = usdcVault[0]
+#     assetTypeId = usdcVault[1]
+#     assetName = usdcVault[2]
+#     assetVersion = usdcVault[3]
+#     assert assetId == usdcVaultAddress
+#     assert assetName == "yearn USD//C"
+#     assert assetTypeId == "VAULT_V1"
+#     assert assetVersion == "1.0.0"
+
+
+# test_assets_dynamic
+
+
+def test_asset_positions_of(v1VaultsAdapter, management, accounts):
     # Deposit into YFI vault
     yfiAccount = accounts.at(vestedYfiAddress, force=True)
     yfi = interface.IERC20(yfiAddress)
@@ -139,7 +179,8 @@ def test_position_of(v1VaultsAdapter, management, accounts):
     assert userVaultBalance > 0
 
     # Test position
-    position = v1VaultsAdapter.positionOf(vestedYfiAddress, yfiVaultAddress)
+    positions = v1VaultsAdapter.assetPositionsOf(vestedYfiAddress, yfiVaultAddress)
+    position = positions[0]
     assetId = position[0]
     categoryId = position[1]
     balance = position[2]
@@ -209,52 +250,14 @@ def test_positions_of(v1VaultsAdapter, accounts):
     assert assetId == yfiVaultAddress
 
 
-def test_asset_tvl(v1VaultsAdapter, oracle):
-    assetsAddresses = v1VaultsAdapter.assetsAddresses()
-    # for address in assetsAddresses:
-    #     tvl = v1VaultsAdapter.assetTvl(address) / 10 ** 12
-    #     assert tvl > 0
-    print(
-        "token: ",
-        v1VaultsAdapter.underlyingTokenAddress(
-            "0x98B058b2CBacF5E99bC7012DF757ea7CFEbd35BC"
-        ),
-    )
-    print(
-        "price: ",
-        oracle.getPriceUsdcRecommended(
-            v1VaultsAdapter.underlyingTokenAddress(
-                "0x98B058b2CBacF5E99bC7012DF757ea7CFEbd35BC"
-            )
-        ),
-    )
-    print(
-        "tvl: ", v1VaultsAdapter.assetTvl("0x98B058b2CBacF5E99bC7012DF757ea7CFEbd35BC")
-    )
-
-    # Print TVL per asset
-    print("-------------")
-    print("V1 Vaults TVL")
-    print("-------------")
-    assetsAddresses = v1VaultsAdapter.assetsAddresses()
-    tvlList = []
-    for address in assetsAddresses:
-        token = interface.IERC20(address)
-        tvl = v1VaultsAdapter.assetTvl(address) / 10 ** 6
-        tvlList.append({"symbol": token.symbol(), "tvl": tvl})
-    sortedTvlItems = sorted(tvlList, key=itemgetter("tvl"), reverse=True)
-    for item in sortedTvlItems:
-        print(item.get("symbol"), item.get("tvl"))
-
-
-def test_assets_tvl(v1VaultsAdapter):
-    tvl = v1VaultsAdapter.assetsTvl()
-    assert tvl > 0
-    print("Total tvl", tvl / 10 ** 12)
-
-
-def test_set_position_spender_addresses(v1VaultsAdapter, management, rando):
+def test_set_position_spender_addresses(
+    v1VaultsAdapter, v1AddressesGenerator, management, rando
+):
     with brownie.reverts():
-        v1VaultsAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": rando})
-    v1VaultsAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": management})
-    assert v1VaultsAdapter.positionSpenderAddresses(0) == ethZapAddress
+        v1AddressesGenerator.setPositionSpenderAddresses(
+            [ethZapAddress], {"from": rando}
+        )
+    v1AddressesGenerator.setPositionSpenderAddresses(
+        [ethZapAddress], {"from": management}
+    )
+    assert v1AddressesGenerator.positionSpenderAddresses(0) == ethZapAddress

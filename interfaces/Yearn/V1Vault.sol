@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.2;
 
-interface V1Vault {
+interface IV1Vault {
     function token() external view returns (address);
 
     function underlying() external view returns (address);

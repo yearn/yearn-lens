@@ -1,239 +1,452 @@
-// // SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 
-// pragma solidity ^0.8.2;
-// pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.2;
+pragma experimental ABIEncoderV2;
 
-// // Adapter-specific imports
-// import "../../interfaces/Cream/Unitroller.sol";
-// import "../../interfaces/Cream/CyToken.sol";
+import "../Utilities/Manageable.sol";
 
-// // Common imports
-// import "../../interfaces/Common/IERC20.sol";
-// import "../Common/Adapter.sol";
+// Adapter-specific imports
+import "../../interfaces/Cream/Unitroller.sol";
+import "../../interfaces/Cream/CyToken.sol";
 
-// contract RegistryAdapterIronBank is Adapter {
-//     /**
-//      * Common code shared by all adapters
-//      */
-//     function assets(address[] memory _assetsAddresses)
-//         public
-//         view
-//         returns (Asset[] memory)
-//     {
-//         uint256 numberOfAssets = _assetsAddresses.length;
-//         Asset[] memory _assets = new Asset[](numberOfAssets);
-//         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
-//             address assetAddress = _assetsAddresses[assetIdx];
-//             Asset memory _asset = asset(assetAddress);
-//             _assets[assetIdx] = _asset;
-//         }
-//         return _assets;
-//     }
+// Common imports
+import "../../interfaces/Common/IERC20.sol";
 
-//     function assets() external view returns (Asset[] memory) {
-//         address[] memory _assetsAddresses = assetsAddresses();
-//         return assets(_assetsAddresses);
-//     }
+/*******************************************************
+ *                       Interfaces                    *
+ *******************************************************/
+interface IOracle {
+    function getNormalizedValueUsdc(address tokenAddress, uint256 amount)
+        external
+        view
+        returns (uint256);
 
-//     function assetsTvl() external view returns (uint256) {
-//         uint256 tvl;
-//         address[] memory assetAddresses = assetsAddresses();
-//         uint256 numberOfAssets = assetAddresses.length;
-//         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
-//             address assetAddress = assetAddresses[assetIdx];
-//             uint256 _assetTvl = assetTvl(assetAddress);
-//             tvl += _assetTvl;
-//         }
-//         return tvl;
-//     }
+    function getPriceUsdcRecommended(address tokenAddress)
+        external
+        view
+        returns (uint256);
+}
 
-//     struct Asset {
-//         address id;
-//         string typeId;
-//         string name;
-//         string version;
-//         uint256 balance;
-//         uint256 balanceUsdc;
-//         Token token;
-//         // AssetMetadata metadata;
-//     }
+interface IAddressesGenerator {
+    function assetsAddresses() external view returns (address[] memory);
 
-//     constructor(
-//         address _registryAddress,
-//         address _oracleAddress,
-//         address _managementListAddress
-//     ) Adapter(_registryAddress, _oracleAddress, _managementListAddress) {}
+    function assetsLength() external view returns (uint256);
 
-//     /**
-//      * Iron Bank Adapter
-//      */
-//     function adapterInfo() public view returns (AdapterInfo memory) {
-//         return
-//             AdapterInfo({
-//                 id: address(this),
-//                 typeId: "ironBank",
-//                 categoryId: "lending"
-//             });
-//     }
+    function registry() external view returns (address);
 
-//     struct AssetMetadata {
-//         uint256 totalSupplied;
-//         uint256 totalSuppliedUsdc;
-//         uint256 totalBorrowed;
-//         uint256 totalBorrowedUsdc;
-//         uint256 cashUsdc;
-//         uint256 liquidity;
-//         uint256 liquidityUsdc;
-//         uint256 supplyApyBips;
-//         uint256 borrowApyBips;
-//     }
+    function getPositionSpenderAddresses()
+        external
+        view
+        returns (address[] memory);
+}
 
-//     function underlyingTokenAddress(address assetAddress)
-//         public
-//         view
-//         returns (address)
-//     {
-//         CyToken cyToken = CyToken(assetAddress);
-//         address tokenAddress = cyToken.underlying();
-//         return tokenAddress;
-//     }
+interface IHelper {
+    struct Allowance {
+        address owner;
+        address spender;
+        uint256 amount;
+        address token;
+    }
 
-//     function assetsLength() public view returns (uint256) {
-//         address[] memory allMarkets = getAllMarkets();
-//         return allMarkets.length;
-//     }
+    function allowances(
+        address ownerAddress,
+        address[] memory tokensAddresses,
+        address[] memory spenderAddresses
+    ) external view returns (Allowance[] memory);
+}
 
-//     function assetsAddresses() public view returns (address[] memory) {
-//         address[] memory allMarkets = getAllMarkets();
-//         return allMarkets;
-//     }
+/*******************************************************
+ *                     Adapter Logic                   *
+ *******************************************************/
+contract RegistryAdapterIronBank is Manageable {
+    /*******************************************************
+     *           Common code shared by all adapters        *
+     *******************************************************/
 
-//     function asset(address assetAddress) public view returns (Asset memory) {
-//         CyToken cyToken = CyToken(assetAddress);
-//         address tokenAddress = underlyingTokenAddress(assetAddress);
-//         IERC20 token = IERC20(tokenAddress);
-//         // AssetMetadata memory metadata =
-//         //     AssetMetadata({
-//         //         symbol: vault.symbol(),
-//         //         pricePerShare: pricePerShare,
-//         //         migrationAvailable: migrationAvailable,
-//         //         latestVaultAddress: latestVaultAddress,
-//         //         depositLimit: vault.depositLimit(),
-//         //         emergencyShutdown: vault.emergencyShutdown()
-//         //     });
+    IOracle public oracle; // The oracle is used to fetch USDC normalized pricing data
+    IHelper public helper; // A helper utility is used for batch allowance fetching and address array merging
+    IAddressesGenerator public addressesGenerator; // A utility for fetching assets addresses and length
+    address public fallbackContractAddress; // Optional fallback proxy
 
-//         Asset memory _asset =
-//             Asset({
-//                 id: assetAddress,
-//                 typeId: adapterInfo().typeId,
-//                 name: token.name(),
-//                 version: "2.0.0",
-//                 balance: assetBalance(assetAddress),
-//                 balanceUsdc: assetTvl(assetAddress),
-//                 token: tokenMetadata(tokenAddress)
-//                 // metadata: metadata
-//             });
-//         return _asset;
-//     }
+    /**
+     * High level static information about an asset
+     */
+    struct AssetStatic {
+        address id; // Asset address
+        string typeId; // Asset typeId (for example "VAULT_V2" or "IRON_BANK_MARKET")
+        string name; // Asset Name
+        string version; // Asset version
+        Token token; // Static asset underlying token information
+    }
 
-//     function assetBalance(address assetAddress) public view returns (uint256) {
-//         CyToken cyToken = CyToken(assetAddress);
-//         uint256 cash = cyToken.getCash();
-//         uint256 totalBorrows = cyToken.totalBorrows();
-//         uint256 totalReserves = cyToken.totalReserves();
-//         uint256 totalSupplied = (cash + totalBorrows - totalReserves);
-//         return totalSupplied;
-//     }
+    /**
+     * High level dynamic information about an asset
+     */
+    struct AssetDynamic {
+        address id; // Asset address
+        string typeId; // Asset typeId (for example "VAULT_V2" or "IRON_BANK_MARKET")
+        address tokenId; // Underlying token address;
+        TokenAmount underlyingTokenBalance; // Underlying token balances
+        // AssetMetadata metadata; // Metadata specific to the asset type of this adapter
+    }
 
-//     function assetTvl(address assetAddress) public view returns (uint256) {
-//         CyToken cyToken = CyToken(assetAddress);
-//         address tokenAddress = underlyingTokenAddress(assetAddress);
-//         IERC20 token = IERC20(tokenAddress);
-//         uint256 totalSupplied = assetBalance(assetAddress);
-//         uint256 tokenDecimals = token.decimals();
-//         uint256 usdcDecimals = 6;
-//         uint256 decimalsAdjustment;
-//         if (tokenDecimals >= usdcDecimals) {
-//             decimalsAdjustment = tokenDecimals - usdcDecimals;
-//         } else {
-//             decimalsAdjustment = usdcDecimals - tokenDecimals;
-//         }
-//         uint256 price = oracle.getPriceUsdcRecommended(tokenAddress);
-//         uint256 tvl;
-//         if (decimalsAdjustment > 0) {
-//             tvl =
-//                 (totalSupplied * price * (10**decimalsAdjustment)) /
-//                 10**(decimalsAdjustment + tokenDecimals);
-//         } else {
-//             tvl = (totalSupplied * price) / 10**usdcDecimals;
-//         }
-//         return tvl;
-//     }
+    /**
+     * Static token data
+     */
+    struct Token {
+        address id; // Token address
+        string name; // Token name
+        string symbol; // Token symbol
+        uint8 decimals; // Token decimals
+    }
 
-//     function positionOf(address accountAddress, address assetAddress)
-//         public
-//         view
-//         returns (Position memory)
-//     {
-//         IERC20 _asset = IERC20(assetAddress);
-//         address tokenAddress = underlyingTokenAddress(assetAddress);
-//         IERC20 token = IERC20(tokenAddress);
-//         uint256 balance = _asset.balanceOf(accountAddress);
-//         uint256 balanceUsdc =
-//             oracle.getNormalizedValueUsdc(tokenAddress, balance);
-//         uint256 tokenBalance = token.balanceOf(accountAddress);
-//         uint256 tokenBalanceUsdc =
-//             oracle.getNormalizedValueUsdc(tokenAddress, tokenBalance);
+    /**
+     * Information about a user's position relative to an asset
+     */
+    struct Position {
+        address assetId; // Asset address
+        address tokenId; // Underlying asset token address
+        string typeId; // Position typeId (for example "DEPOSIT," "BORROW," "LEND")
+        uint256 balance; // asset.balanceOf(account)
+        TokenAmount accountTokenBalance; // User account balance of underlying token (token.balanceOf(account))
+        TokenAmount underlyingTokenBalance; // Represents a user's asset position in underlying tokens
+        Allowance[] tokenAllowances; // Underlying token allowances
+        Allowance[] assetAllowances; // Asset allowances
+    }
 
-//         Allowance[] memory _tokenPositionAllowances =
-//             tokenPositionAllowances(accountAddress, tokenAddress, assetAddress);
-//         Allowance[] memory _positionAllowances =
-//             positionAllowances(accountAddress, assetAddress);
+    /**
+     * Token amount representation
+     */
+    struct TokenAmount {
+        uint256 amount; // Amount in underlying token decimals
+        uint256 amountUsdc; // Amount in USDC (6 decimals)
+    }
 
-//         TokenPosition memory tokenPosition =
-//             TokenPosition({
-//                 tokenId: tokenAddress,
-//                 balance: tokenBalance,
-//                 balanceUsdc: tokenBalanceUsdc,
-//                 allowances: _tokenPositionAllowances
-//             });
+    /**
+     * Allowance information
+     */
+    struct Allowance {
+        address owner; // Allowance owner
+        address spender; // Allowance spender
+        uint256 amount; // Allowance amount (in underlying token)
+    }
 
-//         Position memory position =
-//             Position({
-//                 assetId: assetAddress,
-//                 typeId: "borrow",
-//                 balance: balance,
-//                 balanceUsdc: balanceUsdc,
-//                 tokenPosition: tokenPosition,
-//                 allowances: _positionAllowances
-//             });
-//         return position;
-//     }
+    /**
+     * Information about the adapter
+     */
+    struct AdapterInfo {
+        address id; // Adapter address
+        string typeId; // Adapter typeId (for example "VAULT_V2" or "IRON_BANK_MARKET")
+        string categoryId; // Adapter categoryId (for example "VAULT")
+    }
 
-//     function positionsOf(
-//         address accountAddress,
-//         address[] memory _assetsAddresses
-//     ) public view returns (Position[] memory) {
-//         uint256 numberOfAssets = _assetsAddresses.length;
-//         Position[] memory positions = new Position[](numberOfAssets);
-//         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
-//             address assetAddress = _assetsAddresses[assetIdx];
-//             Position memory position = positionOf(accountAddress, assetAddress);
-//             positions[assetIdx] = position;
-//         }
-//         return positions;
-//     }
+    /**
+     * Fetch static information about an array of assets. This method can be used for off-chain pagination.
+     */
+    function assetsStatic(address[] memory _assetsAddresses)
+        public
+        view
+        returns (AssetStatic[] memory)
+    {
+        uint256 numberOfAssets = _assetsAddresses.length;
+        AssetStatic[] memory _assets = new AssetStatic[](numberOfAssets);
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = _assetsAddresses[assetIdx];
+            AssetStatic memory _asset = assetStatic(assetAddress);
+            _assets[assetIdx] = _asset;
+        }
+        return _assets;
+    }
 
-//     function positionsOf(address accountAddress)
-//         external
-//         view
-//         returns (Position[] memory)
-//     {
-//         address[] memory _assetsAddresses = assetsAddresses();
-//         return positionsOf(accountAddress, _assetsAddresses);
-//     }
+    /**
+     * Fetch dynamic information about an array of assets. This method can be used for off-chain pagination.
+     */
+    function assetsDynamic(address[] memory _assetsAddresses)
+        public
+        view
+        returns (AssetDynamic[] memory)
+    {
+        uint256 numberOfAssets = _assetsAddresses.length;
+        AssetDynamic[] memory _assets = new AssetDynamic[](numberOfAssets);
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = _assetsAddresses[assetIdx];
+            AssetDynamic memory _asset = assetDynamic(assetAddress);
+            _assets[assetIdx] = _asset;
+        }
+        return _assets;
+    }
 
-//     function getAllMarkets() public view returns (address[] memory) {
-//         return Unitroller(registryAddress).getAllMarkets();
-//     }
-// }
+    /**
+     * Fetch static information for all assets
+     */
+    function assetsStatic() external view returns (AssetStatic[] memory) {
+        address[] memory _assetsAddresses = assetsAddresses();
+        return assetsStatic(_assetsAddresses);
+    }
+
+    /**
+     * Fetch dynamic information for all assets
+     */
+    function assetsDynamic() external view returns (AssetDynamic[] memory) {
+        address[] memory _assetsAddresses = assetsAddresses();
+        return assetsDynamic(_assetsAddresses);
+    }
+
+    /**
+     * Fetch underlying token allowances relative to an asset.
+     * This is useful for determining whether or not a user has token approvals
+     * to allow depositing into an asset
+     */
+    function tokenAllowances(address accountAddress, address assetAddress)
+        public
+        view
+        returns (Allowance[] memory)
+    {
+        address tokenAddress = underlyingTokenAddress(assetAddress);
+        address[] memory tokenAddresses = new address[](1);
+        address[] memory assetAddresses = new address[](1);
+        tokenAddresses[0] = tokenAddress;
+        assetAddresses[0] = assetAddress;
+        bytes memory allowances =
+            abi.encode(
+                helper.allowances(
+                    accountAddress,
+                    tokenAddresses,
+                    assetAddresses
+                )
+            );
+        return abi.decode(allowances, (Allowance[]));
+    }
+
+    /**
+     * Fetch asset allowances based on positionSpenderAddresses (configurable).
+     * This is useful to determine if a particular zap contract is approved for the asset (zap out use case)
+     */
+    function assetAllowances(address accountAddress, address assetAddress)
+        public
+        view
+        returns (Allowance[] memory)
+    {
+        address[] memory assetAddresses = new address[](1);
+        assetAddresses[0] = assetAddress;
+        bytes memory allowances =
+            abi.encode(
+                helper.allowances(
+                    accountAddress,
+                    assetAddresses,
+                    addressesGenerator.getPositionSpenderAddresses()
+                )
+            );
+        return abi.decode(allowances, (Allowance[]));
+    }
+
+    /**
+     * Fetch basic static token metadata
+     */
+    function tokenMetadata(address tokenAddress)
+        internal
+        view
+        returns (Token memory)
+    {
+        IERC20 _token = IERC20(tokenAddress);
+        return
+            Token({
+                id: tokenAddress,
+                name: _token.name(),
+                symbol: _token.symbol(),
+                decimals: _token.decimals()
+            });
+    }
+
+    /**
+     * Internal method for constructing a TokenAmount struct given a token balance and address
+     */
+    function tokenAmount(uint256 amount, address tokenAddress)
+        internal
+        view
+        returns (TokenAmount memory)
+    {
+        return
+            TokenAmount({
+                amount: amount,
+                amountUsdc: oracle.getNormalizedValueUsdc(tokenAddress, amount)
+            });
+    }
+
+    /**
+     * Configure adapter
+     */
+    constructor(
+        address _oracleAddress,
+        address _managementListAddress,
+        address _helperAddress,
+        address _addressesGeneratorAddress
+    ) Manageable(_managementListAddress) {
+        require(
+            _managementListAddress != address(0),
+            "Missing management list address"
+        );
+        require(_oracleAddress != address(0), "Missing oracle address");
+        oracle = IOracle(_oracleAddress);
+        helper = IHelper(_helperAddress);
+        // fallbackContractAddress = _fallbackContractAddress;
+        addressesGenerator = IAddressesGenerator(_addressesGeneratorAddress);
+    }
+
+    /*******************************************************
+     *                     Iron Bank Adapter               *
+     *******************************************************/
+    /**
+     * Iron Bank Adapter
+     */
+    function adapterInfo() public view returns (AdapterInfo memory) {
+        return
+            AdapterInfo({
+                id: address(this),
+                typeId: "IRON_BANK_MARKET",
+                categoryId: "LENDING"
+            });
+    }
+
+    struct AssetMetadata {
+        uint256 totalSupplied;
+        uint256 totalSuppliedUsdc;
+        uint256 totalBorrowed;
+        uint256 totalBorrowedUsdc;
+        uint256 cashUsdc;
+        uint256 liquidity;
+        uint256 liquidityUsdc;
+        uint256 supplyApyBips;
+        uint256 borrowApyBips;
+    }
+
+    function underlyingTokenAddress(address assetAddress)
+        public
+        view
+        returns (address)
+    {
+        CyToken cyToken = CyToken(assetAddress);
+        address tokenAddress = cyToken.underlying();
+        return tokenAddress;
+    }
+
+    function assetsLength() public view returns (uint256) {
+        address[] memory allMarkets = getAllMarkets();
+        return allMarkets.length;
+    }
+
+    function assetsAddresses() public view returns (address[] memory) {
+        address[] memory allMarkets = getAllMarkets();
+        return allMarkets;
+    }
+
+    /**
+     * Fetch static information about an asset
+     */
+    function assetStatic(address assetAddress)
+        public
+        view
+        returns (AssetStatic memory)
+    {
+        CyToken cyToken = CyToken(assetAddress);
+        address tokenAddress = underlyingTokenAddress(assetAddress);
+        return
+            AssetStatic({
+                id: assetAddress,
+                typeId: adapterInfo().typeId,
+                name: cyToken.name(),
+                version: "2.0.0",
+                token: tokenMetadata(tokenAddress)
+            });
+    }
+
+    /**
+     * Fetch dynamic information about an asset
+     */
+    function assetDynamic(address assetAddress)
+        public
+        view
+        returns (AssetDynamic memory)
+    {
+        CyToken cyToken = CyToken(assetAddress);
+        address tokenAddress = underlyingTokenAddress(assetAddress);
+        IERC20 token = IERC20(tokenAddress);
+
+        uint256 balance = assetBalance(assetAddress);
+        TokenAmount memory underlyingTokenBalance =
+            tokenAmount(balance, tokenAddress);
+
+        return
+            AssetDynamic({
+                id: assetAddress,
+                typeId: adapterInfo().typeId,
+                tokenId: tokenAddress,
+                underlyingTokenBalance: underlyingTokenBalance
+                // metadata: metadata
+            });
+    }
+
+    /**
+     * Fetch asset positions of an account given an asset address
+     */
+    function assetPositionsOf(address accountAddress, address assetAddress)
+        public
+        view
+        returns (Position[] memory)
+    {
+        IERC20 _asset = IERC20(assetAddress);
+        address tokenAddress = underlyingTokenAddress(assetAddress);
+        IERC20 token = IERC20(tokenAddress);
+
+        Position[] memory positions = new Position[](1);
+        positions[0] = Position({
+            assetId: assetAddress,
+            tokenId: tokenAddress,
+            typeId: "DEPOSIT",
+            balance: 0,
+            underlyingTokenBalance: tokenAmount(0, tokenAddress),
+            accountTokenBalance: tokenAmount(0, tokenAddress),
+            tokenAllowances: tokenAllowances(accountAddress, assetAddress),
+            assetAllowances: assetAllowances(accountAddress, assetAddress)
+        });
+        return positions;
+    }
+
+    /**
+     * Fetch asset balance in underlying tokens
+     */
+    function assetBalance(address assetAddress) public view returns (uint256) {
+        CyToken cyToken = CyToken(assetAddress);
+        uint256 cash = cyToken.getCash();
+        uint256 totalBorrows = cyToken.totalBorrows();
+        uint256 totalReserves = cyToken.totalReserves();
+        uint256 totalSupplied = (cash + totalBorrows - totalReserves);
+        return totalSupplied;
+    }
+
+    /**
+     * Fetch registry address from addresses generator
+     */
+    function registry() public view returns (address) {
+        return addressesGenerator.registry();
+    }
+
+    /**
+     * Fallback proxy. Primary use case is to give registry adapters access to TVL adapter logic
+     */
+    fallback() external {
+        assembly {
+            let addr := sload(fallbackContractAddress.slot)
+            calldatacopy(0, 0, calldatasize())
+            let success := staticcall(gas(), addr, 0, calldatasize(), 0, 0)
+            returndatacopy(0, 0, returndatasize())
+            if success {
+                return(0, returndatasize())
+            }
+        }
+    }
+
+    function getAllMarkets() public view returns (address[] memory) {
+        return Unitroller(registry()).getAllMarkets();
+    }
+}

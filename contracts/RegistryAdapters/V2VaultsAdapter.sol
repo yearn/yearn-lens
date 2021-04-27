@@ -1,14 +1,8 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-04-11
- */
-
 // SPDX-License-Identifier: MIT
-import "../Utilities/Manageable.sol";
-
 pragma solidity ^0.8.2;
 
 /*******************************************************
- *                       Interfaces                    *
+ *                       Interfaces
  *******************************************************/
 interface IV2Vault {
     function token() external view returns (address);
@@ -111,39 +105,34 @@ interface IHelper {
     ) external view returns (Allowance[] memory);
 }
 
-// interface ManagementList {
-//     function isManager(address accountAddress) external returns (bool);
-// }
+/*******************************************************
+ *                     Ownable
+ *******************************************************/
+contract Ownable {
+    address public owner;
 
-// /*******************************************************
-//  *                     Management List                 *
-//  *******************************************************/
+    constructor() {
+        owner = msg.sender;
+    }
 
-// contract Manageable {
-//     ManagementList public managementList;
-
-//     constructor(address _managementListAddress) {
-//         managementList = ManagementList(_managementListAddress);
-//     }
-
-//     modifier onlyManagers() {
-//         bool isManager = managementList.isManager(msg.sender);
-//         require(isManager, "ManagementList: caller is not a manager");
-//         _;
-//     }
-// }
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Ownable: caller is not the owner");
+        _;
+    }
+}
 
 /*******************************************************
- *                     Adapter Logic                   *
+ *                     Adapter Logic
  *******************************************************/
-contract RegisteryAdapterV2Vault is Manageable {
+contract RegisteryAdapterV2Vault is Ownable {
     /*******************************************************
-     *           Common code shared by all adapters        *
+     *           Common code shared by all adapters
      *******************************************************/
 
     IOracle public oracle; // The oracle is used to fetch USDC normalized pricing data
     IHelper public helper; // A helper utility is used for batch allowance fetching and address array merging
     IAddressesGenerator public addressesGenerator; // A utility for fetching assets addresses and length
+    address public fallbackContractAddress; // Optional fallback proxy
 
     /**
      * High level static information about an asset
@@ -185,7 +174,6 @@ contract RegisteryAdapterV2Vault is Manageable {
         address tokenId; // Underlying asset token address
         string typeId; // Position typeId (for example "DEPOSIT," "BORROW," "LEND")
         uint256 balance; // asset.balanceOf(account)
-        TokenAmount accountTokenBalance; // User account balance of underlying token (token.balanceOf(account))
         TokenAmount underlyingTokenBalance; // Represents a user's asset position in underlying tokens
         Allowance[] tokenAllowances; // Underlying token allowances
         Allowance[] assetAllowances; // Asset allowances
@@ -336,60 +324,122 @@ contract RegisteryAdapterV2Vault is Manageable {
     }
 
     /**
+     * Internal method for constructing a TokenAmount struct given a token balance and address
+     */
+    function tokenAmount(uint256 amount, address tokenAddress)
+        internal
+        view
+        returns (TokenAmount memory)
+    {
+        return
+            TokenAmount({
+                amount: amount,
+                amountUsdc: oracle.getNormalizedValueUsdc(tokenAddress, amount)
+            });
+    }
+
+    /**
+     * Fetch the total number of assets for this adapter
+     */
+    function assetsLength() public view returns (uint256) {
+        return addressesGenerator.assetsLength();
+    }
+
+    /**
+     * Fetch all asset addresses for this adapter
+     */
+    function assetsAddresses() public view returns (address[] memory) {
+        return addressesGenerator.assetsAddresses();
+    }
+
+    /**
+     * Fetch registry address from addresses generator
+     */
+    function registry() public view returns (address) {
+        return addressesGenerator.registry();
+    }
+
+    /**
+     * Allow storage slots to be manually updated
+     */
+    function updateSlot(bytes32 slot, bytes32 value) external onlyOwner {
+        assembly {
+            sstore(slot, value)
+        }
+    }
+
+    function getSlot(bytes32 slot) public view returns (bytes32) {
+        bytes32 y;
+        assembly {
+            y := sload(slot)
+        }
+        return y;
+    }
+
+    /**
      * Configure adapter
      */
     constructor(
         address _oracleAddress,
-        address _managementListAddress,
         address _helperAddress,
-        address _addressesGeneratorAddress
-    ) Manageable(_managementListAddress) {
-        require(
-            _managementListAddress != address(0),
-            "Missing management list address"
-        );
+        address _addressesGeneratorAddress,
+        address _fallbackContractAddress
+    ) {
         require(_oracleAddress != address(0), "Missing oracle address");
         oracle = IOracle(_oracleAddress);
         helper = IHelper(_helperAddress);
+        fallbackContractAddress = _fallbackContractAddress;
         addressesGenerator = IAddressesGenerator(_addressesGeneratorAddress);
     }
 
     /*******************************************************
-     * Common code shared by v1 vaults, v2 vaults and earn *
+     * Common code shared by v1 vaults, v2 vaults and earn
      *******************************************************/
 
     /**
      * Fetch asset positions of an account given an array of assets. This method can be used for off-chain pagination.
      */
-    function positionsOf(
+    function assetsPositionsOf(
         address accountAddress,
         address[] memory _assetsAddresses
     ) public view returns (Position[] memory) {
         uint256 numberOfAssets = _assetsAddresses.length;
         Position[] memory positions = new Position[](numberOfAssets);
+        uint256 currentPositionIdx;
         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
             address assetAddress = _assetsAddresses[assetIdx];
-            Position memory position = positionOf(accountAddress, assetAddress);
-            positions[assetIdx] = position;
+            Position memory position =
+                assetPositionsOf(accountAddress, assetAddress)[0];
+            if (position.balance > 0) {
+                positions[currentPositionIdx] = position;
+                currentPositionIdx++;
+            }
         }
+        bytes memory encodedData = abi.encode(positions);
+        assembly {
+            // Manually truncate positions
+            mstore(add(encodedData, 0x40), currentPositionIdx)
+        }
+        positions = abi.decode(encodedData, (Position[]));
         return positions;
     }
 
     /**
-     * Fetch asset positins for an account for all assets
+     * Fetch asset positions for an account for all assets
      */
-    function positionsOf(address accountAddress)
+    function assetsPositionsOf(address accountAddress)
         external
         view
         returns (Position[] memory)
     {
         address[] memory _assetsAddresses = assetsAddresses();
-        return positionsOf(accountAddress, _assetsAddresses);
+        return assetsPositionsOf(accountAddress, _assetsAddresses);
     }
 
     /*******************************************************
-     *                 V2 Adapter (unique logic)           *
+     *                 V2 Adapter (unique logic)
      *******************************************************/
+
     /**
      * Return information about the adapter
      */
@@ -415,6 +465,23 @@ contract RegisteryAdapterV2Vault is Manageable {
     }
 
     /**
+     * Metadata specific to an asset type scoped to a user.
+     * Not used in this adapter.
+     */
+    struct AssetUserMetadata {
+        address assetId;
+    }
+
+    /**
+     * Fetch asset metadata scoped to a user
+     */
+    function assetUserMetadata(address assetAddress)
+        public
+        view
+        returns (AssetUserMetadata memory)
+    {}
+
+    /**
      * Fetch the underlying token address of an asset
      */
     function underlyingTokenAddress(address assetAddress)
@@ -425,20 +492,6 @@ contract RegisteryAdapterV2Vault is Manageable {
         IV2Vault vault = IV2Vault(assetAddress);
         address tokenAddress = vault.token();
         return tokenAddress;
-    }
-
-    /**
-     * Fetch the total number of assets for this adapter
-     */
-    function assetsLength() public view returns (uint256) {
-        return addressesGenerator.assetsLength();
-    }
-
-    /**
-     * Fetch all asset addresses for this adapter
-     */
-    function assetsAddresses() public view returns (address[] memory) {
-        return addressesGenerator.assetsAddresses();
     }
 
     /**
@@ -507,53 +560,33 @@ contract RegisteryAdapterV2Vault is Manageable {
     }
 
     /**
-     * Fetch asset position of an account given an asset address
+     * Fetch asset positions of an account given an asset address
      */
-    function positionOf(address accountAddress, address assetAddress)
+    function assetPositionsOf(address accountAddress, address assetAddress)
         public
         view
-        returns (Position memory)
+        returns (Position[] memory)
     {
         IV2Vault _asset = IV2Vault(assetAddress);
         uint8 assetDecimals = _asset.decimals();
         address tokenAddress = underlyingTokenAddress(assetAddress);
-        IERC20 token = IERC20(tokenAddress);
         uint256 balance = _asset.balanceOf(accountAddress);
-        uint256 _accountTokenBalance =
+        uint256 _underlyingTokenBalance =
             (balance * _asset.pricePerShare()) / 10**assetDecimals;
-        uint256 _underlyingTokenBalance = token.balanceOf(accountAddress);
-        return
-            Position({
-                assetId: assetAddress,
-                tokenId: tokenAddress,
-                typeId: "DEPOSIT",
-                balance: balance,
-                underlyingTokenBalance: tokenAmount(
-                    _underlyingTokenBalance,
-                    tokenAddress
-                ),
-                accountTokenBalance: tokenAmount(
-                    _accountTokenBalance,
-                    tokenAddress
-                ),
-                tokenAllowances: tokenAllowances(accountAddress, assetAddress),
-                assetAllowances: assetAllowances(accountAddress, assetAddress)
-            });
-    }
-
-    /**
-     * Internal method for constructing a TokenAmount struct given a token balance and address
-     */
-    function tokenAmount(uint256 amount, address tokenAddress)
-        internal
-        view
-        returns (TokenAmount memory)
-    {
-        return
-            TokenAmount({
-                amount: amount,
-                amountUsdc: oracle.getNormalizedValueUsdc(tokenAddress, amount)
-            });
+        Position[] memory positions = new Position[](1);
+        positions[0] = Position({
+            assetId: assetAddress,
+            tokenId: tokenAddress,
+            typeId: "DEPOSIT",
+            balance: balance,
+            underlyingTokenBalance: tokenAmount(
+                _underlyingTokenBalance,
+                tokenAddress
+            ),
+            tokenAllowances: tokenAllowances(accountAddress, assetAddress),
+            assetAllowances: assetAllowances(accountAddress, assetAddress)
+        });
+        return positions;
     }
 
     /**
@@ -565,24 +598,32 @@ contract RegisteryAdapterV2Vault is Manageable {
     }
 
     /**
-     * Fetch registry address from addresses generator
-     */
-    function registry() public view returns (address) {
-        return addressesGenerator.registry();
-    }
-
-    /**
-     * Fetch a unique list of tokens for this adapter
+     * Returns unique list of tokens associated with this adapter
      */
     function tokens() public view returns (Token[] memory) {
-        IV2Registry registry = IV2Registry(registry());
-        uint256 numTokens = registry.numTokens();
+        IV2Registry _registry = IV2Registry(registry());
+        uint256 numTokens = _registry.numTokens();
         Token[] memory _tokens = new Token[](numTokens);
         for (uint256 tokenIdx = 0; tokenIdx < numTokens; tokenIdx++) {
-            address tokenAddress = registry.tokens(tokenIdx);
+            address tokenAddress = _registry.tokens(tokenIdx);
             Token memory _token = tokenMetadata(tokenAddress);
             _tokens[tokenIdx] = _token;
         }
         return _tokens;
+    }
+
+    /**
+     * Fallback proxy. Primary use case is to give registry adapters access to TVL adapter logic
+     */
+    fallback() external {
+        assembly {
+            let addr := sload(fallbackContractAddress.slot)
+            calldatacopy(0, 0, calldatasize())
+            let success := staticcall(gas(), addr, 0, calldatasize(), 0, 0)
+            returndatacopy(0, 0, returndatasize())
+            if success {
+                return(0, returndatasize())
+            }
+        }
     }
 }

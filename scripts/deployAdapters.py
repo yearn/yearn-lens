@@ -16,6 +16,8 @@ def main():
     oracleAddress = "0xd3ca98d986be88b72ff95fc2ec976a5e6339150d"
     trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
     helperAddress = "0x5aacd0d03096039ac4381cd814637e9fb7c34a6f"
+    v2AddressesGeneratorAddress = "0x437758D475F70249e03EDa6bE23684aD1FC375F0"
+    v2VaultsTvlAdapterAddress = "0x14d6E0908baE40A2487352B2a9Cb1A6232DA8785"
 
     management = accounts[0]
     positionSpenderAddresses = [trustedMigratorAddress]
@@ -37,15 +39,12 @@ def main():
     # Deploy v2 generator & adapter
 
     v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
-    v2Generator = AddressesGeneratorV2Vaults.deploy(
-        v2RegistryAddress, managementListAddress, {"from": management},
-    )
 
     v2Adapter = RegisteryAdapterV2Vault.deploy(
         oracleAddress,
-        managementListAddress,
         helperAddress,
-        v2Generator,
+        v2AddressesGeneratorAddress,
+        v2VaultsTvlAdapterAddress,
         {"from": management},
     )
 
@@ -108,7 +107,7 @@ def main():
     # print("Earn Registry:     ", earnRegistry)
     # print("Earn Adapter:      ", earnAdapter)
     # print("V1 Adapter:        ", v1Adapter)
-    print("V2 Generator:      ", v2Generator)
+    print("V2 Generator:      ", v2AddressesGeneratorAddress)
     print("V2 Adapter:        ", v2Adapter)
     # print("IB Adapter:        ", ironBankAdapter)
     # print("Lens:              ", lens)

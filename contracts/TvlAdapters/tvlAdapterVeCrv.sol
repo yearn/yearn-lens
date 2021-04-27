@@ -92,7 +92,7 @@ contract TvlAdapterVeCrv {
      */
     function assetsAddresses() public view returns (address[] memory) {
         address[] memory addresses = new address[](1);
-        addresses[0] = yveCrvDaoAddress;
+        addresses[0] = 0xc5bDdf9843308380375a611c18B50Fb9341f502A;
         return addresses;
     }
 
@@ -111,7 +111,8 @@ contract TvlAdapterVeCrv {
      * Fetch asset balance in underlying tokens
      */
     function assetBalance(address assetAddress) public view returns (uint256) {
-        IVotingEscrow votingEscrow = IVotingEscrow(curveVotingEscrowAddress);
+        IVotingEscrow votingEscrow =
+            IVotingEscrow(0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2);
         return votingEscrow.balanceOf(curveYCrvVoterAddress);
     }
 
@@ -133,10 +134,8 @@ contract TvlAdapterVeCrv {
         address tokenAddress = underlyingTokenAddress(assetAddress);
         uint256 underlyingBalanceAmount = assetBalance(assetAddress);
         uint256 adjustedBalanceUsdc =
-            oracle.getNormalizedValueUsdc(
-                tokenAddress,
-                underlyingBalanceAmount
-            );
+            IOracle(0x190c2CFC69E68A8e8D5e2b9e2B9Cc3332CafF77B)
+                .getNormalizedValueUsdc(tokenAddress, underlyingBalanceAmount);
         return adjustedBalanceUsdc;
     }
 
@@ -169,7 +168,9 @@ contract TvlAdapterVeCrv {
     {
         address tokenAddress = underlyingTokenAddress(assetAddress);
         uint256 underlyingBalanceAmount = assetBalance(assetAddress);
-        uint256 tokenPriceUsdc = oracle.getPriceUsdcRecommended(tokenAddress);
+        uint256 tokenPriceUsdc =
+            IOracle(0x190c2CFC69E68A8e8D5e2b9e2B9Cc3332CafF77B)
+                .getPriceUsdcRecommended(tokenAddress);
         uint256 delegatedBalanceAmount = 0;
         return
             AssetTvlBreakdown({
@@ -180,7 +181,10 @@ contract TvlAdapterVeCrv {
                 delegatedBalance: delegatedBalanceAmount,
                 adjustedBalance: underlyingBalanceAmount -
                     delegatedBalanceAmount,
-                adjustedBalanceUsdc: oracle.getNormalizedValueUsdc(
+                adjustedBalanceUsdc: IOracle(
+                    0x190c2CFC69E68A8e8D5e2b9e2B9Cc3332CafF77B
+                )
+                    .getNormalizedValueUsdc(
                     tokenAddress,
                     underlyingBalanceAmount,
                     tokenPriceUsdc
