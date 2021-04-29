@@ -44,6 +44,8 @@ interface IOracle {
 
 contract CalculationsCurve {
     address public oracleAddress;
+    address public curveRegistryAddress;
+    address public curveMetapoolFactory;
     ICurveAddressProvider curveAddressProvider;
     ICurveRegistry curveRegistry;
     IMetapoolFactory metapoolFactory;
@@ -67,8 +69,10 @@ contract CalculationsCurve {
 
     constructor(address _curveAddressProvider, address _oracleAddress) {
         curveAddressProvider = ICurveAddressProvider(_curveAddressProvider);
-        curveRegistry = ICurveRegistry(curveAddressProvider.get_address(0));
-        metapoolFactory = IMetapoolFactory(curveAddressProvider.get_address(3));
+        curveRegistryAddress = curveAddressProvider.get_address(0);
+        curveMetapoolFactory = curveAddressProvider.get_address(3);
+        curveRegistry = ICurveRegistry(curveRegistryAddress);
+        metapoolFactory = IMetapoolFactory(curveMetapoolFactory);
         oracle = IOracle(_oracleAddress);
     }
 
@@ -149,24 +153,24 @@ contract CalculationsCurve {
 
         // Use first coin from pool and if that is empty (due to error) fall back to second coin
         address preferredCoinAddress = coins[0];
-        if (preferredCoinAddress == address(0)) {
-            if (coins[1] == address(0)) {
-                coins = metapoolFactory.get_underlying_coins(poolAddress);
-            } else {
-                preferredCoinAddress = coins[1];
-            }
-        }
 
         // Look for preferred coins (basic coins)
         for (uint256 coinIdx = 0; coinIdx < 8; coinIdx++) {
             address coinAddress = coins[coinIdx];
-            if (coinAddress == address(0)) {
+            if (
+                coinAddress == address(0) && preferredCoinAddress != address(0)
+            ) {
                 break;
-            }
-            if (isBasicToken(coinAddress)) {
+            } else {
                 preferredCoinAddress = coinAddress;
-                break;
+                if (isBasicToken(preferredCoinAddress)) {
+                    break;
+                }
             }
+        }
+
+        if (preferredCoinAddress == address(0)) {
+            coins = metapoolFactory.get_underlying_coins(poolAddress);
         }
 
         return preferredCoinAddress;
