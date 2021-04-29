@@ -6,6 +6,10 @@ interface IERC20 {
     function decimals() external view returns (uint8);
 }
 
+interface ICurveAddressProvider {
+    function get_address(uint256 arg0) external view returns (address);
+}
+
 interface ICurveRegistry {
     function get_pool_from_lp_token(address arg0)
         external
@@ -16,11 +20,17 @@ interface ICurveRegistry {
         external
         view
         returns (address[8] memory);
+}
 
-    function get_virtual_price_from_lp_token(address arg0)
+interface ICurvePool {
+    function get_virtual_price() external view returns (uint256);
+}
+
+interface IMetapoolFactory {
+    function get_underlying_coins(address arg0)
         external
         view
-        returns (uint256);
+        returns (address[8] memory);
 }
 
 interface IOracle {
@@ -33,9 +43,10 @@ interface IOracle {
 }
 
 contract CalculationsCurve {
-    address public curveRegistryAddress;
     address public oracleAddress;
+    ICurveAddressProvider curveAddressProvider;
     ICurveRegistry curveRegistry;
+    IMetapoolFactory metapoolFactory;
     IOracle oracle;
 
     address daiAddress = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
@@ -54,10 +65,10 @@ contract CalculationsCurve {
         linkAddress
     ];
 
-    constructor(address _curveRegistryAddress, address _oracleAddress) {
-        curveRegistryAddress = _curveRegistryAddress;
-        curveRegistry = ICurveRegistry(_curveRegistryAddress);
-        oracleAddress = _oracleAddress;
+    constructor(address _curveAddressProvider, address _oracleAddress) {
+        curveAddressProvider = ICurveAddressProvider(_curveAddressProvider);
+        curveRegistry = ICurveRegistry(curveAddressProvider.get_address(0));
+        metapoolFactory = IMetapoolFactory(curveAddressProvider.get_address(3));
         oracle = IOracle(_oracleAddress);
     }
 
@@ -82,8 +93,7 @@ contract CalculationsCurve {
         view
         returns (uint256)
     {
-        address poolAddress =
-            curveRegistry.get_pool_from_lp_token(curveLpTokenAddress);
+        address poolAddress = getPool(curveLpTokenAddress);
         address underlyingCoinAddress = getUnderlyingCoinFromPool(poolAddress);
         uint256 basePrice =
             oracle.getPriceUsdcRecommended(underlyingCoinAddress);
@@ -95,15 +105,13 @@ contract CalculationsCurve {
         view
         returns (uint256)
     {
-        return
-            curveRegistry.get_virtual_price_from_lp_token(curveLpTokenAddress);
+        ICurvePool pool = ICurvePool(getPool(curveLpTokenAddress));
+        return pool.get_virtual_price();
     }
 
     function isCurveLpToken(address tokenAddress) public view returns (bool) {
-        address poolAddress =
-            curveRegistry.get_pool_from_lp_token(tokenAddress);
-        bool tokenHasCurvePool = poolAddress != address(0);
-        return tokenHasCurvePool;
+        address poolAddress = getPool(tokenAddress);
+        return poolAddress != address(0);
     }
 
     function isBasicToken(address tokenAddress) public view returns (bool) {
@@ -120,6 +128,17 @@ contract CalculationsCurve {
         return false;
     }
 
+    function getPool(address tokenAddress) public view returns (address) {
+        address[8] memory coins =
+            metapoolFactory.get_underlying_coins(tokenAddress);
+
+        if (coins[0] != address(0)) {
+            return tokenAddress;
+        }
+
+        return curveRegistry.get_pool_from_lp_token(tokenAddress);
+    }
+
     function getUnderlyingCoinFromPool(address poolAddress)
         public
         view
@@ -131,7 +150,11 @@ contract CalculationsCurve {
         // Use first coin from pool and if that is empty (due to error) fall back to second coin
         address preferredCoinAddress = coins[0];
         if (preferredCoinAddress == address(0)) {
-            preferredCoinAddress = coins[1];
+            if (coins[1] == address(0)) {
+                coins = metapoolFactory.get_underlying_coins(poolAddress);
+            } else {
+                preferredCoinAddress = coins[1];
+            }
         }
 
         // Look for preferred coins (basic coins)
@@ -145,6 +168,7 @@ contract CalculationsCurve {
                 break;
             }
         }
+
         return preferredCoinAddress;
     }
 

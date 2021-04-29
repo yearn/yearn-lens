@@ -142,7 +142,7 @@ def oracle(
     uniswapFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
     sushiswapRouterAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
     sushiswapFactoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
-    curveRegistryAddress = "0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c"
+    curveAddressProvider = "0x0000000022D53366457F9d5E68Ec105046FC4383"
     unitrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
     usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
 
@@ -181,7 +181,7 @@ def oracle(
         {"from": management},
     )
     calculationsCurve = CalculationsCurve.deploy(
-        curveRegistryAddress, oracle, {"from": management}
+        curveAddressProvider, oracle, {"from": management}
     )
     calculationsIronBank = CalculationsIronBank.deploy(
         unitrollerAddress, oracle, {"from": management}
