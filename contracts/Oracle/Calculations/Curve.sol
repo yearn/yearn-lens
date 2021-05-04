@@ -45,11 +45,9 @@ interface IOracle {
 contract CalculationsCurve {
     address public oracleAddress;
     address public curveRegistryAddress;
-    address public curveMetapoolFactory;
-    ICurveAddressProvider curveAddressProvider;
-    ICurveRegistry curveRegistry;
-    IMetapoolFactory metapoolFactory;
-    IOracle oracle;
+    address public curveMetapoolFactoryAddress;
+    address public curveAddressProviderAddress;
+    address public ownerAddress;
 
     address daiAddress = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address wethAddress = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -67,13 +65,21 @@ contract CalculationsCurve {
         linkAddress
     ];
 
-    constructor(address _curveAddressProvider, address _oracleAddress) {
-        curveAddressProvider = ICurveAddressProvider(_curveAddressProvider);
-        curveRegistryAddress = curveAddressProvider.get_address(0);
-        curveMetapoolFactory = curveAddressProvider.get_address(3);
-        curveRegistry = ICurveRegistry(curveRegistryAddress);
-        metapoolFactory = IMetapoolFactory(curveMetapoolFactory);
-        oracle = IOracle(_oracleAddress);
+    constructor(address _curveAddressProviderAddress, address _oracleAddress) {
+        curveAddressProviderAddress = _curveAddressProviderAddress;
+
+        oracleAddress = _oracleAddress;
+
+        curveRegistryAddress = ICurveAddressProvider(
+            curveAddressProviderAddress
+        )
+            .get_address(0);
+        curveMetapoolFactoryAddress = ICurveAddressProvider(
+            curveAddressProviderAddress
+        )
+            .get_address(3);
+
+        ownerAddress = msg.sender;
     }
 
     function getCurvePriceUsdc(address curveLpTokenAddress)
@@ -83,7 +89,7 @@ contract CalculationsCurve {
     {
         uint256 basePrice = getBasePrice(curveLpTokenAddress);
         uint256 virtualPrice = getVirtualPrice(curveLpTokenAddress);
-        IERC20 usdc = IERC20(oracle.usdcAddress());
+        IERC20 usdc = IERC20(IOracle(oracleAddress).usdcAddress());
         uint256 decimals = usdc.decimals();
         uint256 decimalsAdjustment = 18 - decimals;
         uint256 price =
@@ -100,7 +106,9 @@ contract CalculationsCurve {
         address poolAddress = getPool(curveLpTokenAddress);
         address underlyingCoinAddress = getUnderlyingCoinFromPool(poolAddress);
         uint256 basePrice =
-            oracle.getPriceUsdcRecommended(underlyingCoinAddress);
+            IOracle(oracleAddress).getPriceUsdcRecommended(
+                underlyingCoinAddress
+            );
         return basePrice;
     }
 
@@ -134,13 +142,18 @@ contract CalculationsCurve {
 
     function getPool(address tokenAddress) public view returns (address) {
         address[8] memory coins =
-            metapoolFactory.get_underlying_coins(tokenAddress);
+            IMetapoolFactory(curveMetapoolFactoryAddress).get_underlying_coins(
+                tokenAddress
+            );
 
         if (coins[0] != address(0)) {
             return tokenAddress;
         }
 
-        return curveRegistry.get_pool_from_lp_token(tokenAddress);
+        return
+            ICurveRegistry(curveRegistryAddress).get_pool_from_lp_token(
+                tokenAddress
+            );
     }
 
     function getUnderlyingCoinFromPool(address poolAddress)
@@ -149,7 +162,9 @@ contract CalculationsCurve {
         returns (address)
     {
         address[8] memory coins =
-            curveRegistry.get_underlying_coins(poolAddress);
+            ICurveRegistry(curveRegistryAddress).get_underlying_coins(
+                poolAddress
+            );
 
         // Use first coin from pool and if that is empty (due to error) fall back to second coin
         address preferredCoinAddress = coins[0];
@@ -170,7 +185,8 @@ contract CalculationsCurve {
         }
 
         if (preferredCoinAddress == address(0)) {
-            coins = metapoolFactory.get_underlying_coins(poolAddress);
+            coins = IMetapoolFactory(curveMetapoolFactoryAddress)
+                .get_underlying_coins(poolAddress);
         }
 
         return preferredCoinAddress;
@@ -181,5 +197,15 @@ contract CalculationsCurve {
             return getCurvePriceUsdc(assetAddress);
         }
         revert();
+    }
+
+    /**
+     * Allow storage slots to be manually updated
+     */
+    function updateSlot(bytes32 slot, bytes32 value) external {
+        require(msg.sender == ownerAddress);
+        assembly {
+            sstore(slot, value)
+        }
     }
 }
