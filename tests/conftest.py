@@ -3,6 +3,14 @@ from brownie import Oracle
 from eth_account import Account
 from brownie import web3
 
+uniswapRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+uniswapFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
+sushiswapRouterAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+sushiswapFactoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
+curveRegistryAddress = "0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c"
+unitrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
+usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+
 
 @pytest.fixture
 def gov(accounts):
@@ -17,24 +25,31 @@ def managementList(ManagementList, management):
 @pytest.fixture
 def registryAdapterCommonInterface():
     return [
-        "registry()",
         "oracle()",
         "helper()",
-        "assetsLength()",
-        "assetsAddresses()",
-        "assetStatic(address)",
-        "assetDynamic(address)",
-        "assetBalance(address)",
+        "addressesGenerator()",
+        "fallbackContractAddress()",
+        "assetsStatic(address[])",
+        "assetsDynamic(address[])",
         "assetsStatic()",
+        "assetsDynamic()",
         "tokenAllowances(address,address)",
         "assetAllowances(address,address)",
-        "assetsStatic(address[])",
-        "assetsDynamic()",
-        "assetsDynamic(address[])",
-        "assetPositionsOf(address,address)",
+        "assetsLength()",
+        "assetsAddresses()",
+        "registry()",
+        "updateSlot(bytes32,bytes32)",
         "assetsPositionsOf(address,address[])",
         "assetsPositionsOf(address)",
+        "adapterInfo()",
+        "assetUserMetadata(address,address)",
+        "assetsUserMetadata(address)",
         "underlyingTokenAddress(address)",
+        "assetStatic(address)",
+        "assetDynamic(address)",
+        "assetPositionsOf(address,address)",
+        "assetBalance(address)",
+        "assetsTokensAddresses()",
     ]
 
 
@@ -67,6 +82,23 @@ def v2AddressesGenerator(
         positionSpenderAddresses, {"from": management}
     )
     return generator
+
+
+@pytest.fixture
+def ironBankTvlAdapter(
+    TvlAdapterIronBank,
+    ironBankAddressesGenerator,
+    delegationMapping,
+    managementList,
+    oracle,
+    management,
+):
+    return TvlAdapterIronBank.deploy(
+        oracle,
+        ironBankAddressesGenerator,
+        delegationMapping,
+        {"from": management},
+    )
 
 
 @pytest.fixture
@@ -118,13 +150,33 @@ def helper(
     pricesHelper,
     addressMergeHelper,
     strategiesHelper,
+    uniqueAddressesHelper,
 ):
 
     helperInternal.setHelpers(
-        [allowancesHelper, pricesHelper, addressMergeHelper, strategiesHelper],
+        [
+            allowancesHelper,
+            uniqueAddressesHelper,
+            pricesHelper,
+            addressMergeHelper,
+            strategiesHelper,
+        ],
         {"from": management},
     )
     return helperInternal
+
+
+@pytest.fixture
+def calculationsSushiswap(CalculationsSushiswap, management):
+    calculationsSushiswap = CalculationsSushiswap.deploy(
+        sushiswapRouterAddress,
+        sushiswapFactoryAddress,
+        uniswapRouterAddress,
+        uniswapFactoryAddress,
+        usdcAddress,
+        {"from": management},
+    )
+    return calculationsSushiswap
 
 
 @pytest.fixture
@@ -132,20 +184,11 @@ def oracle(
     Oracle,
     management,
     managementList,
-    CalculationsSushiswap,
+    calculationsSushiswap,
     CalculationsCurve,
     CalculationsIronBank,
     CalculationsYearnVaults,
 ):
-
-    uniswapRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
-    uniswapFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
-    sushiswapRouterAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
-    sushiswapFactoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
-    curveRegistryAddress = "0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c"
-    unitrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
-    usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-
     steCrvAddress = "0x06325440D014e39736583c165C2963BA99fAf14E"
     eCrvAddress = "0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c"
     ethAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
@@ -156,7 +199,7 @@ def oracle(
     oBtcAddress = "0x8064d9Ae6cDf087b1bcd5BDf3531bD5d8C537a68"
     wbtcAddress = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
 
-    return Oracle.at("0x83d95e0d5f402511db06817aff3f9ea88224b030")
+    # return Oracle.at("0x83d95e0d5f402511db06817aff3f9ea88224b030")
 
     oracle = Oracle.deploy(managementList, usdcAddress, {"from": management})
 
@@ -172,14 +215,6 @@ def oracle(
         {"from": management},
     )
 
-    calculationsSushiswap = CalculationsSushiswap.deploy(
-        uniswapRouterAddress,
-        uniswapFactoryAddress,
-        sushiswapRouterAddress,
-        sushiswapFactoryAddress,
-        usdcAddress,
-        {"from": management},
-    )
     calculationsCurve = CalculationsCurve.deploy(
         curveRegistryAddress, oracle, {"from": management}
     )
@@ -188,9 +223,9 @@ def oracle(
     )
     oracle.setCalculations(
         [
+            calculationsSushiswap,
             calculationsCurve,
             calculationsIronBank,
-            calculationsSushiswap,
         ]
     )
     return oracle
@@ -283,11 +318,14 @@ def ironBankAddressesGenerator(
     management,
 ):
     registryAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
-    return AddressesGeneratorIronBank.deploy(
+    generator = AddressesGeneratorIronBank.deploy(
         registryAddress,
         managementList,
         {"from": management},
     )
+    cySusdOldAddress = "0x4e3a36A633f63aee0aB57b5054EC78867CB3C0b8"
+    generator.setAssetDeprecated(cySusdOldAddress, True, {"from": management})
+    return generator
 
 
 @pytest.fixture
@@ -334,6 +372,11 @@ def v2VaultsAdapter(
         v2VaultsTvlAdapter,
         {"from": management},
     )
+
+
+@pytest.fixture
+def uniqueAddressesHelper(UniqueAddressesHelper, management):
+    return UniqueAddressesHelper.deploy({"from": management})
 
 
 @pytest.fixture

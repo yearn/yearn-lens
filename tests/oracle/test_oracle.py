@@ -39,16 +39,16 @@ def oracleProxyCurve(oracle, CalculationsCurve):
 
 
 # General
-def test_add_and_remove_token_alias(oracle):
+def test_add_and_remove_token_alias(oracle, management):
     assert oracle.tokenAliases(ethAddress) != ZERO_ADDRESS
-    oracle.removeTokenAlias(ethAddress)
+    oracle.removeTokenAlias(ethAddress, {"from": management})
     assert oracle.tokenAliases(ethAddress) == ZERO_ADDRESS
-    oracle.addTokenAlias(ethAddress, wethAddress)
+    oracle.addTokenAlias(ethAddress, wethAddress, {"from": management})
     assert oracle.tokenAliases(ethAddress) == wethAddress
 
 
-def test_add_token_aliases(oracle):
-    oracle.addTokenAliases([[ethAddress, yfiAddress]])
+def test_add_token_aliases(oracle, management):
+    oracle.addTokenAliases([[ethAddress, yfiAddress]], {"from": management})
     assert oracle.tokenAliases(ethAddress) == yfiAddress
 
 
@@ -57,7 +57,7 @@ def test_set_calculations(
 ):
     oracle = Oracle.deploy(managementList, usdcAddress, {"from": management})
     calculationsCurve = CalculationsCurve.deploy(
-        curveRegistryAddress, oracle, {"from": gov}
+        "0x0000000022D53366457F9d5E68Ec105046FC4383", oracle, {"from": gov}
     )
 
     # Oracles with no calculations should revert
@@ -68,12 +68,14 @@ def test_set_calculations(
     # Randos cannot set calculations
     with brownie.reverts():
         oracle.setCalculations(
-            [calculationsCurve], {"from": rando},
+            [calculationsCurve],
+            {"from": rando},
         )
 
     # Managers can set calculations
     oracle.setCalculations(
-        [calculationsCurve], {"from": management},
+        [calculationsCurve],
+        {"from": management},
     )
 
     # Oracle should return managementList address
@@ -161,11 +163,19 @@ def test_is_lp_token(oracleProxySushiswap):
 
 
 def test_get_price_from_router(oracleProxySushiswap):
-    ethPrice = oracleProxySushiswap.getPriceFromRouter(ethAddress, usdcAddress)
-    wethPrice = oracleProxySushiswap.getPriceFromRouter(wethAddress, usdcAddress)
+    ethPrice = oracleProxySushiswap.getPriceFromRouter(ethAddress, usdcAddress, True)
+    wethPrice = oracleProxySushiswap.getPriceFromRouter(wethAddress, usdcAddress, True)
+    wethPriceAfterFees = oracleProxySushiswap.getPriceFromRouter(
+        wethAddress, usdcAddress, False
+    )
     assert ethPrice == wethPrice
-    usdcPriceInEth = oracleProxySushiswap.getPriceFromRouter(usdcAddress, ethAddress)
-    usdcPriceInWeth = oracleProxySushiswap.getPriceFromRouter(usdcAddress, wethAddress)
+    assert wethPrice > wethPriceAfterFees
+    usdcPriceInEth = oracleProxySushiswap.getPriceFromRouter(
+        usdcAddress, ethAddress, True
+    )
+    usdcPriceInWeth = oracleProxySushiswap.getPriceFromRouter(
+        usdcAddress, wethAddress, True
+    )
     assert usdcPriceInEth == usdcPriceInWeth
 
 

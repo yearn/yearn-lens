@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
 
+import "../Utilities/Ownable.sol";
+
 /*******************************************************
  *                       Interfaces
  *******************************************************/
@@ -106,22 +108,6 @@ interface IHelper {
 }
 
 /*******************************************************
- *                     Ownable
- *******************************************************/
-contract Ownable {
-    address public owner;
-
-    constructor() {
-        owner = msg.sender;
-    }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Ownable: caller is not the owner");
-        _;
-    }
-}
-
-/*******************************************************
  *                     Adapter Logic
  *******************************************************/
 contract RegisteryAdapterV2Vault is Ownable {
@@ -140,9 +126,11 @@ contract RegisteryAdapterV2Vault is Ownable {
     struct AssetStatic {
         address id; // Asset address
         string typeId; // Asset typeId (for example "VAULT_V2" or "IRON_BANK_MARKET")
+        address tokenId; // Underlying token address
         string name; // Asset Name
         string version; // Asset version
-        Token token; // Static asset underlying token information
+        string symbol; // Asset symbol
+        uint8 decimals; // Asset decimals
     }
 
     /**
@@ -306,24 +294,6 @@ contract RegisteryAdapterV2Vault is Ownable {
     }
 
     /**
-     * Fetch basic static token metadata
-     */
-    function tokenMetadata(address tokenAddress)
-        internal
-        view
-        returns (Token memory)
-    {
-        IERC20 _token = IERC20(tokenAddress);
-        return
-            Token({
-                id: tokenAddress,
-                name: _token.name(),
-                symbol: _token.symbol(),
-                decimals: _token.decimals()
-            });
-    }
-
-    /**
      * Internal method for constructing a TokenAmount struct given a token balance and address
      */
     function tokenAmount(uint256 amount, address tokenAddress)
@@ -368,14 +338,6 @@ contract RegisteryAdapterV2Vault is Ownable {
         }
     }
 
-    function getSlot(bytes32 slot) public view returns (bytes32) {
-        bytes32 y;
-        assembly {
-            y := sload(slot)
-        }
-        return y;
-    }
-
     /**
      * Configure adapter
      */
@@ -417,7 +379,6 @@ contract RegisteryAdapterV2Vault is Ownable {
         }
         bytes memory encodedData = abi.encode(positions);
         assembly {
-            // Manually truncate positions
             mstore(add(encodedData, 0x40), currentPositionIdx)
         }
         positions = abi.decode(encodedData, (Position[]));
@@ -452,11 +413,14 @@ contract RegisteryAdapterV2Vault is Ownable {
             });
     }
 
+    // Position types supported by this adapter
+    string positionDeposit = "DEPOSIT";
+    string[] public supportedPositions = [positionDeposit];
+
     /**
      * Metadata specific to this asset type
      */
     struct AssetMetadata {
-        string symbol; // Vault symbol
         uint256 pricePerShare; // Vault pricePerShare
         bool migrationAvailable; // True if a migration is available for this vault
         address latestVaultAddress; // Latest vault migration address
@@ -475,10 +439,19 @@ contract RegisteryAdapterV2Vault is Ownable {
     /**
      * Fetch asset metadata scoped to a user
      */
-    function assetUserMetadata(address assetAddress)
+    function assetUserMetadata(address assetAddress, address accountAddress)
         public
         view
         returns (AssetUserMetadata memory)
+    {}
+
+    /**
+     * Fetch asset metadata scoped to a user
+     */
+    function assetsUserMetadata(address accountAddress)
+        public
+        view
+        returns (AssetUserMetadata[] memory)
     {}
 
     /**
@@ -508,9 +481,11 @@ contract RegisteryAdapterV2Vault is Ownable {
             AssetStatic({
                 id: assetAddress,
                 typeId: adapterInfo().typeId,
+                tokenId: tokenAddress,
                 name: vault.name(),
                 version: vault.apiVersion(),
-                token: tokenMetadata(tokenAddress)
+                symbol: vault.symbol(),
+                decimals: vault.decimals()
             });
     }
 
@@ -537,7 +512,6 @@ contract RegisteryAdapterV2Vault is Ownable {
 
         AssetMetadata memory metadata =
             AssetMetadata({
-                symbol: vault.symbol(),
                 pricePerShare: pricePerShare,
                 migrationAvailable: migrationAvailable,
                 latestVaultAddress: latestVaultAddress,
@@ -577,7 +551,7 @@ contract RegisteryAdapterV2Vault is Ownable {
         positions[0] = Position({
             assetId: assetAddress,
             tokenId: tokenAddress,
-            typeId: "DEPOSIT",
+            typeId: positionDeposit,
             balance: balance,
             underlyingTokenBalance: tokenAmount(
                 _underlyingTokenBalance,
@@ -600,16 +574,15 @@ contract RegisteryAdapterV2Vault is Ownable {
     /**
      * Returns unique list of tokens associated with this adapter
      */
-    function tokens() public view returns (Token[] memory) {
+    function assetsTokensAddresses() public view returns (address[] memory) {
         IV2Registry _registry = IV2Registry(registry());
-        uint256 numTokens = _registry.numTokens();
-        Token[] memory _tokens = new Token[](numTokens);
-        for (uint256 tokenIdx = 0; tokenIdx < numTokens; tokenIdx++) {
+        uint256 numberOfTokens = _registry.numTokens();
+        address[] memory _tokensAddresses = new address[](numberOfTokens);
+        for (uint256 tokenIdx = 0; tokenIdx < numberOfTokens; tokenIdx++) {
             address tokenAddress = _registry.tokens(tokenIdx);
-            Token memory _token = tokenMetadata(tokenAddress);
-            _tokens[tokenIdx] = _token;
+            _tokensAddresses[tokenIdx] = tokenAddress;
         }
-        return _tokens;
+        return _tokensAddresses;
     }
 
     /**

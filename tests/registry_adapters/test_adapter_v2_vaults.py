@@ -41,28 +41,6 @@ def v2VaultsAdapter(
     return adapter
 
 
-def test_update_slot(v2VaultsAdapter, chad, management):
-    print("mgmt", management, chad, v2VaultsAdapter.oracle())
-    print(v2VaultsAdapter.getSlot(0))
-    oldOracle = v2VaultsAdapter.oracle()
-    v2VaultsAdapter.updateSlot(
-        "0x0000000000000000000000000000000000000000000000000000000000000001",
-        "0x0000000000000000000000000000000000000000000000000000000000000000",
-        {"from": management},
-    )
-    assert v2VaultsAdapter.oracle() != oldOracle
-    v2VaultsAdapter.updateSlot(
-        "0x0000000000000000000000000000000000000000000000000000000000000001",
-        "0x00000000000000000000000083d95e0D5f402511dB06817Aff3f9eA88224B030",
-        {"from": management},
-    )
-    assert v2VaultsAdapter.oracle() == oldOracle
-
-
-def test_asset_user_metadata(v2VaultsAdapter):
-    assetUserMetadata = v2VaultsAdapter.assetUserMetadata(v2UsdcVaultV2Address)
-
-
 def test_interface(
     v2VaultsAdapter, introspection, management, registryAdapterCommonInterface
 ):
@@ -70,6 +48,23 @@ def test_interface(
         v2VaultsAdapter, registryAdapterCommonInterface
     )
     assert adapterImplementsCommonInterface
+
+
+def test_assets_tokens_addresses(v2VaultsAdapter):
+    tokens = v2VaultsAdapter.assetsTokensAddresses()
+    assert len(tokens) > 0
+
+
+def test_asset_user_metadata(v2VaultsAdapter, management):
+    assetUserMetadata = v2VaultsAdapter.assetUserMetadata(
+        v2UsdcVaultV2Address, management
+    )
+
+
+def test_assets_user_metadata(v2VaultsAdapter, management):
+    assetUserMetadata = v2VaultsAdapter.assetsUserMetadata(
+        v2UsdcVaultV2Address, management
+    )
 
 
 def test_adapter_info(v2VaultsAdapter):
@@ -235,17 +230,8 @@ def test_asset_positions_of(v2VaultsAdapter, oracle, management, accounts):
     assert userVaultBalanceUsdc <= underlyingTokenBalanceAmountUsdc + 100
     assert underlyingTokenBalanceAmountUsdc > underlyingTokenBalanceAmount / 10 ** 18
 
-    # Test account token balance
-    accountTokenBalance = position[5]
-    accountTokenBalanceAmount = accountTokenBalance[0]
-    accountTokenBalanceAmountUsdc = accountTokenBalance[1]
-    assert accountTokenBalanceAmount == yfi.balanceOf(vestedYfiAddress)
-    assert accountTokenBalanceAmountUsdc == oracle.getNormalizedValueUsdc(
-        yfiAddress, accountTokenBalanceAmount
-    )
-
     # Test token allowances
-    tokenAllowances = position[6]
+    tokenAllowances = position[5]
     owner = tokenAllowances[0][0]
     spender = tokenAllowances[0][1]
     allowance = tokenAllowances[0][2]
@@ -254,7 +240,7 @@ def test_asset_positions_of(v2VaultsAdapter, oracle, management, accounts):
     assert allowance > 0
 
     # Position allowances
-    positionAllowances = position[7]
+    positionAllowances = position[6]
     owner = positionAllowances[0][0]
     spender = positionAllowances[0][1]
     allowance = positionAllowances[0][2]
