@@ -5,7 +5,7 @@ pragma solidity ^0.8.2;
 contract AddressMergeHelper {
     function mergeAddresses(address[][] memory addressesSets)
         public
-        view
+        pure
         returns (address[] memory)
     {
         bytes memory addressesPacked = new bytes(64);

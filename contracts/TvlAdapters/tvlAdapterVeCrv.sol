@@ -90,7 +90,7 @@ contract TvlAdapterVeCrv {
     /**
      * Fetch all asset addresses for this adapter
      */
-    function assetsAddresses() public view returns (address[] memory) {
+    function assetsAddresses() public pure returns (address[] memory) {
         address[] memory addresses = new address[](1);
         addresses[0] = 0xc5bDdf9843308380375a611c18B50Fb9341f502A;
         return addresses;
@@ -101,7 +101,7 @@ contract TvlAdapterVeCrv {
      */
     function underlyingTokenAddress(address assetAddress)
         public
-        view
+        pure
         returns (address)
     {
         return 0xD533a949740bb3306d119CC777fa900bA034cd52; // CRV
@@ -121,7 +121,7 @@ contract TvlAdapterVeCrv {
      */
     function assetDelegatedBalance(address assetAddress)
         public
-        view
+        pure
         returns (uint256)
     {
         return 0;

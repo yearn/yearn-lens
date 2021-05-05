@@ -7,18 +7,18 @@ cyDaiAddress = "0x8e595470Ed749b85C6F7669de83EAe304C2ec68F"
 ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 
 
-@pytest.fixture
-def ironBankTvlAdapter(
-    TvlAdapterIronBank,
-    ironBankAddressesGenerator,
-    delegationMapping,
-    managementList,
-    oracle,
-    management,
-):
-    return TvlAdapterIronBank.deploy(
-        oracle, ironBankAddressesGenerator, delegationMapping, {"from": management},
-    )
+# @pytest.fixture
+# def ironBankTvlAdapter(
+#     TvlAdapterIronBank,
+#     ironBankAddressesGenerator,
+#     delegationMapping,
+#     managementList,
+#     oracle,
+#     management,
+# ):
+#     return TvlAdapterIronBank.deploy(
+#         oracle, ironBankAddressesGenerator, delegationMapping, {"from": management},
+#     )
 
 
 def test_generator_info(ironBankTvlAdapter):
