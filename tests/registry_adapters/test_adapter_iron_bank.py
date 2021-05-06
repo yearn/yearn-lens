@@ -72,24 +72,17 @@ def test_assets_addresses(ironBankAdapter):
 def test_asset_static(ironBankAdapter):
     assetStatic = ironBankAdapter.assetStatic(cyUsdcAddress)
     assetId = assetStatic[0]
-    assetTypeId = assetStatic[1]
-    name = assetStatic[2]
-    version = assetStatic[3]
+    typeId = assetStatic[1]
+    tokenId = assetStatic[2]
+    name = assetStatic[3]
+    version = assetStatic[4]
+    symbol = assetStatic[5]
+    decimals = assetStatic[6]
+
     assert assetId == cyUsdcAddress
     assert name == "Yearn USD Coin"
     assert version == "2.0.0"
-
-    # Test token metadata
-    token = assetStatic[4]
-    tokenId = token[0]
-    tokenName = token[1]
-    tokenSymbol = token[2]
-    tokenDecimals = token[3]
-
     assert tokenId == usdcAddress
-    assert tokenName == "USD Coin"
-    assert tokenSymbol == "USDC"
-    assert tokenDecimals == 6
 
 
 def test_asset_dynamic(ironBankAdapter, oracle):
@@ -128,12 +121,14 @@ def test_asset_dynamic(ironBankAdapter, oracle):
 
 def test_assets_static(ironBankAdapter):
     assets = ironBankAdapter.assetsStatic()
+
     assert len(assets) > 1
     firstAsset = assets[0]
     assetId = firstAsset[0]
     assetTypeId = firstAsset[1]
-    assetName = firstAsset[2]
-    assetVersion = firstAsset[3]
+    assetTokenId = firstAsset[2]
+    assetName = firstAsset[3]
+    assetVersion = firstAsset[4]
     assert assetId == cyWethAddress
     assert assetName == "Yearn Wrapped Ether"
     assert assetTypeId == "IRON_BANK_MARKET"
