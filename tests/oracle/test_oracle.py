@@ -163,19 +163,15 @@ def test_is_lp_token(oracleProxySushiswap):
 
 
 def test_get_price_from_router(oracleProxySushiswap):
-    ethPrice = oracleProxySushiswap.getPriceFromRouter(ethAddress, usdcAddress, True)
-    wethPrice = oracleProxySushiswap.getPriceFromRouter(wethAddress, usdcAddress, True)
-    wethPriceAfterFees = oracleProxySushiswap.getPriceFromRouter(
-        wethAddress, usdcAddress, False
-    )
+    ethPrice = oracleProxySushiswap.getPriceFromRouter(ethAddress, usdcAddress)
+    wethPrice = oracleProxySushiswap.getPriceFromRouter(wethAddress, usdcAddress)
+    # wethPriceAfterFees = oracleProxySushiswap.getPriceFromRouter(
+    #     wethAddress, usdcAddress
+    # )
     assert ethPrice == wethPrice
-    assert wethPrice > wethPriceAfterFees
-    usdcPriceInEth = oracleProxySushiswap.getPriceFromRouter(
-        usdcAddress, ethAddress, True
-    )
-    usdcPriceInWeth = oracleProxySushiswap.getPriceFromRouter(
-        usdcAddress, wethAddress, True
-    )
+    # assert wethPrice > wethPriceAfterFees
+    usdcPriceInEth = oracleProxySushiswap.getPriceFromRouter(usdcAddress, ethAddress)
+    usdcPriceInWeth = oracleProxySushiswap.getPriceFromRouter(usdcAddress, wethAddress)
     assert usdcPriceInEth == usdcPriceInWeth
 
 

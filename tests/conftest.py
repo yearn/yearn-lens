@@ -233,10 +233,11 @@ def oracle(
     )
     oracle.setCalculations(
         [
-            calculationsSushiswap,
             calculationsCurve,
             calculationsIronBank,
-        ]
+            calculationsSushiswap,
+        ],
+        {"from": management},
     )
     return oracle
 
