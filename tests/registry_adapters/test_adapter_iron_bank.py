@@ -93,30 +93,15 @@ def test_asset_dynamic(ironBankAdapter, oracle):
     underlyingTokenBalance = assetDynamic[3]
     metadata = assetDynamic[4]
 
-    print("total supplied: ", metadata[0])
-    print("total borrowed: ", metadata[1])
-    print("lend apy bips: ", metadata[2])
-    print("borrow apy bips: ", metadata[3])
-    print("liquidity: ", metadata[4])
-    print("liquidity usdc: ", metadata[5])
-    print("collateral factor: ", metadata[6])
-    print("isactive: ", metadata[7])
-    print("exchange rate: ", metadata[8])
-
-
-#     # Test vault underlying balances
-#     tokenPriceUsdc = oracle.getPriceUsdcRecommended(tokenId)
-#     balance = underlyingTokenBalance[0]
-#     balanceUsdc = underlyingTokenBalance[1]
-#     tolerance = 5000000  # $5.00
-#     estimatedBalanceUsdc = tokenPriceUsdc * balance / 10 ** 6
-#     assert tokenPriceUsdc > 900000
-#     assert tokenPriceUsdc < 1100000
-#     assert balance > 0
-#     assert estimatedBalanceUsdc >= balanceUsdc - tolerance
-#     assert estimatedBalanceUsdc <= balanceUsdc + tolerance
-
-#     # Test market metadata
+    # print("total supplied: ", metadata[0])
+    # print("total borrowed: ", metadata[1])
+    # print("lend apy bips: ", metadata[2])
+    # print("borrow apy bips: ", metadata[3])
+    # print("liquidity: ", metadata[4])
+    # print("liquidity usdc: ", metadata[5])
+    # print("collateral factor: ", metadata[6])
+    # print("isactive: ", metadata[7])
+    # print("exchange rate: ", metadata[8])
 
 
 def test_assets_static(ironBankAdapter):
@@ -150,36 +135,22 @@ def test_assets_dynamic(ironBankAdapter):
         reserveFactor = metadata[8]
         exchangeRate = metadata[9]
 
-        print("asset: ", asset[0])
-        print("Supply apy: ", supplyApyBips)
-        print("Borrow apy: ", borrowApyBips)
-        print("Liquidity: ", liquidity)
-        print("Liquidity Usdc: ", liquidityUsdc)
-        print("Collateral factor: ", collateralFactor)
-        print("isActive; ", isActive)
-        print("reserveFactor: ", reserveFactor)
-        print("exchangeRate: ", exchangeRate)
-
-
-# firstAsset = assets[0]
-
-
-#     assetId = firstAsset[0]
-#     assetTypeId = firstAsset[1]
-#     assetName = firstAsset[2]
-#     assetVersion = firstAsset[3]
-#     assert assetId == cyWethAddress
-#     assert assetName == "Yearn Wrapped Ether"
-#     assert assetTypeId == "IRON_BANK_MARKET"
-#     assert assetVersion == "2.0.0"
-#     # print(assets)
+        # print("asset: ", asset[0])
+        # print("Supply apy: ", supplyApyBips)
+        # print("Borrow apy: ", borrowApyBips)
+        # print("Liquidity: ", liquidity)
+        # print("Liquidity Usdc: ", liquidityUsdc)
+        # print("Collateral factor: ", collateralFactor)
+        # print("isActive; ", isActive)
+        # print("reserveFactor: ", reserveFactor)
+        # print("exchangeRate: ", exchangeRate)
 
 
 def test_adapter_position_of(ironBankAdapter):
     adapterPosition = ironBankAdapter.adapterPositionOf(
         "0x48002Ca264076F85e7b22c9F650B7Ba168C90B87"
     )
-    print(adapterPosition)
+    # print(adapterPosition)
 
 
 def test_asset_user_metadata(ironBankAdapter, management):
@@ -190,21 +161,21 @@ def test_asset_user_metadata(ironBankAdapter, management):
         assetId = assetUserMetadata[0]
         enteredMarket = assetUserMetadata[1]
         borrowlimitBips = assetUserMetadata[2]
-        print("assetId: ", assetId)
-        print("enteredMarket: ", enteredMarket)
-        print("borrowlimitBips: ", borrowlimitBips)
-        print("")
+        # print("assetId: ", assetId)
+        # print("enteredMarket: ", enteredMarket)
+        # print("borrowlimitBips: ", borrowlimitBips)
+        # print("")
 
 
-# def test_assets_tokens_addresses(ironBankAdapter):
-#     tokens = ironBankAdapter.assetsTokensAddresses()
-#     assert len(tokens) > 0
+def test_assets_tokens_addresses(ironBankAdapter):
+    tokens = ironBankAdapter.assetsTokensAddresses()
+    assert len(tokens) > 0
 
 
-# def test_fallback_mechanism(ironBankAdapter, TvlAdapterIronBank):
-#     proxy = Contract.from_abi("", ironBankAdapter, TvlAdapterIronBank.abi)
-#     cyDaiTvl = proxy.assetTvlUsdc(cyDaiAddress)
-#     assert cyDaiTvl > 0
+def test_fallback_mechanism(ironBankAdapter, TvlAdapterIronBank):
+    proxy = Contract.from_abi("", ironBankAdapter, TvlAdapterIronBank.abi)
+    cyDaiTvl = proxy.assetTvlUsdc(cyDaiAddress)
+    assert cyDaiTvl > 0
 
 
 def print_position(position):
@@ -217,14 +188,14 @@ def print_position(position):
     assetAllowances = position[6]
     assert balance > 0
 
-    print("assetId: ", assetId)
-    print("tokenId: ", tokenId)
-    print("typeId: ", typeId)
-    print("balance: ", balance)
-    print("underlyingTokenBalance: ", underlyingTokenBalance)
-    print("tokenAllowances: ", tokenAllowances)
-    print("assetAllowances: ", assetAllowances)
-    print("")
+    # print("assetId: ", assetId)
+    # print("tokenId: ", tokenId)
+    # print("typeId: ", typeId)
+    # print("balance: ", balance)
+    # print("underlyingTokenBalance: ", underlyingTokenBalance)
+    # print("tokenAllowances: ", tokenAllowances)
+    # print("assetAllowances: ", assetAllowances)
+    # print("")
 
 
 def test_asset_positions_of(ironBankAdapter, accounts):

@@ -114,11 +114,10 @@ contract RegisteryAdapterV2Vault is Ownable {
     /*******************************************************
      *           Common code shared by all adapters
      *******************************************************/
-
-    IOracle public oracle; // The oracle is used to fetch USDC normalized pricing data
-    IHelper public helper; // A helper utility is used for batch allowance fetching and address array merging
-    IAddressesGenerator public addressesGenerator; // A utility for fetching assets addresses and length
-    address public fallbackContractAddress; // Optional fallback proxy
+    address public oracleAddress; // The oracle is used to fetch USDC normalized pricing data
+    address public helperAddress; // A helper utility is used for batch allowance fetching and address array merging
+    address public addressesGeneratorAddress; // A utility for fetching assets addresses and length
+    address[] private _extensionsAddresses; // Optional contract extensions provide a way to add new features at a later date
 
     /**
      * High level static information about an asset
@@ -262,7 +261,7 @@ contract RegisteryAdapterV2Vault is Ownable {
         assetAddresses[0] = assetAddress;
         bytes memory allowances =
             abi.encode(
-                helper.allowances(
+                IHelper(helperAddress).allowances(
                     accountAddress,
                     tokenAddresses,
                     assetAddresses
@@ -284,10 +283,11 @@ contract RegisteryAdapterV2Vault is Ownable {
         assetAddresses[0] = assetAddress;
         bytes memory allowances =
             abi.encode(
-                helper.allowances(
+                IHelper(helperAddress).allowances(
                     accountAddress,
                     assetAddresses,
-                    addressesGenerator.getPositionSpenderAddresses()
+                    IAddressesGenerator(addressesGeneratorAddress)
+                        .getPositionSpenderAddresses()
                 )
             );
         return abi.decode(allowances, (Allowance[]));
@@ -304,7 +304,10 @@ contract RegisteryAdapterV2Vault is Ownable {
         return
             TokenAmount({
                 amount: amount,
-                amountUsdc: oracle.getNormalizedValueUsdc(tokenAddress, amount)
+                amountUsdc: IOracle(oracleAddress).getNormalizedValueUsdc(
+                    tokenAddress,
+                    amount
+                )
             });
     }
 
@@ -312,21 +315,21 @@ contract RegisteryAdapterV2Vault is Ownable {
      * Fetch the total number of assets for this adapter
      */
     function assetsLength() public view returns (uint256) {
-        return addressesGenerator.assetsLength();
+        return IAddressesGenerator(addressesGeneratorAddress).assetsLength();
     }
 
     /**
      * Fetch all asset addresses for this adapter
      */
     function assetsAddresses() public view returns (address[] memory) {
-        return addressesGenerator.assetsAddresses();
+        return IAddressesGenerator(addressesGeneratorAddress).assetsAddresses();
     }
 
     /**
      * Fetch registry address from addresses generator
      */
     function registry() public view returns (address) {
-        return addressesGenerator.registry();
+        return IAddressesGenerator(addressesGeneratorAddress).registry();
     }
 
     /**
@@ -339,19 +342,34 @@ contract RegisteryAdapterV2Vault is Ownable {
     }
 
     /**
+     * Set optional fallback extension addresses
+     */
+    function setExtensionsAddresses(address[] memory _newExtensionsAddresses)
+        external
+        onlyOwner
+    {
+        _extensionsAddresses = _newExtensionsAddresses;
+    }
+
+    /**
+     * Fetch fallback extension addresses
+     */
+    function extensionsAddresses() external view returns (address[] memory) {
+        return (_extensionsAddresses);
+    }
+
+    /**
      * Configure adapter
      */
     constructor(
         address _oracleAddress,
         address _helperAddress,
-        address _addressesGeneratorAddress,
-        address _fallbackContractAddress
+        address _addressesGeneratorAddress
     ) {
         require(_oracleAddress != address(0), "Missing oracle address");
-        oracle = IOracle(_oracleAddress);
-        helper = IHelper(_helperAddress);
-        fallbackContractAddress = _fallbackContractAddress;
-        addressesGenerator = IAddressesGenerator(_addressesGeneratorAddress);
+        oracleAddress = _oracleAddress;
+        addressesGeneratorAddress = _addressesGeneratorAddress;
+        helperAddress = _helperAddress;
     }
 
     /*******************************************************
@@ -389,7 +407,7 @@ contract RegisteryAdapterV2Vault is Ownable {
      * Fetch asset positions for an account for all assets
      */
     function assetsPositionsOf(address accountAddress)
-        external
+        public
         view
         returns (Position[] memory)
     {
@@ -429,11 +447,18 @@ contract RegisteryAdapterV2Vault is Ownable {
     }
 
     /**
+     * High level adapter metadata scoped to a user
+     */
+    struct AdapterPosition {
+        uint256 balanceUsdc;
+    }
+
+    /**
      * Metadata specific to an asset type scoped to a user.
      * Not used in this adapter.
      */
     struct AssetUserMetadata {
-        address assetId;
+        address depositBalance;
     }
 
     /**
@@ -572,6 +597,27 @@ contract RegisteryAdapterV2Vault is Ownable {
     }
 
     /**
+     * Fetch high level information about an account
+     */
+    function adapterPositionOf(address accountAddress)
+        external
+        view
+        returns (AdapterPosition memory)
+    {
+        Position[] memory positions = assetsPositionsOf(accountAddress);
+        uint256 balanceUsdc;
+        for (
+            uint256 positionIdx;
+            positionIdx < positions.length;
+            positionIdx++
+        ) {
+            Position memory position = positions[positionIdx];
+            balanceUsdc += position.underlyingTokenBalance.amountUsdc;
+        }
+        return AdapterPosition({balanceUsdc: balanceUsdc});
+    }
+
+    /**
      * Returns unique list of tokens associated with this adapter
      */
     function assetsTokensAddresses() public view returns (address[] memory) {
@@ -586,17 +632,28 @@ contract RegisteryAdapterV2Vault is Ownable {
     }
 
     /**
-     * Fallback proxy. Primary use case is to give registry adapters access to TVL adapter logic
+     * Cascading fallback proxy provides the contract with the ability to add new features at a later time
      */
     fallback() external {
-        assembly {
-            let addr := sload(fallbackContractAddress.slot)
-            calldatacopy(0, 0, calldatasize())
-            let success := staticcall(gas(), addr, 0, calldatasize(), 0, 0)
-            returndatacopy(0, 0, returndatasize())
-            if success {
-                return(0, returndatasize())
+        for (uint256 i = 0; i < _extensionsAddresses.length; i++) {
+            address extension = _extensionsAddresses[i];
+            assembly {
+                let _target := extension
+                calldatacopy(0, 0, calldatasize())
+                let success := staticcall(
+                    gas(),
+                    _target,
+                    0,
+                    calldatasize(),
+                    0,
+                    0
+                )
+                returndatacopy(0, 0, returndatasize())
+                if success {
+                    return(0, returndatasize())
+                }
             }
         }
+        revert("Extensions: Fallback proxy failed to return data");
     }
 }

@@ -25,10 +25,11 @@ def managementList(ManagementList, management):
 @pytest.fixture
 def registryAdapterCommonInterface():
     return [
-        "oracleAddress()",
-        "helperAddress()",
-        "addressesGenerator()",
-        "extensionsAddresses()",
+        "oracleAddress()",  # Address of the current oracle
+        "helperAddress()",  # Address of the helper utility
+        "addressesGeneratorAddress()",  # Address of the addresses generator utility
+        "extensionsAddresses()",  # Addresses of fallback method extensions
+        "setExtensionsAddresses(address[])",
         "assetsStatic(address[])",
         "assetsDynamic(address[])",
         "assetsStatic()",
@@ -380,7 +381,6 @@ def v2VaultsAdapter(
         oracle,
         helperInternal,
         v2AddressesGenerator,
-        v2VaultsTvlAdapter,
         {"from": management},
     )
 

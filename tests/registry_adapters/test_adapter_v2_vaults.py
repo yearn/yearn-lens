@@ -32,7 +32,6 @@ def v2VaultsAdapter(
         oracle,
         helper,
         v2AddressesGenerator,
-        v2VaultsTvlAdapter,
         {"from": management},
     )
     v2AddressesGenerator.setPositionSpenderAddresses(
@@ -44,10 +43,11 @@ def v2VaultsAdapter(
 def test_interface(
     v2VaultsAdapter, introspection, management, registryAdapterCommonInterface
 ):
-    adapterImplementsCommonInterface = introspection.implementsInterface(
-        v2VaultsAdapter, registryAdapterCommonInterface
-    )
-    assert adapterImplementsCommonInterface
+    for method in registryAdapterCommonInterface:
+        methodImplemented = introspection.implementsMethod(v2VaultsAdapter, method)
+        if not methodImplemented:
+            print(f"Missing method implementation: {method}")
+        assert methodImplemented == True
 
 
 def test_assets_tokens_addresses(v2VaultsAdapter):
@@ -62,9 +62,7 @@ def test_asset_user_metadata(v2VaultsAdapter, management):
 
 
 def test_assets_user_metadata(v2VaultsAdapter, management):
-    assetUserMetadata = v2VaultsAdapter.assetsUserMetadata(
-        v2UsdcVaultV2Address, management
-    )
+    assetUserMetadata = v2VaultsAdapter.assetsUserMetadata(management)
 
 
 def test_adapter_info(v2VaultsAdapter):
@@ -111,26 +109,21 @@ def test_asset_static(v2VaultsAdapter):
     assetStatic = v2VaultsAdapter.assetStatic(v2UsdcVaultV2Address)
     assetId = assetStatic[0]
     assetTypeId = assetStatic[1]
-    name = assetStatic[2]
-    version = assetStatic[3]
+    assetTokenId = assetStatic[2]
+    name = assetStatic[3]
+    version = assetStatic[4]
+    symbol = assetStatic[5]
+    decimals = assetStatic[6]
     assert assetId == v2UsdcVaultV2Address
+    assert assetTypeId == "VAULT_V2"
+    assert assetTokenId == usdcAddress
     assert name == "USDC yVault"
     assert version == "0.3.0"
-
-    # # Test token
-    token = assetStatic[4]
-    tokenId = token[0]
-    tokenName = token[1]
-    tokenSymbol = token[2]
-    tokenDecimals = token[3]
-
-    assert tokenId == usdcAddress
-    assert tokenName == "USD Coin"
-    assert tokenSymbol == "USDC"
-    assert tokenDecimals == 6
+    assert symbol == "yvUSDC"
+    assert decimals == 6
 
 
-def test_asset_dynamic(v2VaultsAdapter, oracle):
+def test_asset_dynamic(v2VaultsAdapter, oracle, management):
     assetDynamic = v2VaultsAdapter.assetDynamic(v2UsdcVaultV1Address)
     assetId = assetDynamic[0]
     typeId = assetDynamic[1]
@@ -152,12 +145,11 @@ def test_asset_dynamic(v2VaultsAdapter, oracle):
     # assert balanceUsdc > balance / 10 ** 6 # This assumes the price of USDC >= 1
 
     # Test vault metadata
-    symbol = metadata[0]
-    pricePerShare = metadata[1]
-    migrationAvailable = metadata[2]
-    latestVaultAddress = metadata[3]
-    depositLimit = metadata[4]
-    emergencyShutdown = metadata[5]
+    pricePerShare = metadata[0]
+    migrationAvailable = metadata[1]
+    latestVaultAddress = metadata[2]
+    depositLimit = metadata[3]
+    emergencyShutdown = metadata[4]
     assert migrationAvailable == True
     assert latestVaultAddress != v2UsdcVaultV1Address
     assert latestVaultAddress != ZERO_ADDRESS
@@ -171,27 +163,35 @@ def test_assets_static(v2VaultsAdapter):
     firstAsset = assets[0]
     assetId = firstAsset[0]
     assetTypeId = firstAsset[1]
-    assetName = firstAsset[2]
-    assetVersion = firstAsset[3]
+    assetTokenId = firstAsset[2]
+    assetName = firstAsset[3]
+    assetVersion = firstAsset[4]
+    assetSymbol = firstAsset[5]
+    assetDecimals = firstAsset[6]
     assert assetId == yfiVaultAddress
-    assert assetName == "YFI yVault"
     assert assetTypeId == "VAULT_V2"
+    assert assetTokenId == yfiAddress
+    assert assetName == "YFI yVault"
     assert assetVersion == "0.3.2"
+    assert assetSymbol == "yvYFI"
+    assert assetDecimals == 18
     # print(assets)
 
 
 def test_assets_dynamic(v2VaultsAdapter):
-    assets = v2VaultsAdapter.assetsStatic()
+    assets = v2VaultsAdapter.assetsDynamic()
     assert len(assets) > 1
     firstAsset = assets[0]
     assetId = firstAsset[0]
     assetTypeId = firstAsset[1]
-    assetName = firstAsset[2]
-    assetVersion = firstAsset[3]
+    assetTokenId = firstAsset[2]
+    assetUnderlyingTokenBalance = firstAsset[3]
+    assetMetadata = firstAsset[4]
     assert assetId == yfiVaultAddress
-    assert assetName == "YFI yVault"
     assert assetTypeId == "VAULT_V2"
-    assert assetVersion == "0.3.2"
+    assert assetTokenId == yfiAddress
+    assert assetUnderlyingTokenBalance[0] > 0
+    assert assetUnderlyingTokenBalance[1] > 0
     # print(assets)
 
 
@@ -248,6 +248,10 @@ def test_asset_positions_of(v2VaultsAdapter, oracle, management, accounts):
     assert spender == trustedMigratorAddress
     assert allowance == 100
 
+    # Test assetPositionOf
+    positions = v2VaultsAdapter.adapterPositionOf(vestedYfiAddress)
+    assert positions[0] > 0
+
 
 def test_assets_positions_of(v2VaultsAdapter, oracle, accounts):
     # Deposit into YFI vault
@@ -292,3 +296,20 @@ def test_set_position_spender_addresses(
         [ethZapAddress], {"from": management}
     )
     assert v2AddressesGenerator.positionSpenderAddresses(0) == ethZapAddress
+
+
+## Test oracle slot update
+# v2VaultsAdapter.updateSlot(
+#     "0000000000000000000000000000000000000000000000000000000000000001",
+#     "0000000000000000000000000000000000000000000000000000000000000000",
+#     {"from": management},
+# )
+# # Test vault underlying balances
+# with brownie.reverts():
+#     v2VaultsAdapter.tokenAmount(1000000000000000000, yfiAddress)
+
+# v2VaultsAdapter.updateSlot(
+#     "0000000000000000000000000000000000000000000000000000000000000001",
+#     "00000000000000000000000083d95e0d5f402511db06817aff3f9ea88224b030",
+#     {"from": management},
+# )
