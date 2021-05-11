@@ -144,16 +144,6 @@ contract RegisteryAdapterV2Vault is Ownable {
     }
 
     /**
-     * Static token data
-     */
-    struct Token {
-        address id; // Token address
-        string name; // Token name
-        string symbol; // Token symbol
-        uint8 decimals; // Token decimals
-    }
-
-    /**
      * Information about a user's position relative to an asset
      */
     struct Position {
@@ -294,24 +284,6 @@ contract RegisteryAdapterV2Vault is Ownable {
     }
 
     /**
-     * Internal method for constructing a TokenAmount struct given a token balance and address
-     */
-    function tokenAmount(uint256 amount, address tokenAddress)
-        internal
-        view
-        returns (TokenAmount memory)
-    {
-        return
-            TokenAmount({
-                amount: amount,
-                amountUsdc: IOracle(oracleAddress).getNormalizedValueUsdc(
-                    tokenAddress,
-                    amount
-                )
-            });
-    }
-
-    /**
      * Fetch the total number of assets for this adapter
      */
     function assetsLength() public view returns (uint256) {
@@ -359,17 +331,21 @@ contract RegisteryAdapterV2Vault is Ownable {
     }
 
     /**
-     * Configure adapter
+     * Internal method for constructing a TokenAmount struct given a token balance and address
      */
-    constructor(
-        address _oracleAddress,
-        address _helperAddress,
-        address _addressesGeneratorAddress
-    ) {
-        require(_oracleAddress != address(0), "Missing oracle address");
-        oracleAddress = _oracleAddress;
-        addressesGeneratorAddress = _addressesGeneratorAddress;
-        helperAddress = _helperAddress;
+    function tokenAmount(uint256 amount, address tokenAddress)
+        internal
+        view
+        returns (TokenAmount memory)
+    {
+        return
+            TokenAmount({
+                amount: amount,
+                amountUsdc: IOracle(oracleAddress).getNormalizedValueUsdc(
+                    tokenAddress,
+                    amount
+                )
+            });
     }
 
     /*******************************************************
@@ -418,6 +394,19 @@ contract RegisteryAdapterV2Vault is Ownable {
     /*******************************************************
      *                 V2 Adapter (unique logic)
      *******************************************************/
+    /**
+     * Configure adapter
+     */
+    constructor(
+        address _oracleAddress,
+        address _helperAddress,
+        address _addressesGeneratorAddress
+    ) {
+        require(_oracleAddress != address(0), "Missing oracle address");
+        oracleAddress = _oracleAddress;
+        addressesGeneratorAddress = _addressesGeneratorAddress;
+        helperAddress = _helperAddress;
+    }
 
     /**
      * Return information about the adapter

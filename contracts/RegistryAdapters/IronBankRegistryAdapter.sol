@@ -124,14 +124,16 @@ interface IERC20 {
  *                     Adapter Logic
  *******************************************************/
 contract RegistryAdapterIronBank is Ownable {
+    // Adapter specific storage variables
+    uint256 public blocksPerYear = 2102400; // Blocks per year is used to calculate lending APY
+    address public comptrollerAddress; // Comptroller address
+
     /*******************************************************
      *           Common code shared by all adapters
      *******************************************************/
-    address public comptrollerAddress; // Comptroller address
+    address public oracleAddress; // The oracle is used to fetch USDC normalized pricing data
     address public helperAddress; // A helper utility is used for batch allowance fetching and address array merging
-    address public oracleAddress; // Yearn oracle address
     address public addressesGeneratorAddress; // A utility for fetching assets addresses and length
-    uint256 public blocksPerYear = 2102400;
     address[] private _extensionsAddresses; // Optional contract extensions provide a way to add new features at a later date
 
     /**
@@ -299,25 +301,6 @@ contract RegistryAdapterIronBank is Ownable {
     }
 
     /**
-     * Internal method for constructing a TokenAmount struct given a token balance and address
-     */
-    function tokenAmount(
-        uint256 amount,
-        address tokenAddress,
-        uint256 tokenPriceUsdc
-    ) internal view returns (TokenAmount memory) {
-        return
-            TokenAmount({
-                amount: amount,
-                amountUsdc: IOracle(oracleAddress).getNormalizedValueUsdc(
-                    tokenAddress,
-                    amount,
-                    tokenPriceUsdc
-                )
-            });
-    }
-
-    /**
      * Fetch the total number of assets for this adapter
      */
     function assetsLength() public view returns (uint256) {
@@ -365,6 +348,28 @@ contract RegistryAdapterIronBank is Ownable {
     }
 
     /**
+     * Internal method for constructing a TokenAmount struct given a token balance and address
+     */
+    function tokenAmount(
+        uint256 amount,
+        address tokenAddress,
+        uint256 tokenPriceUsdc
+    ) internal view returns (TokenAmount memory) {
+        return
+            TokenAmount({
+                amount: amount,
+                amountUsdc: IOracle(oracleAddress).getNormalizedValueUsdc(
+                    tokenAddress,
+                    amount,
+                    tokenPriceUsdc
+                )
+            });
+    }
+
+    /*******************************************************
+     *                     Iron Bank Adapter
+     *******************************************************/
+    /**
      * Configure adapter
      */
     constructor(
@@ -379,12 +384,6 @@ contract RegistryAdapterIronBank is Ownable {
         comptrollerAddress = registry();
     }
 
-    /*******************************************************
-     *                     Iron Bank Adapter
-     *******************************************************/
-    /**
-     * Iron Bank Adapter
-     */
     function adapterInfo() public view returns (AdapterInfo memory) {
         return
             AdapterInfo({
