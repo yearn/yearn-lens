@@ -128,16 +128,11 @@ contract RegistryAdapterIronBank is Ownable {
      *           Common code shared by all adapters
      *******************************************************/
     address public comptrollerAddress; // Comptroller address
-    address public creamOracleAddress; // Cream oracle address
-    address public helperAddress; // Helper utility address
+    address public helperAddress; // A helper utility is used for batch allowance fetching and address array merging
     address public oracleAddress; // Yearn oracle address
+    address public addressesGeneratorAddress; // A utility for fetching assets addresses and length
     uint256 public blocksPerYear = 2102400;
     address[] private _extensionsAddresses; // Optional contract extensions provide a way to add new features at a later date
-    ICreamOracle creamOracle; // Cream oracle
-    IUnitroller comptroller; // Comptroller
-    IOracle oracle; // Yearn oracle
-    IHelper helper; // A helper utility is used for batch allowance fetching and address array merging
-    IAddressesGenerator public addressesGenerator; // A utility for fetching assets addresses and length
 
     /**
      * High level static information about an asset
@@ -271,7 +266,7 @@ contract RegistryAdapterIronBank is Ownable {
         assetAddresses[0] = assetAddress;
         bytes memory allowances =
             abi.encode(
-                helper.allowances(
+                IHelper(helperAddress).allowances(
                     accountAddress,
                     tokenAddresses,
                     assetAddresses
@@ -293,10 +288,11 @@ contract RegistryAdapterIronBank is Ownable {
         assetAddresses[0] = assetAddress;
         bytes memory allowances =
             abi.encode(
-                helper.allowances(
+                IHelper(helperAddress).allowances(
                     accountAddress,
                     assetAddresses,
-                    addressesGenerator.getPositionSpenderAddresses()
+                    IAddressesGenerator(addressesGeneratorAddress)
+                        .getPositionSpenderAddresses()
                 )
             );
         return abi.decode(allowances, (Allowance[]));
@@ -313,7 +309,7 @@ contract RegistryAdapterIronBank is Ownable {
         return
             TokenAmount({
                 amount: amount,
-                amountUsdc: oracle.getNormalizedValueUsdc(
+                amountUsdc: IOracle(oracleAddress).getNormalizedValueUsdc(
                     tokenAddress,
                     amount,
                     tokenPriceUsdc
@@ -325,21 +321,21 @@ contract RegistryAdapterIronBank is Ownable {
      * Fetch the total number of assets for this adapter
      */
     function assetsLength() public view returns (uint256) {
-        return addressesGenerator.assetsLength();
+        return IAddressesGenerator(addressesGeneratorAddress).assetsLength();
     }
 
     /**
      * Fetch all asset addresses for this adapter
      */
     function assetsAddresses() public view returns (address[] memory) {
-        return addressesGenerator.assetsAddresses();
+        return IAddressesGenerator(addressesGeneratorAddress).assetsAddresses();
     }
 
     /**
      * Fetch registry address from addresses generator
      */
     function registry() public view returns (address) {
-        return addressesGenerator.registry();
+        return IAddressesGenerator(addressesGeneratorAddress).registry();
     }
 
     /**
@@ -379,14 +375,8 @@ contract RegistryAdapterIronBank is Ownable {
         require(_oracleAddress != address(0), "Missing oracle address");
         oracleAddress = _oracleAddress;
         helperAddress = _helperAddress;
-        addressesGenerator = IAddressesGenerator(_addressesGeneratorAddress);
-        address _comptrollerAddress = registry();
-        comptrollerAddress = _comptrollerAddress;
-        comptroller = IUnitroller(comptrollerAddress);
-        creamOracleAddress = comptroller.oracle();
-        creamOracle = ICreamOracle(creamOracleAddress);
-        oracle = IOracle(_oracleAddress);
-        helper = IHelper(_helperAddress);
+        addressesGeneratorAddress = _addressesGeneratorAddress;
+        comptrollerAddress = registry();
     }
 
     /*******************************************************
@@ -455,7 +445,8 @@ contract RegistryAdapterIronBank is Ownable {
         returns (AssetUserMetadata memory)
     {
         bool enteredMarket;
-        address[] memory markets = comptroller.getAssetsIn(accountAddress);
+        address[] memory markets =
+            IUnitroller(comptrollerAddress).getAssetsIn(accountAddress);
         for (uint256 marketIdx; marketIdx < markets.length; marketIdx++) {
             address marketAddress = markets[marketIdx];
             if (marketAddress == assetAddress) {
@@ -464,21 +455,22 @@ contract RegistryAdapterIronBank is Ownable {
             }
         }
         ICyToken asset = ICyToken(assetAddress);
-        IUnitroller.Market memory market = comptroller.markets(assetAddress);
+        IUnitroller.Market memory market =
+            IUnitroller(comptrollerAddress).markets(assetAddress);
         uint256 supplyBalanceShares = asset.balanceOf(accountAddress);
         uint256 supplyBalanceUnderlying =
             (supplyBalanceShares * asset.exchangeRateStored()) / 10**18;
         address tokenAddress = underlyingTokenAddress(assetAddress);
         uint256 tokenPriceUsdc = assetUnderlyingTokenPriceUsdc(assetAddress);
         uint256 supplyBalanceUsdc =
-            oracle.getNormalizedValueUsdc(
+            IOracle(oracleAddress).getNormalizedValueUsdc(
                 tokenAddress,
                 supplyBalanceUnderlying,
                 tokenPriceUsdc
             );
         uint256 borrowBalanceShares = asset.borrowBalanceStored(accountAddress);
         uint256 borrowBalanceUsdc =
-            oracle.getNormalizedValueUsdc(
+            IOracle(oracleAddress).getNormalizedValueUsdc(
                 tokenAddress,
                 borrowBalanceShares,
                 tokenPriceUsdc
@@ -562,7 +554,8 @@ contract RegistryAdapterIronBank is Ownable {
         IERC20 underlyingToken = IERC20(_underlyingTokenAddress);
         uint8 underlyingTokenDecimals = underlyingToken.decimals();
         uint256 underlyingTokenPrice =
-            creamOracle.getUnderlyingPrice(assetAddress) /
+            ICreamOracle(IUnitroller(comptrollerAddress).oracle())
+                .getUnderlyingPrice(assetAddress) /
                 (10**(36 - underlyingTokenDecimals - 6));
         return underlyingTokenPrice;
     }
@@ -581,13 +574,14 @@ contract RegistryAdapterIronBank is Ownable {
         uint256 liquidityUsdc;
         uint256 tokenPriceUsdc = assetUnderlyingTokenPriceUsdc(assetAddress);
         if (liquidity > 0) {
-            liquidityUsdc = oracle.getNormalizedValueUsdc(
+            liquidityUsdc = IOracle(oracleAddress).getNormalizedValueUsdc(
                 tokenAddress,
                 liquidity,
                 tokenPriceUsdc
             );
         }
-        IUnitroller.Market memory market = comptroller.markets(assetAddress);
+        IUnitroller.Market memory market =
+            IUnitroller(comptrollerAddress).markets(assetAddress);
 
         uint256 balance = assetBalance(assetAddress);
         TokenAmount memory underlyingTokenBalance =
@@ -595,7 +589,7 @@ contract RegistryAdapterIronBank is Ownable {
 
         uint256 totalBorrowed = asset.totalBorrows();
         uint256 totalBorrowedUsdc =
-            oracle.getNormalizedValueUsdc(
+            IOracle(oracleAddress).getNormalizedValueUsdc(
                 tokenAddress,
                 totalBorrowed,
                 tokenPriceUsdc
