@@ -244,7 +244,7 @@ contract RegisteryAdapterV2Vault is Ownable {
         view
         returns (Allowance[] memory)
     {
-        address tokenAddress = underlyingTokenAddress(assetAddress);
+        address tokenAddress = assetUnderlyingTokenAddress(assetAddress);
         address[] memory tokenAddresses = new address[](1);
         address[] memory assetAddresses = new address[](1);
         tokenAddresses[0] = tokenAddress;
@@ -300,7 +300,7 @@ contract RegisteryAdapterV2Vault is Ownable {
     /**
      * Fetch registry address from addresses generator
      */
-    function registry() public view returns (address) {
+    function registryAddress() public view returns (address) {
         return IAddressesGenerator(addressesGeneratorAddress).registry();
     }
 
@@ -471,7 +471,7 @@ contract RegisteryAdapterV2Vault is Ownable {
     /**
      * Fetch the underlying token address of an asset
      */
-    function underlyingTokenAddress(address assetAddress)
+    function assetUnderlyingTokenAddress(address assetAddress)
         public
         view
         returns (address)
@@ -490,7 +490,7 @@ contract RegisteryAdapterV2Vault is Ownable {
         returns (AssetStatic memory)
     {
         IV2Vault vault = IV2Vault(assetAddress);
-        address tokenAddress = underlyingTokenAddress(assetAddress);
+        address tokenAddress = assetUnderlyingTokenAddress(assetAddress);
         return
             AssetStatic({
                 id: assetAddress,
@@ -512,7 +512,7 @@ contract RegisteryAdapterV2Vault is Ownable {
         returns (AssetDynamic memory)
     {
         IV2Vault vault = IV2Vault(assetAddress);
-        address tokenAddress = underlyingTokenAddress(assetAddress);
+        address tokenAddress = assetUnderlyingTokenAddress(assetAddress);
         uint256 totalSupply = vault.totalSupply();
         uint256 pricePerShare = 0;
         bool vaultHasShares = totalSupply != 0;
@@ -521,7 +521,7 @@ contract RegisteryAdapterV2Vault is Ownable {
         }
 
         address latestVaultAddress =
-            IV2Registry(registry()).latestVault(tokenAddress);
+            IV2Registry(registryAddress()).latestVault(tokenAddress);
         bool migrationAvailable = latestVaultAddress != assetAddress;
 
         AssetMetadata memory metadata =
@@ -557,7 +557,7 @@ contract RegisteryAdapterV2Vault is Ownable {
     {
         IV2Vault _asset = IV2Vault(assetAddress);
         uint8 assetDecimals = _asset.decimals();
-        address tokenAddress = underlyingTokenAddress(assetAddress);
+        address tokenAddress = assetUnderlyingTokenAddress(assetAddress);
         uint256 balance = _asset.balanceOf(accountAddress);
         uint256 _underlyingTokenBalance =
             (balance * _asset.pricePerShare()) / 10**assetDecimals;
@@ -610,7 +610,7 @@ contract RegisteryAdapterV2Vault is Ownable {
      * Returns unique list of tokens associated with this adapter
      */
     function assetsTokensAddresses() public view returns (address[] memory) {
-        IV2Registry _registry = IV2Registry(registry());
+        IV2Registry _registry = IV2Registry(registryAddress());
         uint256 numberOfTokens = _registry.numTokens();
         address[] memory _tokensAddresses = new address[](numberOfTokens);
         for (uint256 tokenIdx = 0; tokenIdx < numberOfTokens; tokenIdx++) {

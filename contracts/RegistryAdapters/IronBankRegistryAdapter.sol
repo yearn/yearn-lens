@@ -261,7 +261,7 @@ contract RegistryAdapterIronBank is Ownable {
         view
         returns (Allowance[] memory)
     {
-        address tokenAddress = underlyingTokenAddress(assetAddress);
+        address tokenAddress = assetUnderlyingTokenAddress(assetAddress);
         address[] memory tokenAddresses = new address[](1);
         address[] memory assetAddresses = new address[](1);
         tokenAddresses[0] = tokenAddress;
@@ -317,7 +317,7 @@ contract RegistryAdapterIronBank is Ownable {
     /**
      * Fetch registry address from addresses generator
      */
-    function registry() public view returns (address) {
+    function registryAddress() public view returns (address) {
         return IAddressesGenerator(addressesGeneratorAddress).registry();
     }
 
@@ -381,7 +381,7 @@ contract RegistryAdapterIronBank is Ownable {
         oracleAddress = _oracleAddress;
         helperAddress = _helperAddress;
         addressesGeneratorAddress = _addressesGeneratorAddress;
-        comptrollerAddress = registry();
+        comptrollerAddress = registryAddress();
     }
 
     function adapterInfo() public view returns (AdapterInfo memory) {
@@ -459,7 +459,7 @@ contract RegistryAdapterIronBank is Ownable {
         uint256 supplyBalanceShares = asset.balanceOf(accountAddress);
         uint256 supplyBalanceUnderlying =
             (supplyBalanceShares * asset.exchangeRateStored()) / 10**18;
-        address tokenAddress = underlyingTokenAddress(assetAddress);
+        address tokenAddress = assetUnderlyingTokenAddress(assetAddress);
         uint256 tokenPriceUsdc = assetUnderlyingTokenPriceUsdc(assetAddress);
         uint256 supplyBalanceUsdc =
             IOracle(oracleAddress).getNormalizedValueUsdc(
@@ -509,7 +509,7 @@ contract RegistryAdapterIronBank is Ownable {
         return _assetsUserMetadata;
     }
 
-    function underlyingTokenAddress(address assetAddress)
+    function assetUnderlyingTokenAddress(address assetAddress)
         public
         view
         returns (address)
@@ -528,7 +528,7 @@ contract RegistryAdapterIronBank is Ownable {
         returns (AssetStatic memory)
     {
         ICyToken asset = ICyToken(assetAddress);
-        address tokenAddress = underlyingTokenAddress(assetAddress);
+        address tokenAddress = assetUnderlyingTokenAddress(assetAddress);
         return
             AssetStatic({
                 id: assetAddress,
@@ -549,7 +549,8 @@ contract RegistryAdapterIronBank is Ownable {
         view
         returns (uint256)
     {
-        address _underlyingTokenAddress = underlyingTokenAddress(assetAddress);
+        address _underlyingTokenAddress =
+            assetUnderlyingTokenAddress(assetAddress);
         IERC20 underlyingToken = IERC20(_underlyingTokenAddress);
         uint8 underlyingTokenDecimals = underlyingToken.decimals();
         uint256 underlyingTokenPrice =
@@ -568,7 +569,7 @@ contract RegistryAdapterIronBank is Ownable {
         returns (AssetDynamic memory)
     {
         ICyToken asset = ICyToken(assetAddress);
-        address tokenAddress = underlyingTokenAddress(assetAddress);
+        address tokenAddress = assetUnderlyingTokenAddress(assetAddress);
         uint256 liquidity = asset.getCash();
         uint256 liquidityUsdc;
         uint256 tokenPriceUsdc = assetUnderlyingTokenPriceUsdc(assetAddress);
@@ -629,7 +630,7 @@ contract RegistryAdapterIronBank is Ownable {
         returns (Position[] memory)
     {
         ICyToken asset = ICyToken(assetAddress);
-        address tokenAddress = underlyingTokenAddress(assetAddress);
+        address tokenAddress = assetUnderlyingTokenAddress(assetAddress);
         uint256 supplyBalanceShares = asset.balanceOf(accountAddress);
         uint256 borrowBalanceShares = asset.borrowBalanceStored(accountAddress);
 
@@ -794,7 +795,9 @@ contract RegistryAdapterIronBank is Ownable {
         address[] memory _tokensAddresses = new address[](numberOfAssets);
         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
             address assetAddress = _assetsAddresses[assetIdx];
-            _tokensAddresses[assetIdx] = underlyingTokenAddress(assetAddress);
+            _tokensAddresses[assetIdx] = assetUnderlyingTokenAddress(
+                assetAddress
+            );
         }
         return _tokensAddresses;
     }

@@ -73,7 +73,7 @@ def test_adapter_info(v2VaultsAdapter):
 
 
 def test_registry_address(v2VaultsAdapter):
-    assert not v2VaultsAdapter.registry() == ZERO_ADDRESS
+    assert not v2VaultsAdapter.registryAddress() == ZERO_ADDRESS
 
 
 def test_assets_length(v2VaultsAdapter):

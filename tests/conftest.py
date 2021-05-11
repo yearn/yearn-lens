@@ -29,29 +29,29 @@ def registryAdapterCommonInterface():
         "helperAddress()",  # Address of the helper utility
         "addressesGeneratorAddress()",  # Address of the addresses generator utility
         "extensionsAddresses()",  # Addresses of fallback method extensions
-        "setExtensionsAddresses(address[])",
-        "assetsStatic(address[])",
-        "assetsDynamic(address[])",
-        "assetsStatic()",
-        "assetsDynamic()",
-        "tokenAllowances(address,address)",
-        "assetAllowances(address,address)",
-        "assetsLength()",
-        "assetsAddresses()",
-        "registry()",
-        "updateSlot(bytes32,bytes32)",
-        "assetsPositionsOf(address,address[])",
-        "assetsPositionsOf(address)",
-        "adapterInfo()",
-        "assetUserMetadata(address,address)",
-        "assetsUserMetadata(address)",
-        "underlyingTokenAddress(address)",
-        "assetStatic(address)",
-        "assetDynamic(address)",
-        "assetPositionsOf(address,address)",
-        "assetBalance(address)",
-        "assetsTokensAddresses()",
-        "adapterPositionOf(address)",
+        "setExtensionsAddresses(address[])",  # Update fallback extension contract addresses
+        "assetsStatic(address[])",  # Fetch a list of static adapter assets given an array of asset addresses
+        "assetsDynamic(address[])",  # Fetch a list of dynamic adapter assets given an array of asset addresses
+        "assetsStatic()",  # Fetch a list of all static adapter assets
+        "assetsDynamic()",  # Fetch a list of all dynamic adapter assets
+        "tokenAllowances(address,address)",  # Fetch token allowances for an asset scoped to an asset and account
+        "assetAllowances(address,address)",  # Fetch asset allowances for an asset scoped to a spender and account
+        "assetsLength()",  # Fetch the total number of assets in the adapter
+        "assetsAddresses()",  # Fetch a list of all asset addresses for the adapter
+        "registryAddress()",  # Fetch the address of the registry associated with the adapter
+        "assetsPositionsOf(address,address[])",  # Fetch account positions relative to an asset given a list of asset addresses
+        "assetsPositionsOf(address)",  # Fetch account positions relative to an asset
+        "adapterInfo()",  # Fetch adapter info metadata
+        "assetUserMetadata(address,address)",  # Fetch metadata for an asset scoped to a user
+        "assetsUserMetadata(address)",  # Fetch metadata for all assets scoped to a user
+        "assetUnderlyingTokenAddress(address)",  # Fetch the underlying token address of an asset
+        "assetStatic(address)",  # Fetch static information about an asset given an address
+        "assetDynamic(address)",  # Fetch dynamic information about an asset given an address
+        "assetPositionsOf(address,address)",  # Fetch account positins for an asset given an account address and asset address
+        "assetBalance(address)",  # Fetch the balance for an asset given an asset address
+        "assetsTokensAddresses()",  # Fetch a list of unique underlying token addresses associated with an adapter
+        "adapterPositionOf(address)",  # Fetch asset position metadata scoped to a user
+        "updateSlot(bytes32,bytes32)",  # Allow owner to update a storage slot directly
     ]
 
 

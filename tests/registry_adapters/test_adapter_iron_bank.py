@@ -55,7 +55,7 @@ def test_adapter_info(ironBankAdapter):
 
 
 def test_registry_address(ironBankAdapter):
-    assert not ironBankAdapter.registry() == ZERO_ADDRESS
+    assert not ironBankAdapter.registryAddress() == ZERO_ADDRESS
 
 
 def test_assets_length(ironBankAdapter):
