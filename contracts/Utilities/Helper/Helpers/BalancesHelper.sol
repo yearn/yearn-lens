@@ -1,54 +1,5 @@
 pragma solidity ^0.8.2;
 
-interface IPairsHelper {
-    function pairsAddresses(
-        address factoryAddress,
-        uint256 pageSize,
-        uint256 pageNbr,
-        uint256 offset
-    ) external view returns (address[] memory);
-
-    function pairsAddresses(
-        address factoryAddress,
-        uint256 pageSize,
-        uint256 pageNbr
-    ) external view returns (address[] memory);
-
-    function pairsAddresses(address factoryAddress)
-        external
-        view
-        returns (address[] memory);
-
-    function tokensAddresses(
-        address factoryAddress,
-        uint256 pageSize,
-        uint256 pageNbr,
-        uint256 offset
-    ) external view returns (address[] memory);
-
-    function tokensAddresses(
-        address factoryAddress,
-        uint256 pageSize,
-        uint256 pageNbr
-    ) external view returns (address[] memory);
-
-    function tokensAddresses(address factoryAddress)
-        external
-        view
-        returns (address[] memory);
-
-    function pagesLength(address factoryAddress, uint256 pageSize)
-        external
-        view
-        returns (uint256);
-
-    function pagesLength(
-        address factoryAddress,
-        uint256 pageSize,
-        uint256 offset
-    ) external view returns (uint256);
-}
-
 interface IERC20 {
     function decimals() external view returns (uint8);
 
@@ -80,7 +31,7 @@ interface IOracle {
 /**
  * Static token data
  */
-struct Token {
+struct TokenMetadata {
     address id; // Token address
     string name; // Token name
     string symbol; // Token symbol
@@ -90,54 +41,22 @@ struct Token {
 contract BalancesHelper {
     address public owner; // Owner can update storage slots
     address public oracleAddress; // Oracle address
-    address public pairsHelperAddress; // Pair utility address
-    IOracle oracle;
-    IPairsHelper pairsHelper;
 
     struct TokenBalance {
-        address tokenId;
-        uint256 priceUsdc;
-        uint256 balance;
-        uint256 balanceUsdc;
+        address tokenId; // Token address
+        uint256 priceUsdc; // Token price in USDC (6 decimals)
+        uint256 balance; // Token balance in underlying token
+        uint256 balanceUsdc; // Token balance value in USDC (6 decimals)
     }
 
     struct TokenPrice {
-        address tokenId;
-        uint256 priceUsdc;
+        address tokenId; // Token address
+        uint256 priceUsdc; // Token price in USDC (6 decimals)
     }
 
-    constructor(address _oracleAddress, address _pairsHelperAddress) {
+    constructor(address _oracleAddress) {
         owner = msg.sender;
         oracleAddress = _oracleAddress;
-        pairsHelperAddress = _pairsHelperAddress;
-        oracle = IOracle(_oracleAddress);
-        pairsHelper = IPairsHelper(_pairsHelperAddress);
-    }
-
-    /**
-     * Fetch token prices given a factory address and pagination settings
-     */
-    function tokensPrices(
-        address factoryAddress,
-        uint256 pageSize,
-        uint256 pageNbr
-    ) public view returns (TokenPrice[] memory) {
-        address[] memory tokensAddresses =
-            pairsHelper.tokensAddresses(factoryAddress, pageSize, pageNbr);
-        return tokensPrices(tokensAddresses);
-    }
-
-    /**
-     * Fetch LP prices given a factory address and pagination settings
-     */
-    function pairsPrices(
-        address factoryAddress,
-        uint256 pageSize,
-        uint256 pageNbr
-    ) public view returns (TokenPrice[] memory) {
-        address[] memory pairsAddresses =
-            pairsHelper.pairsAddresses(factoryAddress, pageSize, pageNbr);
-        return tokensPrices(pairsAddresses);
     }
 
     /**
@@ -149,8 +68,6 @@ contract BalancesHelper {
     ) public view returns (TokenBalance[] memory) {
         TokenBalance[] memory _tokensBalances =
             new TokenBalance[](tokensAddresses.length);
-        uint256 currentIdx;
-        // return tokensAddresses;
         for (
             uint256 tokenIdx = 0;
             tokenIdx < tokensAddresses.length;
@@ -158,44 +75,24 @@ contract BalancesHelper {
         ) {
             address tokenAddress = tokensAddresses[tokenIdx];
             IERC20 token = IERC20(tokenAddress);
-            uint256 balance =
-                token.balanceOf(0x253c5cBDd08838DaD5493D511E17Aa1ac5eAB51B);
-            if (balance == 0) {
-                continue;
-            }
-            uint256 priceUsdc = oracle.getPriceUsdcRecommended(tokenAddress);
+            uint256 balance = token.balanceOf(accountAddress);
+            uint256 priceUsdc =
+                IOracle(oracleAddress).getPriceUsdcRecommended(tokenAddress);
             uint256 balanceUsdc =
-                oracle.getNormalizedValueUsdc(tokenAddress, balance, priceUsdc);
+                IOracle(oracleAddress).getNormalizedValueUsdc(
+                    tokenAddress,
+                    balance,
+                    priceUsdc
+                );
 
-            _tokensBalances[currentIdx] = TokenBalance({
+            _tokensBalances[tokenIdx] = TokenBalance({
                 tokenId: tokenAddress,
-                priceUsdc: 0,
+                priceUsdc: priceUsdc,
                 balance: balance,
-                balanceUsdc: 0
+                balanceUsdc: balanceUsdc
             });
-            currentIdx++;
         }
-        bytes memory encodedBalances = abi.encode(_tokensBalances);
-        assembly {
-            mstore(add(encodedBalances, 0x40), currentIdx)
-        }
-        _tokensBalances = abi.decode(encodedBalances, (TokenBalance[]));
-
         return _tokensBalances;
-    }
-
-    function tokensBalances(
-        address accountAddress,
-        address factoryAddress,
-        uint256 pageSize,
-        uint256 pageNbr
-    ) public view returns (address[] memory) {
-        address[] memory tokensAddresses =
-            pairsHelper.tokensAddresses(factoryAddress, pageSize, pageNbr);
-        return tokensAddresses;
-        // TokenBalance[] memory _tokensBalances =
-        //     tokensBalances(accountAddress, tokensAddresses);
-        // return _tokensBalances;
     }
 
     /**
@@ -216,7 +113,9 @@ contract BalancesHelper {
             address tokenAddress = tokensAddresses[tokenIdx];
             _tokensPrices[tokenIdx] = TokenPrice({
                 tokenId: tokenAddress,
-                priceUsdc: oracle.getPriceUsdcRecommended(tokenAddress)
+                priceUsdc: IOracle(oracleAddress).getPriceUsdcRecommended(
+                    tokenAddress
+                )
             });
         }
         return _tokensPrices;
@@ -225,19 +124,28 @@ contract BalancesHelper {
     /**
      * Fetch basic static token metadata
      */
-    function tokenMetadata(address tokenAddress)
+    function tokensMetadata(address[] memory tokensAddresses)
         public
         view
-        returns (Token memory)
+        returns (TokenMetadata[] memory)
     {
-        IERC20 _token = IERC20(tokenAddress);
-        return
-            Token({
+        TokenMetadata[] memory _tokensMetadata =
+            new TokenMetadata[](tokensAddresses.length);
+        for (
+            uint256 tokenIdx = 0;
+            tokenIdx < tokensAddresses.length;
+            tokenIdx++
+        ) {
+            address tokenAddress = tokensAddresses[tokenIdx];
+            IERC20 _token = IERC20(tokenAddress);
+            _tokensMetadata[tokenIdx] = TokenMetadata({
                 id: tokenAddress,
                 name: _token.name(),
                 symbol: _token.symbol(),
                 decimals: _token.decimals()
             });
+        }
+        return _tokensMetadata;
     }
 
     function updateSlot(bytes32 slot, bytes32 value) external {

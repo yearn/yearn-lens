@@ -14,6 +14,7 @@ from brownie import (
     TvlAdapterV2Vaults,
     AddressesGeneratorIronBank,
     UniqueAddressesHelper,
+    BalancesHelper,
     DelegatedBalanceMapping,
     PricesHelper,
     StrategiesHelper,
@@ -119,6 +120,7 @@ def main():
     ironBankAddressesGenerator.setAssetDeprecated(
         cySusdOldAddress, True, {"from": management}
     )
+    balancesHelper = BalancesHelper.deploy(oracle, {"from": management})
 
     ####################################################
     # Delegated balance mapping
@@ -181,23 +183,54 @@ def main():
         {"from": management},
     )
 
+    print("Management list")
+    print("---------------")
     print("Management List:         ", managementList)
+    print("")
+
+    print("Oracle")
+    print("------")
     print("Oracle:                  ", oracle)
+    print("")
+
+    print("Calculations")
+    print("------------")
     print("Sushiswap Calculations:  ", calculationsSushiswap)
     print("Curve calculations:      ", calculationsCurve)
     print("Iron Bank Calculations:  ", calculationsIronBank)
-    print("Helper:                  ", helper)
-    print("V2 Addresses Generator:  ", v2VaultsAddressesGenerator)
+    print("")
+
+    print("Delegated balance mapping")
+    print("-------------------------")
     print("Delegated balances:      ", delegatedBalanceMapping)
-    print("Iron Bank TVL Adapter:   ", ironBankTvlAdapter)
-    print("V2 Vaults TVL Adapter:   ", v2VaultsTvlAdapter)
-    print("Iron Bank Generator:     ", ironBankAddressesGenerator)
+    print("")
+
+    print("Helpers")
+    print("-------")
+    print("Helper:                  ", helper)
     print("Prices Helper:           ", pricesHelper)
     print("Allowances Helper:       ", allowancesHelper)
     print("Unique Addresses Helper: ", uniqueAddressesHelper)
     print("Addresses Merge Helper:  ", addressMergeHelper)
     print("Prices Helper:           ", pricesHelper)
+    print("Balances Helper:         ", balancesHelper)
     print("Strategies Helper:       ", strategiesHelper)
+    print("")
+
+    print("Addresses generators")
+    print("--------------------")
+    print("Iron Bank Generator:     ", ironBankAddressesGenerator)
     print("V2 Generator:            ", v2VaultsAddressesGenerator)
+    print("")
+
+    print("TVL Adapters")
+    print("------------")
+    print("Iron Bank TVL Adapter:   ", ironBankTvlAdapter)
+    print("V2 Vaults TVL Adapter:   ", v2VaultsTvlAdapter)
+    print("")
+
+    print("Registry Adapters")
+    print("-----------------")
     print("V2 Vaults Adapter:       ", v2VaultsAdapter)
     print("Iron Bank Adapter:       ", ironBankAdapter)
+    print("")
