@@ -177,6 +177,7 @@ def main():
             allowancesHelper,
             uniqueAddressesHelper,
             pricesHelper,
+            balancesHelper,
             addressMergeHelper,
             strategiesHelper,
         ],
