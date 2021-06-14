@@ -61,7 +61,7 @@ def introspection(Introspection, management):
 
 
 @pytest.fixture
-def pricesHelper(PricesHelper, management, managementList, oracle, ):
+def pricesHelper(PricesHelper, management, managementList, oracle):
     return PricesHelper.deploy(oracle, managementList, {"from": management})
 
 
@@ -403,4 +403,3 @@ def chad(accounts):
 @pytest.fixture
 def rando(accounts):
     yield Account.create().address
-

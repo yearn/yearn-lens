@@ -50,4 +50,3 @@ contract PricesHelper is Manageable {
     }
 
 }
-

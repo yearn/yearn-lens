@@ -204,4 +204,3 @@ def test_get_lp_token_total_liquidity_usdc(oracleProxySushiswap):
         uniswapLpTokenAddress
     )
     assert totalLiquidity > 0
-
