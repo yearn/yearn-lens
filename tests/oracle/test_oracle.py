@@ -178,7 +178,6 @@ def test_get_price_from_router(oracleProxySushiswap):
     # wethPriceAfterFees = oracleProxySushiswap.getPriceFromRouter(
     #     wethAddress, usdcAddress
     # )
-    print(wethPrice)
     assert ethPrice == wethPrice
     # assert wethPrice > wethPriceAfterFees
     usdcPriceInEth = oracleProxySushiswap.getPriceFromRouter(usdcAddress, ethAddress)
@@ -204,3 +203,4 @@ def test_get_lp_token_total_liquidity_usdc(oracleProxySushiswap):
         uniswapLpTokenAddress
     )
     assert totalLiquidity > 0
+    
