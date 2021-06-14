@@ -1,7 +1,7 @@
 import pytest
 import brownie
 
-from brownie import Contract, ZERO_ADDRESS
+from brownie import Contract, ZERO_ADDRESS, chain
 
 # Oracle deployment options
 uniswapRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
@@ -39,6 +39,16 @@ def oracleProxyCurve(oracle, CalculationsCurve):
 
 
 # General
+def test_update_prices_helper_oracle_address(pricesHelper, management):
+    chain.snapshot()
+    oracleAddress = pricesHelper.oracleAddress()
+    newOracleAddress = "0x83d95e0D5f402511dB06817Aff3f9eA88224B030"
+    oldOracleAddress = "0x6951b5Bd815043E3F842c1b026b0Fa888Cc2DD85"
+    assert oracleAddress == oldOracleAddress
+    pricesHelper.updateOracleAddress(newOracleAddress, {"from": management})
+    assert pricesHelper.oracleAddress() == newOracleAddress
+    chain.revert()
+
 def test_add_and_remove_token_alias(oracle, management):
     assert oracle.tokenAliases(ethAddress) != ZERO_ADDRESS
     oracle.removeTokenAlias(ethAddress, {"from": management})
