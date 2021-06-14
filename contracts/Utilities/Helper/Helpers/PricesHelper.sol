@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.2;
 
+import "../../Manageable.sol";
+
 interface IOracle {
     function getPriceUsdcRecommended(address tokenAddress)
         external
@@ -9,17 +11,17 @@ interface IOracle {
         returns (uint256);
 }
 
-contract PricesHelper {
-    IOracle public oracle;
+contract PricesHelper is Manageable {
+    address public oracleAddress;
 
     struct TokenPrice {
         address tokenId;
         uint256 priceUsdc;
     }
 
-    constructor(address oracleAddress) {
-        require(oracleAddress != address(0), "Missing oracle address");
-        oracle = IOracle(oracleAddress);
+    constructor(address _oracleAddress, address _managementListAddress) Manageable(_managementListAddress) {
+        require(_oracleAddress != address(0), "Missing oracle address");
+        oracleAddress = _oracleAddress;
     }
 
     function tokensPrices(address[] memory tokensAddresses)
@@ -37,9 +39,15 @@ contract PricesHelper {
             address tokenAddress = tokensAddresses[tokenIdx];
             _tokensPrices[tokenIdx] = TokenPrice({
                 tokenId: tokenAddress,
-                priceUsdc: oracle.getPriceUsdcRecommended(tokenAddress)
+                priceUsdc: IOracle(oracleAddress).getPriceUsdcRecommended(tokenAddress)
             });
         }
         return _tokensPrices;
     }
+    
+    function updateOracleAddress(address _oracleAddress) external onlyManagers {
+        oracleAddress = _oracleAddress;
+    }
+
 }
+
