@@ -141,6 +141,9 @@ contract CalculationsSushiswap {
     }
 
     function isLpToken(address tokenAddress) public view returns (bool) {
+        if (tokenAddress == ethAddress) {
+            return false;
+        }
         Pair lpToken = Pair(tokenAddress);
         try lpToken.factory() {
             return true;

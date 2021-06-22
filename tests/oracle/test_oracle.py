@@ -171,6 +171,9 @@ def test_is_lp_token(oracleProxySushiswap):
     tokenIsLp = oracleProxySushiswap.isLpToken(uniswapLpTokenAddress)
     assert tokenIsLp
 
+def test_eth_is_not_lp_token(oracleProxySushiswap):
+    is_lp_token = oracleProxySushiswap.isLpToken(ethAddress)
+    assert is_lp_token == False
 
 def test_get_price_from_router(oracleProxySushiswap):
     ethPrice = oracleProxySushiswap.getPriceFromRouter(ethAddress, usdcAddress)
@@ -183,7 +186,6 @@ def test_get_price_from_router(oracleProxySushiswap):
     usdcPriceInEth = oracleProxySushiswap.getPriceFromRouter(usdcAddress, ethAddress)
     usdcPriceInWeth = oracleProxySushiswap.getPriceFromRouter(usdcAddress, wethAddress)
     assert usdcPriceInEth == usdcPriceInWeth
-
 
 def test_get_router_for_lp_token(oracleProxySushiswap):
     derivedRouterAddress = oracleProxySushiswap.getRouterForLpToken(
