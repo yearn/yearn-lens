@@ -138,7 +138,7 @@ def helperInternal(Helper, managementList, management):
 @pytest.fixture
 def strategiesHelper(StrategiesHelper, v2VaultsAdapter, helperInternal, management):
     return StrategiesHelper.deploy(
-        v2VaultsAdapter, helperInternal, {"from": management}
+        v2VaultsAdapter, addressMergeHelper, {"from": management}
     )
 
 
