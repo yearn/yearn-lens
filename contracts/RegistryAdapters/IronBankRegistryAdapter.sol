@@ -490,23 +490,41 @@ contract RegistryAdapterIronBank is Ownable {
     /**
      * Fetch asset metadata scoped to a user
      */
+    function assetsUserMetadata(address accountAddress, address[] memory _assetsAddresses)
+        public
+        view
+        returns (AssetUserMetadata[] memory)
+    {
+        if (_assetsAddresses.length == 0) {
+            _assetsAddresses = assetsAddresses();
+        }
+        return _assetsUserMetadata(accountAddress, _assetsAddresses);
+    }
+
     function assetsUserMetadata(address accountAddress)
         public
         view
         returns (AssetUserMetadata[] memory)
     {
-        address[] memory _assetsAddresses = assetsAddresses();
+      return _assetsUserMetadata(accountAddress, assetsAddresses());
+    }
+
+    function _assetsUserMetadata(address accountAddress, address[] memory _assetsAddresses)
+        internal
+        view
+        returns (AssetUserMetadata[] memory)
+    {
         uint256 numberOfAssets = _assetsAddresses.length;
-        AssetUserMetadata[] memory _assetsUserMetadata =
+        AssetUserMetadata[] memory _assetsUserMetadataArray =
             new AssetUserMetadata[](numberOfAssets);
         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
             address assetAddress = _assetsAddresses[assetIdx];
-            _assetsUserMetadata[assetIdx] = assetUserMetadata(
+            _assetsUserMetadataArray[assetIdx] = assetUserMetadata(
                 accountAddress,
                 assetAddress
             );
         }
-        return _assetsUserMetadata;
+        return _assetsUserMetadataArray;
     }
 
     function assetUnderlyingTokenAddress(address assetAddress)
@@ -633,6 +651,7 @@ contract RegistryAdapterIronBank is Ownable {
         address tokenAddress = assetUnderlyingTokenAddress(assetAddress);
         uint256 supplyBalanceShares = asset.balanceOf(accountAddress);
         uint256 borrowBalanceShares = asset.borrowBalanceStored(accountAddress);
+        uint256 exchangeRateStored = asset.exchangeRateStored();
 
         uint8 currentPositionIdx;
         Position[] memory positions = new Position[](2);
@@ -641,7 +660,7 @@ contract RegistryAdapterIronBank is Ownable {
 
         if (supplyBalanceShares > 0) {
             uint256 supplyBalanceUnderlying =
-                (supplyBalanceShares * asset.exchangeRateStored()) / 10**18;
+                (supplyBalanceShares * exchangeRateStored) / 10**18;
             positions[currentPositionIdx] = Position({
                 assetId: assetAddress,
                 tokenId: tokenAddress,
@@ -658,11 +677,12 @@ contract RegistryAdapterIronBank is Ownable {
             currentPositionIdx++;
         }
         if (borrowBalanceShares > 0) {
+            uint256 borrowedCyTokenBalance = (borrowBalanceShares * 10**18) / exchangeRateStored;
             positions[currentPositionIdx] = Position({
                 assetId: assetAddress,
                 tokenId: tokenAddress,
                 typeId: positionBorrow,
-                balance: borrowBalanceShares,
+                balance: borrowedCyTokenBalance,
                 underlyingTokenBalance: tokenAmount(
                     borrowBalanceShares,
                     tokenAddress,
@@ -755,21 +775,23 @@ contract RegistryAdapterIronBank is Ownable {
         view
         returns (AdapterPosition memory)
     {
-        AssetUserMetadata[] memory _assetsUserMetadata =
+        AssetUserMetadata[] memory _assetsUserMetadataArray =
             assetsUserMetadata(accountAddress);
         uint256 supplyBalanceUsdc;
         uint256 borrowBalanceUsdc;
         uint256 borrowLimitUsdc;
         for (
             uint256 metadataIdx = 0;
-            metadataIdx < _assetsUserMetadata.length;
+            metadataIdx < _assetsUserMetadataArray.length;
             metadataIdx++
         ) {
             AssetUserMetadata memory _assetUserMetadata =
-                _assetsUserMetadata[metadataIdx];
+                _assetsUserMetadataArray[metadataIdx];
             supplyBalanceUsdc += _assetUserMetadata.supplyBalanceUsdc;
             borrowBalanceUsdc += _assetUserMetadata.borrowBalanceUsdc;
-            borrowLimitUsdc += _assetUserMetadata.borrowLimitUsdc;
+            if (_assetUserMetadata.enteredMarket) {
+                borrowLimitUsdc += _assetUserMetadata.borrowLimitUsdc;
+            }
         }
         uint256 utilizationRatioBips;
         if (borrowLimitUsdc > 0) {
