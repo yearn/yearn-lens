@@ -167,6 +167,20 @@ def test_asset_user_metadata(ironBankAdapter, management):
         # print("")
 
 
+def test_asset_user_metadata(ironBankAdapter, management):
+    assetsUserMetadata = ironBankAdapter.assetsUserMetadata(
+        "0x48002Ca264076F85e7b22c9F650B7Ba168C90B87",
+        ['0x8e595470Ed749b85C6F7669de83EAe304C2ec68F']
+    )
+    for assetUserMetadata in assetsUserMetadata:
+        assetId = assetUserMetadata[0]
+        enteredMarket = assetUserMetadata[1]
+        borrowlimitBips = assetUserMetadata[2]
+        assert assetId == "0x8e595470Ed749b85C6F7669de83EAe304C2ec68F"
+        assert enteredMarket == True
+        assert borrowlimitBips == 0
+
+
 def test_assets_tokens_addresses(ironBankAdapter):
     tokens = ironBankAdapter.assetsTokensAddresses()
     assert len(tokens) > 0
