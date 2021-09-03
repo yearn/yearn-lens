@@ -488,43 +488,36 @@ contract RegistryAdapterIronBank is Ownable {
     }
 
     /**
-     * Fetch asset metadata scoped to a user
+     * Fetch asset metadata about an array of assets scoped to a user . This method can be used for off-chain pagination.
      */
     function assetsUserMetadata(address accountAddress, address[] memory _assetsAddresses)
         public
         view
         returns (AssetUserMetadata[] memory)
     {
-        if (_assetsAddresses.length == 0) {
-            _assetsAddresses = assetsAddresses();
+        uint256 numberOfAssets = _assetsAddresses.length;
+        AssetUserMetadata[] memory _assetsUserMetadata =
+            new AssetUserMetadata[](numberOfAssets);
+        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
+            address assetAddress = _assetsAddresses[assetIdx];
+            _assetsUserMetadata[assetIdx] = assetUserMetadata(
+                accountAddress,
+                assetAddress
+            );
         }
-        return _assetsUserMetadata(accountAddress, _assetsAddresses);
+        return _assetsUserMetadata;
     }
 
+    /**
+     * Fetch all assets metadata scoped to a user
+     */
     function assetsUserMetadata(address accountAddress)
         public
         view
         returns (AssetUserMetadata[] memory)
     {
-      return _assetsUserMetadata(accountAddress, assetsAddresses());
-    }
-
-    function _assetsUserMetadata(address accountAddress, address[] memory _assetsAddresses)
-        internal
-        view
-        returns (AssetUserMetadata[] memory)
-    {
-        uint256 numberOfAssets = _assetsAddresses.length;
-        AssetUserMetadata[] memory _assetsUserMetadataArray =
-            new AssetUserMetadata[](numberOfAssets);
-        for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
-            address assetAddress = _assetsAddresses[assetIdx];
-            _assetsUserMetadataArray[assetIdx] = assetUserMetadata(
-                accountAddress,
-                assetAddress
-            );
-        }
-        return _assetsUserMetadataArray;
+        address[] memory _assetsAddresses = assetsAddresses();
+        return assetsUserMetadata(accountAddress, _assetsAddresses);
     }
 
     function assetUnderlyingTokenAddress(address assetAddress)
@@ -775,18 +768,18 @@ contract RegistryAdapterIronBank is Ownable {
         view
         returns (AdapterPosition memory)
     {
-        AssetUserMetadata[] memory _assetsUserMetadataArray =
+        AssetUserMetadata[] memory _assetsUserMetadata =
             assetsUserMetadata(accountAddress);
         uint256 supplyBalanceUsdc;
         uint256 borrowBalanceUsdc;
         uint256 borrowLimitUsdc;
         for (
             uint256 metadataIdx = 0;
-            metadataIdx < _assetsUserMetadataArray.length;
+            metadataIdx < _assetsUserMetadata.length;
             metadataIdx++
         ) {
             AssetUserMetadata memory _assetUserMetadata =
-                _assetsUserMetadataArray[metadataIdx];
+                _assetsUserMetadata[metadataIdx];
             supplyBalanceUsdc += _assetUserMetadata.supplyBalanceUsdc;
             borrowBalanceUsdc += _assetUserMetadata.borrowBalanceUsdc;
             if (_assetUserMetadata.enteredMarket) {
