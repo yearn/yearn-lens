@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.2;
 
+import "../../Utilities/Manageable.sol";
+
 interface AggregatorV3Interface {
   function latestRoundData()
     external
@@ -12,24 +14,6 @@ interface AggregatorV3Interface {
       uint256 updatedAt,
       uint80 answeredInRound
     );
-}
-
-interface ManagementList {
-    function isManager(address accountAddress) external returns (bool);
-}
-
-contract Manageable {
-    ManagementList public managementList;
-
-    constructor(address _managementListAddress) {
-        managementList = ManagementList(_managementListAddress);
-    }
-
-    modifier onlyManagers() {
-        bool isManager = managementList.isManager(msg.sender);
-        require(isManager, "ManagementList: caller is not a manager");
-        _;
-    }
 }
 
 contract CalculationsSynth is Manageable {
@@ -62,6 +46,30 @@ contract CalculationsSynth is Manageable {
         chfChainlinkFeed = AggregatorV3Interface(_chfChainlinkFeed);
         audChainlinkFeed = AggregatorV3Interface(_audChainlinkFeed);
         jpyChainlinkFeed = AggregatorV3Interface(_jpyChainlinkFeed);
+        krwChainlinkFeed = AggregatorV3Interface(_krwChainlinkFeed);
+    }
+
+    function setEurFeed(address _eurChainlinkFeed) public onlyManagers {
+        eurChainlinkFeed = AggregatorV3Interface(_eurChainlinkFeed);
+    }
+
+    function setGbpFeed(address _gbpChainlinkFeed) public onlyManagers {
+        gbpChainlinkFeed = AggregatorV3Interface(_gbpChainlinkFeed);
+    }
+
+    function setChfFeed(address _chfChainlinkFeed) public onlyManagers {
+        chfChainlinkFeed = AggregatorV3Interface(_chfChainlinkFeed);
+    }
+
+    function setAudFeed(address _audChainlinkFeed) public onlyManagers {
+        audChainlinkFeed = AggregatorV3Interface(_audChainlinkFeed);
+    }
+
+    function setJpyFeed(address _jpyChainlinkFeed) public onlyManagers {
+        jpyChainlinkFeed = AggregatorV3Interface(_jpyChainlinkFeed);
+    }
+
+    function setKrwFeed(address _krwChainlinkFeed) public onlyManagers {
         krwChainlinkFeed = AggregatorV3Interface(_krwChainlinkFeed);
     }
     
