@@ -18,19 +18,6 @@ jpy_usd_feed = "0xBcE206caE7f0ec07b545EddE332A47C2F75bbeb3"
 krw_usd_feed = "0x01435677FB11763550905594A16B645847C1d0F3"
 new_test_feed = "0x1237d4FdF54c74fb1753aDeDe4c297d0eD1E61a5"
 
-@pytest.fixture
-def synth_calculations(management, managementList, CalculationsSynth):
-    return CalculationsSynth.deploy(
-        managementList, 
-        eur_usd_feed,
-        gbp_usd_feed,
-        chf_usd_feed,
-        aud_usd_feed,
-        jpy_usd_feed,
-        krw_usd_feed,
-        {"from": management}
-    )
-
 
 def test_setting_eur_feed(synth_calculations):
     assert synth_calculations.eurChainlinkFeed() == eur_usd_feed
