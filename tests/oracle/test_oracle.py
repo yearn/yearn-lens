@@ -208,7 +208,7 @@ def test_get_lp_token_total_liquidity_usdc(oracleProxySushiswap):
 
 
 # Synth
-def test_synth_calculations(oracle, calculationsSynth):
+def test_synth_calculations(oracle, synth_calculations):
     sEUR = "0xD71eCFF9342A5Ced620049e616c5035F1dB98620"
-    calculationsSynth.setEurSynth(sEUR, True)
+    synth_calculations.setEurSynth(sEUR, True)
     assert oracle.getPriceUsdcRecommended(sEUR) > 0
