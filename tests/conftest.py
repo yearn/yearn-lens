@@ -180,6 +180,28 @@ def calculationsSushiswap(CalculationsSushiswap, management):
     )
     return calculationsSushiswap
 
+@pytest.fixture
+def synth_calculations(CalculationsSynth, managementList, management):
+    eur_usd_feed = "0xb49f677943BC038e9857d61E7d053CaA2C1734C1"
+    gbp_usd_feed = "0x5c0Ab2d9b5a7ed9f470386e82BB36A3613cDd4b5"
+    chf_usd_feed = "0x449d117117838fFA61263B61dA6301AA2a88B13A"
+    aud_usd_feed = "0x77F9710E7d0A19669A13c055F62cd80d313dF022"
+    jpy_usd_feed = "0xBcE206caE7f0ec07b545EddE332A47C2F75bbeb3"
+    krw_usd_feed = "0x01435677FB11763550905594A16B645847C1d0F3"
+
+    synth_calculations = CalculationsSynth.deploy(
+        managementList, 
+        eur_usd_feed,
+        gbp_usd_feed,
+        chf_usd_feed,
+        aud_usd_feed,
+        jpy_usd_feed,
+        krw_usd_feed,
+        {"from": management}
+    )
+
+    return synth_calculations
+
 
 @pytest.fixture
 def oracle(
@@ -187,6 +209,7 @@ def oracle(
     management,
     managementList,
     calculationsSushiswap,
+    synth_calculations,
     CalculationsCurve,
     CalculationsIronBank,
     CalculationsYearnVaults,
@@ -236,7 +259,8 @@ def oracle(
         [
             calculationsCurve,
             calculationsIronBank,
-            calculationsSushiswap,
+            synth_calculations,
+            calculationsSushiswap
         ],
         {"from": management},
     )
