@@ -21,6 +21,7 @@ yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
 threeCrvAddress = "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490"
 threeCrvPoolAddress = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
 cyDaiAddress = "0x8e595470Ed749b85C6F7669de83EAe304C2ec68F"
+ibEurPoolAddress = "0x19b080FE1ffA0553469D20Ca36219F17Fcf03859"
 
 # Fixtures
 @pytest.fixture
@@ -42,8 +43,8 @@ def oracleProxyCurve(oracle, CalculationsCurve):
 def test_update_prices_helper_oracle_address(pricesHelper, management):
     chain.snapshot()
     oracleAddress = pricesHelper.oracleAddress()
-    newOracleAddress = "0x83d95e0D5f402511dB06817Aff3f9eA88224B030"
-    oldOracleAddress = "0x6951b5Bd815043E3F842c1b026b0Fa888Cc2DD85"
+    newOracleAddress = "0x6951b5Bd815043E3F842c1b026b0Fa888Cc2DD85"
+    oldOracleAddress = "0xcCB53c9429d32594F404d01fbe9E65ED1DCda8D9"
     assert oracleAddress == oldOracleAddress
     pricesHelper.updateOracleAddress(newOracleAddress, {"from": management})
     assert pricesHelper.oracleAddress() == newOracleAddress
@@ -97,6 +98,11 @@ def test_get_price_usdc_sushiswap(oracle):
     assert price > 0
 
 
+def test_new_curve_pool(oracle):
+    price = oracle.getPriceUsdcRecommended('0x19b080FE1ffA0553469D20Ca36219F17Fcf03859')
+    assert price > 0
+
+
 def test_get_price_usdc_curve(oracle):
     price = oracle.getPriceUsdcRecommended(threeCrvAddress)
     assert price > 0
@@ -129,17 +135,13 @@ def test_is_iron_bank_market(oracleProxyIronBank):
 
 
 # Curve
-def test_is_curve_lp_token(oracle, CalculationsCurve, gov):
-    calculationsCurve = CalculationsCurve.deploy(
-        curveAddressProvider, oracle, {"from": gov}
-    )
-    assert calculationsCurve.isCurveLpToken(threeCrvAddress)
+def test_is_curve_lp_token(oracleProxyCurve):
+    assert oracleProxyCurve.isCurveLpToken(threeCrvAddress)
 
 
-def test_get_get_curve_price_usdc(oracleProxyCurve):
+def test_get_curve_price_usdc(oracleProxyCurve):
     price = oracleProxyCurve.getCurvePriceUsdc(threeCrvAddress)
     assert price > 0
-
 
 def test_base_price(oracleProxyCurve):
     price = oracleProxyCurve.getBasePrice(threeCrvAddress)
@@ -154,6 +156,16 @@ def test_virtual_price(oracleProxyCurve):
 def test_get_first_underlying_coin_from_pool(oracleProxyCurve):
     token = oracleProxyCurve.getUnderlyingCoinFromPool(threeCrvPoolAddress)
     assert token != ZERO_ADDRESS
+
+
+def test_ib_eur_pool(oracle):
+    price = oracle.getPriceUsdcRecommended(ibEurPoolAddress)
+    assert price > 0
+
+
+def test_ib_eur_pool_not_lp_token(oracleProxyCurve):
+    is_curve_token = oracleProxyCurve.isCurveLpToken(ibEurPoolAddress)
+    assert not is_curve_token
 
 
 # Sushiswap
