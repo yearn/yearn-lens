@@ -22,6 +22,7 @@ threeCrvAddress = "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490"
 threeCrvPoolAddress = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
 cyDaiAddress = "0x8e595470Ed749b85C6F7669de83EAe304C2ec68F"
 ibEurPoolAddress = "0x19b080FE1ffA0553469D20Ca36219F17Fcf03859"
+cvxCrvAddress = "0x9D0464996170c6B9e75eED71c68B99dDEDf279e8"
 
 # Fixtures
 @pytest.fixture
@@ -98,11 +99,6 @@ def test_get_price_usdc_sushiswap(oracle):
     assert price > 0
 
 
-def test_new_curve_pool(oracle):
-    price = oracle.getPriceUsdcRecommended('0x19b080FE1ffA0553469D20Ca36219F17Fcf03859')
-    assert price > 0
-
-
 def test_get_price_usdc_curve(oracle):
     price = oracle.getPriceUsdcRecommended(threeCrvAddress)
     assert price > 0
@@ -158,7 +154,7 @@ def test_get_first_underlying_coin_from_pool(oracleProxyCurve):
     assert token != ZERO_ADDRESS
 
 
-def test_ib_eur_pool(oracle):
+def test_ib_eur_pool_price(oracle):
     price = oracle.getPriceUsdcRecommended(ibEurPoolAddress)
     assert price > 0
 
@@ -166,6 +162,10 @@ def test_ib_eur_pool(oracle):
 def test_ib_eur_pool_not_lp_token(oracleProxyCurve):
     is_curve_token = oracleProxyCurve.isCurveLpToken(ibEurPoolAddress)
     assert not is_curve_token
+
+def test_cvx_crv_pool_price(oracle):
+    price = oracle.getPriceUsdcRecommended(cvxCrvAddress)
+    assert price > 0
 
 
 # Sushiswap
