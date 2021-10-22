@@ -288,7 +288,7 @@ contract CalculationsCurve {
     }
 
     function getPreferredCoinFromCoins(address[8] memory coins)
-        public
+        internal
         view
         returns (address)
     {
