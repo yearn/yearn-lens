@@ -42,6 +42,7 @@ def main():
     sushiswapFactoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
     ironBankRegistryAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
     cySusdOldAddress = "0x4e3a36A633f63aee0aB57b5054EC78867CB3C0b8"
+    yearnAddressProvider = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
 
     management = accounts[0]
     positionSpenderAddresses = [trustedMigratorAddress]
@@ -81,7 +82,7 @@ def main():
     )
 
     calculationsCurve = CalculationsCurve.deploy(
-        curveAddressProvider, oracle, {"from": management}
+        yearnAddressProvider, curveAddressProvider, {"from": management}
     )
     calculationsIronBank = CalculationsIronBank.deploy(
         ironBankRegistryAddress, oracle, {"from": management}
