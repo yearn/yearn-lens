@@ -200,7 +200,20 @@ def synth_calculations(CalculationsSynth, managementList, management):
         {"from": management}
     )
 
+    synth_calculations.setEurSynth('0x96E61422b6A9bA0e068B6c5ADd4fFaBC6a4aae27', True)
+
     return synth_calculations
+
+
+@pytest.fixture
+def curve_calculations(CalculationsCurve, management):
+    yearnAddressProvider = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
+    curveAddressProvider = "0x0000000022D53366457F9d5E68Ec105046FC4383"
+
+    calculations_curve = CalculationsCurve.deploy(
+        yearnAddressProvider, curveAddressProvider, {"from": management}
+    )
+    return calculations_curve
 
 
 @pytest.fixture
@@ -210,7 +223,7 @@ def oracle(
     managementList,
     calculationsSushiswap,
     synth_calculations,
-    CalculationsCurve,
+    curve_calculations,
     CalculationsIronBank,
     CalculationsYearnVaults,
 ):
@@ -219,7 +232,6 @@ def oracle(
     uniswapFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
     sushiswapRouterAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
     sushiswapFactoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
-    curveAddressProvider = "0x0000000022D53366457F9d5E68Ec105046FC4383"
     unitrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
     usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
 
@@ -249,15 +261,12 @@ def oracle(
         {"from": management},
     )
 
-    calculationsCurve = CalculationsCurve.deploy(
-        curveAddressProvider, oracle, {"from": management}
-    )
     calculationsIronBank = CalculationsIronBank.deploy(
         unitrollerAddress, oracle, {"from": management}
     )
     oracle.setCalculations(
         [
-            calculationsCurve,
+            curve_calculations,
             calculationsIronBank,
             synth_calculations,
             calculationsSushiswap

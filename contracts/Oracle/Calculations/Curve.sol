@@ -8,6 +8,11 @@ interface IERC20 {
     function symbol() external view returns (string memory);
 }
 
+interface ICurvePool {
+    function get_virtual_price() external view returns (uint256);
+    function coins(uint256 arg0) external view returns (address);
+}
+
 interface ICurveRegistry {
     function get_pool_from_lp_token(address arg0)
         external
@@ -279,6 +284,14 @@ contract CalculationsCurve {
             poolAddress
         );
 
+        return getPreferredCoinFromCoins(coins);
+    }
+
+    function getPreferredCoinFromCoins(address[8] memory coins)
+        internal
+        view
+        returns (address)
+    {
         // Look for preferred coins (basic coins)
         address preferredCoinAddress;
         for (uint256 coinIdx = 0; coinIdx < 8; coinIdx++) {
@@ -304,7 +317,21 @@ contract CalculationsCurve {
         if (isCurveLpToken(assetAddress)) {
             return getCurvePriceUsdc(assetAddress);
         }
-        revert();
+        
+        ICurvePool pool = ICurvePool(assetAddress);
+        uint256 virtualPrice = pool.get_virtual_price();
+        address[8] memory coins;
+        for (uint i = 0; i < 8; i++) {
+            try pool.coins(i) returns (address coin) {
+                coins[i] = coin;
+            } catch {}
+        }
+        address preferredCoin = getPreferredCoinFromCoins(coins);
+        uint256 price = oracle().getPriceUsdcRecommended(preferredCoin);
+        if (price == 0) {
+            revert();
+        }
+        return price * virtualPrice / 10 ** 18;
     }
 
     /**
