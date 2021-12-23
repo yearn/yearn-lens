@@ -1,7 +1,7 @@
 import pytest
 import brownie
 
-from brownie import Contract, ZERO_ADDRESS, chain
+from brownie import Contract, ZERO_ADDRESS, chain, accounts
 
 # Oracle deployment options
 uniswapRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
@@ -210,7 +210,7 @@ def test_update_yearn_addresses_provider(curve_calculations, management):
     chain.snapshot()
     old_address = curve_calculations.yearnAddressesProviderAddress()
     new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
-    curve_calculations.updateYearnAddressesProvider(new_address, {"from": management})
+    curve_calculations.updateYearnAddressesProviderAddress(new_address, {"from": management})
     assert curve_calculations.yearnAddressesProviderAddress() == new_address
     assert curve_calculations.yearnAddressesProviderAddress() != old_address
     chain.revert()
@@ -219,14 +219,14 @@ def test_update_yearn_addresses_provider(curve_calculations, management):
 def test_update_yearn_addresses_provider_only_possible_by_owner(curve_calculations, rando):
     new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
     with brownie.reverts():
-        curve_calculations.updateYearnAddressesProvider(new_address, {"from": rando})
+        curve_calculations.updateYearnAddressesProviderAddress(new_address, {"from": rando})
 
 
 def test_update_curve_addresses_provider(curve_calculations, management):
     chain.snapshot()
     old_address = curve_calculations.curveAddressesProviderAddress()
     new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
-    curve_calculations.updateCurveAddressesProvider(new_address, {"from": management})
+    curve_calculations.updateCurveAddressesProviderAddress(new_address, {"from": management})
     assert curve_calculations.curveAddressesProviderAddress() == new_address
     assert curve_calculations.curveAddressesProviderAddress() != old_address
     chain.revert()
@@ -235,7 +235,7 @@ def test_update_curve_addresses_provider(curve_calculations, management):
 def test_update_curve_addresses_provider_only_possible_by_owner(curve_calculations, rando):
     new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
     with brownie.reverts():
-        curve_calculations.updateCurveAddressesProvider(new_address, {"from": rando})
+        curve_calculations.updateCurveAddressesProviderAddress(new_address, {"from": rando})
 
 
 # Sushiswap

@@ -93,14 +93,14 @@ contract CalculationsCurve is Ownable {
         );
     }
 
-    function updateYearnAddressesProvider(address _yearnAddressesProviderAddress) external onlyOwner {
+    function updateYearnAddressesProviderAddress(address _yearnAddressesProviderAddress) external onlyOwner {
         yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
         yearnAddressesProvider = IYearnAddressesProvider(
             _yearnAddressesProviderAddress
         );
     }
 
-    function updateCurveAddressesProvider(address _curveAddressesProviderAddress) external onlyOwner {
+    function updateCurveAddressesProviderAddress(address _curveAddressesProviderAddress) external onlyOwner {
         curveAddressesProviderAddress = _curveAddressesProviderAddress;
         curveAddressesProvider = ICurveAddressesProvider(
             _curveAddressesProviderAddress
