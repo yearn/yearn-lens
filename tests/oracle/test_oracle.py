@@ -23,6 +23,8 @@ threeCrvPoolAddress = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
 cyDaiAddress = "0x8e595470Ed749b85C6F7669de83EAe304C2ec68F"
 ibEurPoolAddress = "0x19b080FE1ffA0553469D20Ca36219F17Fcf03859"
 cvxCrvAddress = "0x9D0464996170c6B9e75eED71c68B99dDEDf279e8"
+crvEURSUSDCAddress = "0x3D229E1B4faab62F621eF2F6A610961f7BD7b23B"
+triCryptoAddress = "0xc4AD29ba4B3c580e6D59105FFf484999997675Ff"
 
 # Fixtures
 @pytest.fixture
@@ -163,9 +165,39 @@ def test_ib_eur_pool_not_lp_token(oracleProxyCurve):
     is_curve_token = oracleProxyCurve.isCurveLpToken(ibEurPoolAddress)
     assert not is_curve_token
 
+
 def test_cvx_crv_pool_price(oracle):
     price = oracle.getPriceUsdcRecommended(cvxCrvAddress)
     assert price > 0
+
+
+def test_tri_crypto_price(curve_calculations):
+    price = curve_calculations.getPriceUsdc(triCryptoAddress)
+    assert price > 0
+
+
+def test_curv_eur_usd_underlying_coins(curve_calculations):
+    eursUsdcPool = "0x98a7F18d4E56Cfe84E3D081B40001B3d5bD3eB8B"
+    usdc = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    eurs = "0xdB25f211AB05b1c97D595516F45794528a807ad8"
+    coins = curve_calculations.cryptoPoolUnderlyingTokensAddressesByPoolAddress(eursUsdcPool)
+    assert coins == [usdc, eurs]
+
+
+def test_curve_eur_usd_pool_totalValue(curve_calculations):
+    assert curve_calculations.cryptoPoolLpTotalValueUsdc(crvEURSUSDCAddress) > 0
+
+
+def test_curve_eur_usd_price(curve_calculations):
+    assert curve_calculations.getPriceUsdc(crvEURSUSDCAddress) > 0
+
+
+def test_curve_eur_usd_pool_is_crypto_pool(curve_calculations):
+    assert curve_calculations.isLpCryptoPool(crvEURSUSDCAddress)
+
+
+def test_curve_tri_crypto_price(curve_calculations):
+    assert curve_calculations.getPriceUsdc(triCryptoAddress) > 0
 
 
 # Sushiswap

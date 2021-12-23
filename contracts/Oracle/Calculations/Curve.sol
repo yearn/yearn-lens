@@ -35,6 +35,13 @@ interface ICryptoPool {
 
     function price_oracle(uint256) external view returns (uint256);
 
+    // Some crypto pools only consist of 2 coins, the first is usd so 
+    // it can be assumed that the price oracle doesn't need an argument
+    // and the price of the oracle refers to the other coin.
+    // This function is mutually exclusive with the price_oracle function that takes 
+    // an argument of the index of the coin, only one will be present on the pool
+    function price_oracle() external view returns (uint256);
+
     function coins(uint256) external view returns (address);
 }
 
@@ -122,8 +129,7 @@ contract CalculationsCurve {
         address poolAddress = curveRegistry().get_pool_from_lp_token(lpAddress);
 
 
-            address[] memory underlyingTokensAddresses
-         = cryptoPoolUnderlyingTokensAddressesByPoolAddress(poolAddress);
+        address[] memory underlyingTokensAddresses = cryptoPoolUnderlyingTokensAddressesByPoolAddress(poolAddress);
         uint256 totalValue;
         for (
             uint256 tokenIdx;
@@ -161,9 +167,7 @@ contract CalculationsCurve {
         view
         returns (TokenAmount[] memory)
     {
-
-            address[] memory underlyingTokensAddresses
-         = cryptoPoolUnderlyingTokensAddressesByPoolAddress(poolAddress);
+        address[] memory underlyingTokensAddresses = cryptoPoolUnderlyingTokensAddressesByPoolAddress(poolAddress);
         TokenAmount[] memory _tokenAmounts = new TokenAmount[](
             underlyingTokensAddresses.length
         );
@@ -199,7 +203,11 @@ contract CalculationsCurve {
         if (tokenIdx == 0) {
             tokenPrice = 1 * 10**18;
         } else {
-            tokenPrice = pool.price_oracle(tokenIdx - 1);
+            try pool.price_oracle(tokenIdx - 1) returns (uint256 _tokenPrice) {
+                tokenPrice = _tokenPrice;
+            } catch {
+                tokenPrice = pool.price_oracle();
+            }
         }
         uint256 tokenBalance = pool.balances(tokenIdx) * 10**(18 - decimals);
         uint256 tokenValueUsdc = (tokenPrice * tokenBalance) / 10**18 / 10**12;
@@ -255,17 +263,28 @@ contract CalculationsCurve {
 
     function isLpCryptoPool(address lpAddress) public view returns (bool) {
         address poolAddress = curveRegistry().get_pool_from_lp_token(lpAddress);
-        (bool success, ) = address(poolAddress).staticcall(
-            abi.encodeWithSignature("price_oracle(uint256)", 0)
-        );
-        return success;
+
+        if (poolAddress != address(0)) {
+            return isPoolCryptoPool(poolAddress);
+        }
+
+        return false;
     }
 
     function isPoolCryptoPool(address poolAddress) public view returns (bool) {
         (bool success, ) = address(poolAddress).staticcall(
             abi.encodeWithSignature("price_oracle(uint256)", 0)
         );
-        return success;
+
+        if (success) {
+            return true;
+        }
+
+        (bool successNoParams, ) = address(poolAddress).staticcall(
+            abi.encodeWithSignature("price_oracle()")   
+        );
+
+        return successNoParams;
     }
 
     function isBasicToken(address tokenAddress) public view returns (bool) {
@@ -332,15 +351,5 @@ contract CalculationsCurve {
             revert();
         }
         return price * virtualPrice / 10 ** 18;
-    }
-
-    /**
-     * Allow storage slots to be manually updated
-     */
-    function updateSlot(bytes32 slot, bytes32 value) external {
-        require(msg.sender == ownerAddress, "Ownable: Admin only");
-        assembly {
-            sstore(slot, value)
-        }
     }
 }
