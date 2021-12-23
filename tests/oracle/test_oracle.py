@@ -24,7 +24,9 @@ cyDaiAddress = "0x8e595470Ed749b85C6F7669de83EAe304C2ec68F"
 ibEurPoolAddress = "0x19b080FE1ffA0553469D20Ca36219F17Fcf03859"
 cvxCrvAddress = "0x9D0464996170c6B9e75eED71c68B99dDEDf279e8"
 crvEURSUSDCAddress = "0x3D229E1B4faab62F621eF2F6A610961f7BD7b23B"
+crvEURTUSDAddress = "0x3b6831c0077a1e44ED0a21841C3bC4dC11bCE833"
 triCryptoAddress = "0xc4AD29ba4B3c580e6D59105FFf484999997675Ff"
+
 
 # Fixtures
 @pytest.fixture
@@ -47,7 +49,7 @@ def test_update_prices_helper_oracle_address(pricesHelper, management):
     chain.snapshot()
     oracleAddress = pricesHelper.oracleAddress()
     newOracleAddress = "0x6951b5Bd815043E3F842c1b026b0Fa888Cc2DD85"
-    oldOracleAddress = "0xcCB53c9429d32594F404d01fbe9E65ED1DCda8D9"
+    oldOracleAddress = "0x420b1099B9eF5baba6D92029594eF45E19A04A4A"
     assert oracleAddress == oldOracleAddress
     pricesHelper.updateOracleAddress(newOracleAddress, {"from": management})
     assert pricesHelper.oracleAddress() == newOracleAddress
@@ -176,7 +178,7 @@ def test_tri_crypto_price(curve_calculations):
     assert price > 0
 
 
-def test_curv_eur_usd_underlying_coins(curve_calculations):
+def test_curv_eurs_usdc_underlying_coins(curve_calculations):
     eursUsdcPool = "0x98a7F18d4E56Cfe84E3D081B40001B3d5bD3eB8B"
     usdc = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
     eurs = "0xdB25f211AB05b1c97D595516F45794528a807ad8"
@@ -184,20 +186,56 @@ def test_curv_eur_usd_underlying_coins(curve_calculations):
     assert coins == [usdc, eurs]
 
 
-def test_curve_eur_usd_pool_totalValue(curve_calculations):
+def test_curve_eurs_usdc_pool_is_crypto_pool(curve_calculations):
+    assert curve_calculations.isLpCryptoPool(crvEURSUSDCAddress)
+
+
+def test_curve_eurs_usdc_pool_totalValue(curve_calculations):
     assert curve_calculations.cryptoPoolLpTotalValueUsdc(crvEURSUSDCAddress) > 0
 
 
-def test_curve_eur_usd_price(curve_calculations):
+def test_curve_eurs_usdc_price(curve_calculations):
     assert curve_calculations.getPriceUsdc(crvEURSUSDCAddress) > 0
 
 
-def test_curve_eur_usd_pool_is_crypto_pool(curve_calculations):
-    assert curve_calculations.isLpCryptoPool(crvEURSUSDCAddress)
+def test_curve_eurt_usd_price(curve_calculations):
+    assert curve_calculations.getPriceUsdc(crvEURTUSDAddress) > 0
 
 
 def test_curve_tri_crypto_price(curve_calculations):
     assert curve_calculations.getPriceUsdc(triCryptoAddress) > 0
+
+
+def test_update_yearn_addresses_provider(curve_calculations, management):
+    chain.snapshot()
+    old_address = curve_calculations.yearnAddressesProviderAddress()
+    new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
+    curve_calculations.updateYearnAddressesProvider(new_address, {"from": management})
+    assert curve_calculations.yearnAddressesProviderAddress() == new_address
+    assert curve_calculations.yearnAddressesProviderAddress() != old_address
+    chain.revert()
+
+
+def test_update_yearn_addresses_provider_only_possible_by_owner(curve_calculations, rando):
+    new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
+    with brownie.reverts():
+        curve_calculations.updateYearnAddressesProvider(new_address, {"from": rando})
+
+
+def test_update_curve_addresses_provider(curve_calculations, management):
+    chain.snapshot()
+    old_address = curve_calculations.curveAddressesProviderAddress()
+    new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
+    curve_calculations.updateCurveAddressesProvider(new_address, {"from": management})
+    assert curve_calculations.curveAddressesProviderAddress() == new_address
+    assert curve_calculations.curveAddressesProviderAddress() != old_address
+    chain.revert()
+
+
+def test_update_curve_addresses_provider_only_possible_by_owner(curve_calculations, rando):
+    new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
+    with brownie.reverts():
+        curve_calculations.updateCurveAddressesProvider(new_address, {"from": rando})
 
 
 # Sushiswap
@@ -256,3 +294,16 @@ def test_synth_calculations(oracle, synth_calculations):
     sEUR = "0xD71eCFF9342A5Ced620049e616c5035F1dB98620"
     synth_calculations.setEurSynth(sEUR, True)
     assert oracle.getPriceUsdcRecommended(sEUR) > 0
+
+# Chainlink
+
+def test_chainlink(chainlink_calculations, management):
+    eurt_namehash = "0xd5aa869323f85cb893514ce48950ba7e84a8d0bf062a7e3058bcc494217da39f"
+    eurt = "0xC581b735A1688071A1746c968e0798D642EDE491"
+
+    with brownie.reverts():
+        chainlink_calculations.getPriceUsdc(eurt)
+
+    chainlink_calculations.setNamehash(eurt, eurt_namehash, {"from": management})
+    
+    assert chainlink_calculations.getPriceUsdc(eurt) > 0

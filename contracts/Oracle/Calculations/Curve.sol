@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.2;
+import "../../Utilities/Ownable.sol";
 
 interface IERC20 {
     function decimals() external view returns (uint8);
@@ -35,7 +36,7 @@ interface ICryptoPool {
 
     function price_oracle(uint256) external view returns (uint256);
 
-    // Some crypto pools only consist of 2 coins, the first is usd so 
+    // Some crypto pools only consist of 2 coins, one of which is usd so 
     // it can be assumed that the price oracle doesn't need an argument
     // and the price of the oracle refers to the other coin.
     // This function is mutually exclusive with the price_oracle function that takes 
@@ -72,8 +73,7 @@ interface ICalculationsChainlink {
     function oracleNamehashes(address) external view returns (bytes32);
 }
 
-contract CalculationsCurve {
-    address public ownerAddress;
+contract CalculationsCurve is Ownable {
     address public yearnAddressesProviderAddress;
     address public curveAddressesProviderAddress;
     IYearnAddressesProvider internal yearnAddressesProvider;
@@ -83,12 +83,25 @@ contract CalculationsCurve {
         address _yearnAddressesProviderAddress,
         address _curveAddressesProviderAddress
     ) {
-        curveAddressesProviderAddress = _curveAddressesProviderAddress;
         yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
-        ownerAddress = msg.sender;
+        curveAddressesProviderAddress = _curveAddressesProviderAddress;
         yearnAddressesProvider = IYearnAddressesProvider(
             _yearnAddressesProviderAddress
         );
+        curveAddressesProvider = ICurveAddressesProvider(
+            _curveAddressesProviderAddress
+        );
+    }
+
+    function updateYearnAddressesProvider(address _yearnAddressesProviderAddress) external onlyOwner {
+        yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
+        yearnAddressesProvider = IYearnAddressesProvider(
+            _yearnAddressesProviderAddress
+        );
+    }
+
+    function updateCurveAddressesProvider(address _curveAddressesProviderAddress) external onlyOwner {
+        curveAddressesProviderAddress = _curveAddressesProviderAddress;
         curveAddressesProvider = ICurveAddressesProvider(
             _curveAddressesProviderAddress
         );
@@ -199,18 +212,8 @@ contract CalculationsCurve {
         ICryptoPool pool = ICryptoPool(poolAddress);
         address tokenAddress = pool.coins(tokenIdx);
         uint8 decimals = IERC20(tokenAddress).decimals();
-        uint256 tokenPrice;
-        if (tokenIdx == 0) {
-            tokenPrice = 1 * 10**18;
-        } else {
-            try pool.price_oracle(tokenIdx - 1) returns (uint256 _tokenPrice) {
-                tokenPrice = _tokenPrice;
-            } catch {
-                tokenPrice = pool.price_oracle();
-            }
-        }
-        uint256 tokenBalance = pool.balances(tokenIdx) * 10**(18 - decimals);
-        uint256 tokenValueUsdc = (tokenPrice * tokenBalance) / 10**18 / 10**12;
+        uint256 tokenPrice = oracle().getPriceUsdcRecommended(tokenAddress);
+        uint256 tokenValueUsdc = pool.balances(tokenIdx) * tokenPrice / 10 ** decimals;
         return tokenValueUsdc;
     }
 
