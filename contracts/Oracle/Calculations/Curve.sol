@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.2;
+import "../../Utilities/Ownable.sol";
 
 interface IERC20 {
     function decimals() external view returns (uint8);
@@ -35,6 +36,13 @@ interface ICryptoPool {
 
     function price_oracle(uint256) external view returns (uint256);
 
+    // Some crypto pools only consist of 2 coins, one of which is usd so 
+    // it can be assumed that the price oracle doesn't need an argument
+    // and the price of the oracle refers to the other coin.
+    // This function is mutually exclusive with the price_oracle function that takes 
+    // an argument of the index of the coin, only one will be present on the pool
+    function price_oracle() external view returns (uint256);
+
     function coins(uint256) external view returns (address);
 }
 
@@ -65,8 +73,7 @@ interface ICalculationsChainlink {
     function oracleNamehashes(address) external view returns (bytes32);
 }
 
-contract CalculationsCurve {
-    address public ownerAddress;
+contract CalculationsCurve is Ownable {
     address public yearnAddressesProviderAddress;
     address public curveAddressesProviderAddress;
     IYearnAddressesProvider internal yearnAddressesProvider;
@@ -76,12 +83,25 @@ contract CalculationsCurve {
         address _yearnAddressesProviderAddress,
         address _curveAddressesProviderAddress
     ) {
-        curveAddressesProviderAddress = _curveAddressesProviderAddress;
         yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
-        ownerAddress = msg.sender;
+        curveAddressesProviderAddress = _curveAddressesProviderAddress;
         yearnAddressesProvider = IYearnAddressesProvider(
             _yearnAddressesProviderAddress
         );
+        curveAddressesProvider = ICurveAddressesProvider(
+            _curveAddressesProviderAddress
+        );
+    }
+
+    function updateYearnAddressesProviderAddress(address _yearnAddressesProviderAddress) external onlyOwner {
+        yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
+        yearnAddressesProvider = IYearnAddressesProvider(
+            _yearnAddressesProviderAddress
+        );
+    }
+
+    function updateCurveAddressesProviderAddress(address _curveAddressesProviderAddress) external onlyOwner {
+        curveAddressesProviderAddress = _curveAddressesProviderAddress;
         curveAddressesProvider = ICurveAddressesProvider(
             _curveAddressesProviderAddress
         );
@@ -122,8 +142,7 @@ contract CalculationsCurve {
         address poolAddress = curveRegistry().get_pool_from_lp_token(lpAddress);
 
 
-            address[] memory underlyingTokensAddresses
-         = cryptoPoolUnderlyingTokensAddressesByPoolAddress(poolAddress);
+        address[] memory underlyingTokensAddresses = cryptoPoolUnderlyingTokensAddressesByPoolAddress(poolAddress);
         uint256 totalValue;
         for (
             uint256 tokenIdx;
@@ -161,9 +180,7 @@ contract CalculationsCurve {
         view
         returns (TokenAmount[] memory)
     {
-
-            address[] memory underlyingTokensAddresses
-         = cryptoPoolUnderlyingTokensAddressesByPoolAddress(poolAddress);
+        address[] memory underlyingTokensAddresses = cryptoPoolUnderlyingTokensAddressesByPoolAddress(poolAddress);
         TokenAmount[] memory _tokenAmounts = new TokenAmount[](
             underlyingTokensAddresses.length
         );
@@ -195,14 +212,8 @@ contract CalculationsCurve {
         ICryptoPool pool = ICryptoPool(poolAddress);
         address tokenAddress = pool.coins(tokenIdx);
         uint8 decimals = IERC20(tokenAddress).decimals();
-        uint256 tokenPrice;
-        if (tokenIdx == 0) {
-            tokenPrice = 1 * 10**18;
-        } else {
-            tokenPrice = pool.price_oracle(tokenIdx - 1);
-        }
-        uint256 tokenBalance = pool.balances(tokenIdx) * 10**(18 - decimals);
-        uint256 tokenValueUsdc = (tokenPrice * tokenBalance) / 10**18 / 10**12;
+        uint256 tokenPrice = oracle().getPriceUsdcRecommended(tokenAddress);
+        uint256 tokenValueUsdc = pool.balances(tokenIdx) * tokenPrice / 10 ** decimals;
         return tokenValueUsdc;
     }
 
@@ -255,17 +266,28 @@ contract CalculationsCurve {
 
     function isLpCryptoPool(address lpAddress) public view returns (bool) {
         address poolAddress = curveRegistry().get_pool_from_lp_token(lpAddress);
-        (bool success, ) = address(poolAddress).staticcall(
-            abi.encodeWithSignature("price_oracle(uint256)", 0)
-        );
-        return success;
+
+        if (poolAddress != address(0)) {
+            return isPoolCryptoPool(poolAddress);
+        }
+
+        return false;
     }
 
     function isPoolCryptoPool(address poolAddress) public view returns (bool) {
         (bool success, ) = address(poolAddress).staticcall(
             abi.encodeWithSignature("price_oracle(uint256)", 0)
         );
-        return success;
+
+        if (success) {
+            return true;
+        }
+
+        (bool successNoParams, ) = address(poolAddress).staticcall(
+            abi.encodeWithSignature("price_oracle()")   
+        );
+
+        return successNoParams;
     }
 
     function isBasicToken(address tokenAddress) public view returns (bool) {
@@ -332,15 +354,5 @@ contract CalculationsCurve {
             revert();
         }
         return price * virtualPrice / 10 ** 18;
-    }
-
-    /**
-     * Allow storage slots to be manually updated
-     */
-    function updateSlot(bytes32 slot, bytes32 value) external {
-        require(msg.sender == ownerAddress, "Ownable: Admin only");
-        assembly {
-            sstore(slot, value)
-        }
     }
 }
