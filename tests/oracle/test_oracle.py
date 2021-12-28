@@ -11,6 +11,8 @@ sushiswapFactoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
 curveAddressProvider = "0x0000000022D53366457F9d5E68Ec105046FC4383"
 unitrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
 usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+yveCRVAddress = "0xc5bDdf9843308380375a611c18B50Fb9341f502A"
+yvBOOSTAddress = "0x9d409a0A012CFbA9B15F6D4B36Ac57A46966Ab9a"
 
 # Test token addresses
 uniswapLpTokenAddress = "0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc"  # USDC/WETH
@@ -173,6 +175,14 @@ def test_cvx_crv_pool_price(oracle):
     assert price > 0
 
 
+# Calculations overrides
+def test_calculations_overrides(oracle, calculationsOverrides, management):
+    yvBOOSTPriceBefore = oracle.getPriceUsdcRecommended(yvBOOSTAddress)
+    calculationsOverrides.setOverrideForToken(yvBOOSTAddress, "CALCULATIONS_SUSHISWAP", {"from": management})
+    yvBOOSTPriceAfter = oracle.getPriceUsdcRecommended(yvBOOSTAddress)
+    assert yvBOOSTPriceBefore != yvBOOSTPriceAfter
+    
+    
 def test_tri_crypto_price(curve_calculations):
     price = curve_calculations.getPriceUsdc(triCryptoAddress)
     assert price > 0
@@ -237,8 +247,14 @@ def test_update_curve_addresses_provider_only_possible_by_owner(curve_calculatio
     with brownie.reverts():
         curve_calculations.updateCurveAddressesProviderAddress(new_address, {"from": rando})
 
-
 # Sushiswap
+def test_router_override(calculationsSushiswap, oracle):
+    yveCRVPriceBefore = calculationsSushiswap.getPriceUsdc(yveCRVAddress)    
+    calculationsSushiswap.setRouterOverrideForToken(yveCRVAddress, uniswapRouterAddress)
+    yveCRVPriceAfter = calculationsSushiswap.getPriceUsdc(yveCRVAddress)
+    assert yveCRVPriceBefore != yveCRVPriceAfter
+    calculationsSushiswap.setRouterOverrideForToken(yveCRVAddress, sushiswapRouterAddress)
+
 def test_get_lp_token_price_usdc(oracleProxySushiswap):
     lpTokenPrice = oracleProxySushiswap.getLpTokenPriceUsdc(uniswapLpTokenAddress)
     assert lpTokenPrice > 0
@@ -268,18 +284,6 @@ def test_get_price_from_router(oracleProxySushiswap):
     usdcPriceInEth = oracleProxySushiswap.getPriceFromRouter(usdcAddress, ethAddress)
     usdcPriceInWeth = oracleProxySushiswap.getPriceFromRouter(usdcAddress, wethAddress)
     assert usdcPriceInEth == usdcPriceInWeth
-
-def test_get_router_for_lp_token(oracleProxySushiswap):
-    derivedRouterAddress = oracleProxySushiswap.getRouterForLpToken(
-        uniswapLpTokenAddress
-    )
-    assert derivedRouterAddress == uniswapRouterAddress
-    derivedRouterAddress = oracleProxySushiswap.getRouterForLpToken(
-        sushiswapLpTokenAddress
-    )
-    assert derivedRouterAddress == sushiswapRouterAddress
-    with brownie.reverts():
-        oracleProxySushiswap.getRouterForLpToken(yfiAddress)
 
 
 def test_get_lp_token_total_liquidity_usdc(oracleProxySushiswap):

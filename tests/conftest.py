@@ -11,6 +11,8 @@ curveRegistryAddress = "0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c"
 unitrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
 usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
 
+yearnAddressesProviderAddress = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
+curveAddressProviderAddress = "0x0000000022D53366457F9d5E68Ec105046FC4383"
 
 @pytest.fixture
 def gov(accounts):
@@ -172,9 +174,6 @@ def helper(
 def calculationsSushiswap(CalculationsSushiswap, management):
     calculationsSushiswap = CalculationsSushiswap.deploy(
         sushiswapRouterAddress,
-        sushiswapFactoryAddress,
-        uniswapRouterAddress,
-        uniswapFactoryAddress,
         usdcAddress,
         {"from": management},
     )
@@ -206,19 +205,19 @@ def synth_calculations(CalculationsSynth, managementList, management):
 
 @pytest.fixture
 def curve_calculations(CalculationsCurve, management):
-    yearnAddressProvider = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
-    curveAddressProvider = "0x0000000022D53366457F9d5E68Ec105046FC4383"
-
     calculations_curve = CalculationsCurve.deploy(
-        yearnAddressProvider, curveAddressProvider, {"from": management}
+        yearnAddressesProviderAddress, curveAddressProviderAddress, {"from": management}
     )
     return calculations_curve
+
+@pytest.fixture
+def calculationsOverrides(CalculationsOverrides, management):
+    return CalculationsOverrides.deploy(yearnAddressesProviderAddress, {"from": management})
 
 @pytest.fixture
 def chainlink_calculations(CalculationsChainlink, management):
     chainlink_calculations = CalculationsChainlink.deploy({"from": management})
     return chainlink_calculations
-
 
 @pytest.fixture
 def oracle(
@@ -230,13 +229,10 @@ def oracle(
     curve_calculations,
     CalculationsIronBank,
     CalculationsYearnVaults,
+    calculationsOverrides,
     chainlink_calculations
 ):
 
-    uniswapRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
-    uniswapFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
-    sushiswapRouterAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
-    sushiswapFactoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
     unitrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
     usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
 
@@ -249,6 +245,8 @@ def oracle(
     usdpAddress = "0x1456688345527bE1f37E9e627DA0837D6f08C925"
     oBtcAddress = "0x8064d9Ae6cDf087b1bcd5BDf3531bD5d8C537a68"
     wbtcAddress = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+    
+    addressesProviderAddress = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
 
     # return Oracle.at("0x83d95e0d5f402511db06817aff3f9ea88224b030")
 
@@ -265,15 +263,18 @@ def oracle(
         ],
         {"from": management},
     )
-
+    
+    calculationsYearnVaults = CalculationsYearnVaults.deploy(oracle, {"from": management})
     calculationsIronBank = CalculationsIronBank.deploy(
         unitrollerAddress, oracle, {"from": management}
     )
 
     oracle.setCalculations(
         [
+            calculationsOverrides,
             chainlink_calculations,
             curve_calculations,
+            calculationsYearnVaults,
             calculationsIronBank,
             synth_calculations,
             calculationsSushiswap
