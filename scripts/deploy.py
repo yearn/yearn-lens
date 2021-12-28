@@ -74,9 +74,6 @@ def main():
     ####################################################
     calculationsSushiswap = CalculationsSushiswap.deploy(
         sushiswapRouterAddress,
-        sushiswapFactoryAddress,
-        uniswapRouterAddress,
-        uniswapFactoryAddress,
         usdcAddress,
         {"from": management},
     )

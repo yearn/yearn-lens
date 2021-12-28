@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.2;
 
+import "../../Utilities/Ownable.sol";
+
 interface PriceRouter {
     function getAmountsOut(uint256 amountIn, address[] calldata path)
         external
@@ -38,34 +40,28 @@ interface IERC20 {
     function balanceOf(address account) external view returns (uint256);
 }
 
-contract CalculationsSushiswap {
-    address public primaryRouterAddress;
-    address public primaryFactoryAddress;
-    address public secondaryRouterAddress;
-    address public secondaryFactoryAddress;
+contract CalculationsSushiswap is Ownable {
+    address public defaultRouterAddress;
     address public wethAddress;
     address public usdcAddress;
-    PriceRouter primaryRouter;
-    PriceRouter secondaryRouter;
+    PriceRouter defaultRouter;
+    mapping(address => address) public routerOverrides;
 
     address ethAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address zeroAddress = 0x0000000000000000000000000000000000000000;
 
     constructor(
-        address _primaryRouterAddress,
-        address _primaryFactoryAddress,
-        address _secondaryRouterAddress,
-        address _secondaryFactoryAddress,
+        address _defaultRouterAddress,
         address _usdcAddress
     ) {
-        primaryRouterAddress = _primaryRouterAddress;
-        primaryFactoryAddress = _primaryFactoryAddress;
-        secondaryRouterAddress = _secondaryRouterAddress;
-        secondaryFactoryAddress = _secondaryFactoryAddress;
+        defaultRouterAddress = _defaultRouterAddress;
         usdcAddress = _usdcAddress;
-        primaryRouter = PriceRouter(primaryRouterAddress);
-        secondaryRouter = PriceRouter(secondaryRouterAddress);
-        wethAddress = primaryRouter.WETH();
+        defaultRouter = PriceRouter(defaultRouterAddress);
+        wethAddress = defaultRouter.WETH();
+    }
+    
+    function setRouterOverrideForToken(address tokenAddress, address routerAddress) public onlyOwner {
+        routerOverrides[tokenAddress] = routerAddress;
     }
 
     // Uniswap/Sushiswap
@@ -112,18 +108,12 @@ contract CalculationsSushiswap {
         uint256 amountIn = 10**uint256(token0.decimals());
         uint256[] memory amountsOut;
 
-        bool fallbackRouterExists = secondaryRouterAddress != zeroAddress;
-        if (fallbackRouterExists) {
-            try primaryRouter.getAmountsOut(amountIn, path) returns (
-                uint256[] memory _amountsOut
-            ) {
-                amountsOut = _amountsOut;
-            } catch {
-                amountsOut = secondaryRouter.getAmountsOut(amountIn, path);
-            }
-        } else {
-            amountsOut = primaryRouter.getAmountsOut(amountIn, path);
+        PriceRouter router = defaultRouter;
+        address routerOverrideAddress = routerOverrides[token0Address];
+        if (routerOverrideAddress != zeroAddress) {
+            router = PriceRouter(routerOverrideAddress);
         }
+        amountsOut = router.getAmountsOut(amountIn, path);
 
         // Return raw price (without fees)
         uint256 amountOut = amountsOut[amountsOut.length - 1];
@@ -150,21 +140,6 @@ contract CalculationsSushiswap {
         } catch {
             return false;
         }
-    }
-
-    function getRouterForLpToken(address tokenAddress)
-        public
-        view
-        returns (PriceRouter)
-    {
-        Pair lpToken = Pair(tokenAddress);
-        address factoryAddress = lpToken.factory();
-        if (factoryAddress == primaryFactoryAddress) {
-            return primaryRouter;
-        } else if (factoryAddress == secondaryFactoryAddress) {
-            return secondaryRouter;
-        }
-        revert();
     }
 
     function getLpTokenTotalLiquidityUsdc(address tokenAddress)
