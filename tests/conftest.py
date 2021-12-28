@@ -203,7 +203,6 @@ def synth_calculations(CalculationsSynth, managementList, management):
 
     return synth_calculations
 
-
 @pytest.fixture
 def curve_calculations(CalculationsCurve, management):
     calculations_curve = CalculationsCurve.deploy(
@@ -216,6 +215,11 @@ def calculationsOverrides(CalculationsOverrides, management):
     return CalculationsOverrides.deploy(yearnAddressesProviderAddress, {"from": management})
 
 @pytest.fixture
+def chainlink_calculations(CalculationsChainlink, management):
+    chainlink_calculations = CalculationsChainlink.deploy({"from": management})
+    return chainlink_calculations
+
+@pytest.fixture
 def oracle(
     Oracle,
     management,
@@ -225,7 +229,8 @@ def oracle(
     curve_calculations,
     CalculationsIronBank,
     CalculationsYearnVaults,
-    calculationsOverrides
+    calculationsOverrides,
+    chainlink_calculations
 ):
 
     unitrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
@@ -263,11 +268,13 @@ def oracle(
     calculationsIronBank = CalculationsIronBank.deploy(
         unitrollerAddress, oracle, {"from": management}
     )
+
     oracle.setCalculations(
         [
             calculationsOverrides,
-            calculationsYearnVaults,
+            chainlink_calculations,
             curve_calculations,
+            calculationsYearnVaults,
             calculationsIronBank,
             synth_calculations,
             calculationsSushiswap

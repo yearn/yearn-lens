@@ -1,7 +1,7 @@
 # use Ganache's forked mainnet mode as the default network
 
 networks:
-    default: mainnet-fork
+  default: mainnet-fork
 
 autofetch_sources: true
 
@@ -12,7 +12,6 @@ dependencies:
 # path remapping to support OpenZepplin imports with NPM-style path
 compiler:
   solc:
-    version: 0.8.2
     remappings:
       - "@openzeppelin=OpenZeppelin/openzeppelin-contracts@3.1.0"
 
