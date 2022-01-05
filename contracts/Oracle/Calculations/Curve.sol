@@ -313,7 +313,7 @@ contract CalculationsCurve is Ownable {
 
     // should not be used with pools from the crypto pool registry
     function getUnderlyingCoinFromPool(address poolAddress)
-        public  
+        public
         view
         returns (address)
     {
