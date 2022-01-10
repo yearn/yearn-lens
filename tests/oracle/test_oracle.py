@@ -213,6 +213,8 @@ def test_curve_eurt_usd_price(curve_calculations):
 
 
 def test_curve_tri_crypto_price(curve_calculations):
+    assert curve_calculations.isLpCryptoPool(triCryptoAddress)
+    assert curve_calculations.isCurveLpToken(triCryptoAddress)
     assert curve_calculations.getPriceUsdc(triCryptoAddress) > 0
 
 
