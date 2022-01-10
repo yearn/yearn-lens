@@ -114,6 +114,10 @@ contract CalculationsCurve is Ownable {
     function curveRegistry() internal view returns (ICurveRegistry) {
         return ICurveRegistry(curveAddressesProvider.get_registry());
     }
+    
+    function cryptoPoolRegistry() internal view returns (ICurveRegistry) {
+        return ICurveRegistry(curveAddressesProvider.get_address(5));
+    }
 
     function getCurvePriceUsdc(address lpAddress)
         public
@@ -139,8 +143,7 @@ contract CalculationsCurve is Ownable {
         view
         returns (uint256)
     {
-        address poolAddress = curveRegistry().get_pool_from_lp_token(lpAddress);
-
+        address poolAddress = getPoolFromLpToken(lpAddress);
 
         address[] memory underlyingTokensAddresses = cryptoPoolUnderlyingTokensAddressesByPoolAddress(poolAddress);
         uint256 totalValue;
@@ -246,7 +249,7 @@ contract CalculationsCurve is Ownable {
     }
 
     function getBasePrice(address lpAddress) public view returns (uint256) {
-        address poolAddress = curveRegistry().get_pool_from_lp_token(lpAddress);
+        address poolAddress = getPoolFromLpToken(lpAddress);
         address underlyingCoinAddress = getUnderlyingCoinFromPool(poolAddress);
         uint256 basePriceUsdc = oracle().getPriceUsdcRecommended(
             underlyingCoinAddress
@@ -254,6 +257,7 @@ contract CalculationsCurve is Ownable {
         return basePriceUsdc;
     }
 
+    // should not be used with lpAddresses that are from the crypto swap registry
     function getVirtualPrice(address lpAddress) public view returns (uint256) {
         return curveRegistry().get_virtual_price_from_lp_token(lpAddress);
     }
@@ -265,7 +269,7 @@ contract CalculationsCurve is Ownable {
     }
 
     function isLpCryptoPool(address lpAddress) public view returns (bool) {
-        address poolAddress = curveRegistry().get_pool_from_lp_token(lpAddress);
+        address poolAddress = getPoolFromLpToken(lpAddress);
 
         if (poolAddress != address(0)) {
             return isPoolCryptoPool(poolAddress);
@@ -290,6 +294,16 @@ contract CalculationsCurve is Ownable {
         return successNoParams;
     }
 
+    function getPoolFromLpToken(address lpAddress) public view returns (address) {
+        address poolAddress = curveRegistry().get_pool_from_lp_token(lpAddress);
+
+        if (poolAddress != address(0)) {
+            return poolAddress;
+        }
+
+        return cryptoPoolRegistry().get_pool_from_lp_token(lpAddress);
+    }
+
     function isBasicToken(address tokenAddress) public view returns (bool) {
         return
             ICalculationsChainlink(
@@ -297,6 +311,7 @@ contract CalculationsCurve is Ownable {
             ).oracleNamehashes(tokenAddress) != bytes32(0);
     }
 
+    // should not be used with pools from the crypto pool registry
     function getUnderlyingCoinFromPool(address poolAddress)
         public
         view
@@ -318,7 +333,7 @@ contract CalculationsCurve is Ownable {
         address preferredCoinAddress;
         for (uint256 coinIdx = 0; coinIdx < 8; coinIdx++) {
             address coinAddress = coins[coinIdx];
-            if (isBasicToken(coinAddress)) {
+            if (coinAddress != address(0) && isBasicToken(coinAddress)) {
                 preferredCoinAddress = coinAddress;
                 break;
             } else if (coinAddress != address(0)) {
