@@ -51,8 +51,7 @@ def test_update_prices_helper_oracle_address(pricesHelper, management):
     chain.snapshot()
     oracleAddress = pricesHelper.oracleAddress()
     newOracleAddress = "0x6951b5Bd815043E3F842c1b026b0Fa888Cc2DD85"
-    oldOracleAddress = "0x420b1099B9eF5baba6D92029594eF45E19A04A4A"
-    assert oracleAddress == oldOracleAddress
+    assert newOracleAddress != oracleAddress
     pricesHelper.updateOracleAddress(newOracleAddress, {"from": management})
     assert pricesHelper.oracleAddress() == newOracleAddress
     chain.revert()
