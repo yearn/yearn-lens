@@ -263,7 +263,7 @@ contract CalculationsCurve is Ownable {
     }
 
     function isCurveLpToken(address lpAddress) public view returns (bool) {
-        address poolAddress = curveRegistry().get_pool_from_lp_token(lpAddress);
+        address poolAddress = getPoolFromLpToken(lpAddress);
         bool tokenHasCurvePool = poolAddress != address(0);
         return tokenHasCurvePool;
     }
