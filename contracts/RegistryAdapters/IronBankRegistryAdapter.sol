@@ -538,14 +538,13 @@ contract RegistryAdapterIronBank is Ownable {
     }
 
     /**
-     * Fetch asset metadata scoped to a user
+     * Fetch asset metadata about an array of assets scoped to a user . This method can be used for off-chain pagination.
      */
-    function assetsUserMetadata(address accountAddress)
+    function assetsUserMetadata(address accountAddress, address[] memory _assetsAddresses)
         public
         view
         returns (AssetUserMetadata[] memory)
     {
-        address[] memory _assetsAddresses = assetsAddresses();
         uint256 numberOfAssets = _assetsAddresses.length;
         AssetUserMetadata[] memory _assetsUserMetadata =
             new AssetUserMetadata[](numberOfAssets);
@@ -557,6 +556,18 @@ contract RegistryAdapterIronBank is Ownable {
             );
         }
         return _assetsUserMetadata;
+    }
+
+    /**
+     * Fetch all assets metadata scoped to a user
+     */
+    function assetsUserMetadata(address accountAddress)
+        public
+        view
+        returns (AssetUserMetadata[] memory)
+    {
+        address[] memory _assetsAddresses = assetsAddresses();
+        return assetsUserMetadata(accountAddress, _assetsAddresses);
     }
 
     function assetUnderlyingTokenAddress(address assetAddress)
@@ -715,11 +726,12 @@ contract RegistryAdapterIronBank is Ownable {
             currentPositionIdx++;
         }
         if (borrowBalanceShares > 0) {
+            uint256 borrowedCyTokenBalance = (borrowBalanceShares * 10**18) / asset.exchangeRateStored();
             positions[currentPositionIdx] = Position({
                 assetId: assetAddress,
                 tokenId: tokenAddress,
                 typeId: positionBorrow,
-                balance: borrowBalanceShares,
+                balance: borrowedCyTokenBalance,
                 underlyingTokenBalance: tokenAmount(
                     borrowBalanceShares,
                     tokenAddress,
