@@ -643,9 +643,9 @@ contract RegistryAdapterIronBank is Ownable {
                 tokenPriceUsdc
             );
 
-        uint256 collateralCap;
+        uint256 collateralCap = type(uint256).max;
         uint256 totalCollateralTokens;
-        if (market.version == 1) {
+        if (market.version >= 1) {
             collateralCap = asset.collateralCap();
             totalCollateralTokens = asset.totalCollateralTokens();
         }
