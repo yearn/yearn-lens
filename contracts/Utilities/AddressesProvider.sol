@@ -1,22 +1,21 @@
-pragma solidity 0.8.6;
+pragma solidity 0.8.11;
+import "../Utilities/Ownable.sol";
+import "../Libraries/Strings.sol";
 
-contract AddressesProvider {
-    address public ownerAddress;
+contract AddressesProvider is Ownable {
     mapping(uint256 => address) addressMap;
     mapping(uint256 => string) addressIdMap;
     uint256 addressesLength;
-
-    constructor() {
-        ownerAddress = msg.sender;
-    }
 
     struct AddressMetadata {
         string addrId;
         address addr;
     }
 
-    function setAddress(AddressMetadata memory addressMetadata) public {
-        require(msg.sender == ownerAddress, "Caller is not owner");
+    function setAddress(AddressMetadata memory addressMetadata)
+        public
+        onlyOwner
+    {
         string memory addressId = addressMetadata.addrId;
         address addr = addressMetadata.addr;
         uint256 upsertPosition = addressesLength;
@@ -30,8 +29,10 @@ contract AddressesProvider {
         addressMap[upsertPosition] = addr;
     }
 
-    function setAddresses(AddressMetadata[] memory _addressesMetadata) public {
-        require(msg.sender == ownerAddress, "Caller is not owner");
+    function setAddresses(AddressMetadata[] memory _addressesMetadata)
+        public
+        onlyOwner
+    {
         for (
             uint256 addressMetadataIdx;
             addressMetadataIdx < _addressesMetadata.length;
@@ -110,7 +111,10 @@ contract AddressesProvider {
         uint256 _addressesLength;
         for (uint256 addressIdx; addressIdx < addressesLength; addressIdx++) {
             string memory addressId = addressIdMap[addressIdx];
-            bool foundMatch = startsWith(addressId, addressIdSubstring);
+            bool foundMatch = Strings.stringStartsWith(
+                addressId,
+                addressIdSubstring
+            );
             if (foundMatch) {
                 _addressesMetadata[_addressesLength] = AddressMetadata({
                     addrId: addressIdMap[addressIdx],
@@ -128,91 +132,5 @@ contract AddressesProvider {
             (AddressMetadata[])
         );
         return filteredAddresses;
-    }
-
-    /**
-     * Allow storage slots to be manually updated by owner
-     */
-    function updateSlot(bytes32 slot, bytes32 value) external {
-        require(msg.sender == ownerAddress, "Caller is not owner");
-        assembly {
-            sstore(slot, value)
-        }
-    }
-
-    /***********
-     * Utilities
-     ***********/
-
-    /**
-     * Search for a needle in a haystack
-     */
-    function startsWith(string memory haystack, string memory needle)
-        internal
-        pure
-        returns (bool)
-    {
-        return indexOf(needle, haystack) == 0;
-    }
-
-    /**
-     * Case insensitive string search
-     *
-     * @param needle The string to search for
-     * @param haystack The string to search in
-     * @return Returns -1 if no match is found, otherwise returns the index of the match
-     */
-    function indexOf(string memory needle, string memory haystack)
-        internal
-        pure
-        returns (int256)
-    {
-        bytes memory _needle = bytes(needle);
-        bytes memory _haystack = bytes(haystack);
-        if (_haystack.length < _needle.length) {
-            return -1;
-        }
-        bool _match;
-        for (
-            uint256 haystackIdx;
-            haystackIdx < _haystack.length;
-            haystackIdx++
-        ) {
-            for (uint256 needleIdx; needleIdx < _needle.length; needleIdx++) {
-                uint8 needleChar = uint8(_needle[needleIdx]);
-                if (haystackIdx + needleIdx >= _haystack.length) {
-                    return -1;
-                }
-                uint8 haystackChar = uint8(_haystack[haystackIdx + needleIdx]);
-                if (needleChar == haystackChar) {
-                    _match = true;
-                    if (needleIdx == _needle.length - 1) {
-                        return int256(haystackIdx);
-                    }
-                } else {
-                    _match = false;
-                    break;
-                }
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Check to see if two strings are exactly equal
-     * @dev Only valid for strings up to 32 characters
-     */
-    function stringsEqual(string memory input1, string memory input2)
-        internal
-        pure
-        returns (bool)
-    {
-        bytes32 input1Bytes32;
-        bytes32 input2Bytes32;
-        assembly {
-            input1Bytes32 := mload(add(input1, 32))
-            input2Bytes32 := mload(add(input2, 32))
-        }
-        return input1Bytes32 == input2Bytes32;
     }
 }
