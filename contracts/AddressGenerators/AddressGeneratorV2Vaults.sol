@@ -144,11 +144,76 @@ contract AddressesGeneratorV2Vaults is Manageable {
                 vaultTokenIdx < numVaultsForToken;
                 vaultTokenIdx++
             ) {
-                address currentAssetAddress =
-                    registry.vaults(currentTokenAddress, vaultTokenIdx);
-                bool assetIsNotDeprecated =
-                    assetDeprecated[currentAssetAddress] == false;
+                address currentAssetAddress = registry.vaults(
+                    currentTokenAddress,
+                    vaultTokenIdx
+                );
+                bool assetIsNotDeprecated = assetDeprecated[
+                    currentAssetAddress
+                ] == false;
                 if (assetIsNotDeprecated) {
+                    _assetsAddresses[currentVaultIdx] = currentAssetAddress;
+                    currentVaultIdx++;
+                }
+            }
+        }
+        return _assetsAddresses;
+    }
+
+    /**
+     * Fetch total assets page length given a page size
+     */
+    function assetsPagesLength(uint256 pageSize) public view returns (uint256) {
+        uint256 _assetsLength = assetsLength();
+        uint256 _pagesLength = _assetsLength / pageSize;
+        return _pagesLength + 1;
+    }
+
+    /**
+     * Fetch asset addresses by page
+     */
+    function assetsAddressesByPage(uint256 pageNumber, uint256 pageSize)
+        public
+        view
+        returns (address[] memory)
+    {
+        uint256 _assetsLength = assetsLength();
+        uint256 startIdx = pageNumber * pageSize;
+        if (startIdx > _assetsLength - 1) {
+            return new address[](0);
+        }
+        uint256 endIdx = startIdx + pageSize;
+        if (endIdx > _assetsLength - 1) {
+            endIdx = _assetsLength;
+        }
+        uint256 numberOfAssetsToReturn = endIdx - startIdx;
+
+        address[] memory _assetsAddresses = new address[](
+            numberOfAssetsToReturn
+        );
+        uint256 numTokens = registry.numTokens();
+        uint256 currentVaultIdx;
+        uint256 currentIterationIdx;
+        for (uint256 tokenIdx = 0; tokenIdx < numTokens; tokenIdx++) {
+            address currentTokenAddress = registry.tokens(tokenIdx);
+            uint256 numVaultsForToken = registry.numVaults(currentTokenAddress);
+
+            for (
+                uint256 vaultTokenIdx = 0;
+                vaultTokenIdx < numVaultsForToken;
+                vaultTokenIdx++
+            ) {
+                address currentAssetAddress = registry.vaults(
+                    currentTokenAddress,
+                    vaultTokenIdx
+                );
+                bool assetIsNotDeprecated = assetDeprecated[
+                    currentAssetAddress
+                ] == false;
+                bool assetWithinPageRange = currentIterationIdx >= startIdx &&
+                    currentIterationIdx < endIdx;
+                currentIterationIdx++;
+                if (assetIsNotDeprecated && assetWithinPageRange) {
                     _assetsAddresses[currentVaultIdx] = currentAssetAddress;
                     currentVaultIdx++;
                 }
