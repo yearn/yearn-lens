@@ -1,6 +1,6 @@
 pragma solidity 0.8.11;
 import "../Utilities/Ownable.sol";
-import "../Libraries/Strings.sol";
+import "../Libraries/String.sol";
 
 contract AddressesProvider is Ownable {
     mapping(uint256 => address) addressMap;
@@ -52,7 +52,7 @@ contract AddressesProvider is Ownable {
     {
         for (uint256 addressIdx; addressIdx < addressesLength; addressIdx++) {
             string memory currentAddressId = addressIdMap[addressIdx];
-            if (Strings.stringsEqual(addressId, currentAddressId)) {
+            if (String.equal(addressId, currentAddressId)) {
                 return int256(addressIdx);
             }
         }
@@ -111,10 +111,7 @@ contract AddressesProvider is Ownable {
         uint256 _addressesLength;
         for (uint256 addressIdx; addressIdx < addressesLength; addressIdx++) {
             string memory addressId = addressIdMap[addressIdx];
-            bool foundMatch = Strings.stringStartsWith(
-                addressId,
-                addressIdSubstring
-            );
+            bool foundMatch = String.startsWith(addressId, addressIdSubstring);
             if (foundMatch) {
                 _addressesMetadata[_addressesLength] = AddressMetadata({
                     addrId: addressIdMap[addressIdx],

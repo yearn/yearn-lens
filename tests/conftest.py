@@ -62,8 +62,8 @@ def introspection(Introspection, management):
     return Introspection.deploy({"from": management})
 
 @pytest.fixture(autouse=True)
-def strings(Strings, management):
-    return Strings.deploy({"from": management})
+def strings(String, management):
+    return String.deploy({"from": management})
 
 @pytest.fixture
 def pricesHelper(PricesHelper, management, managementList, oracle):
@@ -141,9 +141,9 @@ def helperInternal(Helper, managementList, management):
 
 
 @pytest.fixture
-def strategiesHelper(StrategiesHelper, v2VaultsAdapter, helperInternal, management):
+def strategiesHelper(StrategiesHelper, v2AddressesGenerator, addressMergeHelper, oracle, management):
     return StrategiesHelper.deploy(
-        v2VaultsAdapter, addressMergeHelper, {"from": management}
+        v2AddressesGenerator, addressMergeHelper, oracle, {"from": management}
     )
 
 

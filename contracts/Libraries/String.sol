@@ -2,17 +2,17 @@
 pragma solidity 0.8.11;
 
 /**
- * @title Small library for working with strings
+ * @title Library for working with strings
  * @author yearn.finance
  */
 
-library Strings {
+library String {
     /**
      * @notice Search for a needle in a haystack
      * @param haystack The string to search
      * @param needle The string to search for
      */
-    function stringStartsWith(string memory haystack, string memory needle)
+    function startsWith(string memory haystack, string memory needle)
         public
         pure
         returns (bool)
@@ -69,7 +69,7 @@ library Strings {
      * @param input1 Second string to compare
      * @return Returns true if strings are exactly equal, false if not
      */
-    function stringsEqual(string memory input0, string memory input1)
+    function equal(string memory input0, string memory input1)
         public
         pure
         returns (bool)
@@ -158,5 +158,82 @@ library Strings {
             buf[idx] ^= buf[length - 1 - idx];
         }
         output = string(buf);
+    }
+
+    /**
+     * @notice Convert a string to lowercase
+     * @param input Input string
+     * @return Returns the string in lowercase
+     */
+    function lowercase(string memory input)
+        internal
+        pure
+        returns (string memory)
+    {
+        bytes memory _input = bytes(input);
+        for (uint256 inputIdx = 0; inputIdx < _input.length; inputIdx++) {
+            uint8 character = uint8(_input[inputIdx]);
+            if (character >= 65 && character <= 90) {
+                character += 0x20;
+                _input[inputIdx] = bytes1(character);
+            }
+        }
+        return string(_input);
+    }
+
+    /**
+     * @notice Convert a string to uppercase
+     * @param input Input string
+     * @return Returns the string in uppercase
+     */
+    function uppercase(string memory input)
+        internal
+        pure
+        returns (string memory)
+    {
+        bytes memory _input = bytes(input);
+        for (uint256 inputIdx = 0; inputIdx < _input.length; inputIdx++) {
+            uint8 character = uint8(_input[inputIdx]);
+            if (character >= 97 && character <= 122) {
+                character -= 0x20;
+                _input[inputIdx] = bytes1(character);
+            }
+        }
+        return string(_input);
+    }
+
+    /**
+     * @notice Determine whether or not haystack contains needle
+     * @param haystack The string to search
+     * @param needle The substring to search for
+     * @return Returns true if needle exists in haystack, false if not
+     */
+    function contains(string memory haystack, string memory needle)
+        internal
+        pure
+        returns (bool)
+    {
+        return indexOfStringInString(needle, haystack) >= 0;
+    }
+
+    /**
+     * @notice Convert bytes32 to string and remove padding
+     * @param _bytes32 The input bytes32 data to convert
+     * @return Returns the string representation of the bytes32 data
+     */
+    function bytes32ToString(bytes32 _bytes32)
+        public
+        pure
+        returns (string memory)
+    {
+        uint8 i = 0;
+        while (i < 32 && _bytes32[i] != 0) {
+            i++;
+        }
+        bytes memory bytesArray = new bytes(i);
+        for (i = 0; i < 32 && _bytes32[i] != 0; i++) {
+            bytesArray[i] = _bytes32[i];
+        }
+        return string(bytesArray);
     }
 }
