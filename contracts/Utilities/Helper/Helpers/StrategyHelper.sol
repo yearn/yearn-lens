@@ -1,10 +1,6 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-07-09
- */
-
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.6;
+import "../../../Libraries/String.sol";
 
 interface IV2Strategy {
     function name() external view returns (string memory);
@@ -172,45 +168,6 @@ contract StrategiesHelper {
     }
 
     /**
-     * Convert an ASCII string to a number given a string and a base
-     */
-    function atoi(string memory a, uint8 base)
-        internal
-        pure
-        returns (uint256 i)
-    {
-        require(base == 2 || base == 8 || base == 10 || base == 16);
-        bytes memory buf = bytes(a);
-        for (uint256 p = 0; p < buf.length; p++) {
-            uint8 digit = uint8(buf[p]) - 0x30;
-            if (digit > 10) {
-                digit -= 7;
-            }
-            require(digit < base);
-            i *= base;
-            i += digit;
-        }
-        return i;
-    }
-
-    /**
-     * Check to see if two strings are exactly equal
-     */
-    function stringsEqual(string memory input1, string memory input2)
-        internal
-        pure
-        returns (bool)
-    {
-        bytes32 input1Bytes32;
-        bytes32 input2Bytes32;
-        assembly {
-            input1Bytes32 := mload(add(input1, 32))
-            input2Bytes32 := mload(add(input2, 32))
-        }
-        return input1Bytes32 == input2Bytes32;
-    }
-
-    /**
      * Fetch strategy addresses by filter
      */
     function assetsStrategiesAddressesByFilter(string[][] memory filter)
@@ -218,9 +175,8 @@ contract StrategiesHelper {
         view
         returns (address[] memory)
     {
-
-            address[] memory _assetsStrategiesAddresses
-         = assetsStrategiesAddresses();
+        address[]
+            memory _assetsStrategiesAddresses = assetsStrategiesAddresses();
         return
             assetsStrategiesAddressesByFilter(
                 _assetsStrategiesAddresses,
@@ -276,9 +232,10 @@ contract StrategiesHelper {
         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
             address assetAddress = _assetsAddresses[assetIdx];
 
-
-                address[] memory _assetStrategiessAddresses
-             = assetStrategiesAddresses(assetAddress);
+            address[]
+                memory _assetStrategiessAddresses = assetStrategiesAddresses(
+                    assetAddress
+                );
             _strategiesForAssets[assetIdx] = _assetStrategiessAddresses;
         }
         address[] memory mergedAddresses = IAddressMergeHelper(
@@ -369,9 +326,8 @@ contract StrategiesHelper {
         view
         returns (StrategyMetadata[] memory)
     {
-
-            address[] memory _assetsStrategiesAddresses
-         = assetsStrategiesAddresses();
+        address[]
+            memory _assetsStrategiesAddresses = assetsStrategiesAddresses();
         return strategies(_assetsStrategiesAddresses);
     }
 
@@ -383,9 +339,10 @@ contract StrategiesHelper {
         view
         returns (StrategyMetadata[] memory)
     {
-
-            address[] memory _assetsStrategiesAddresses
-         = assetsStrategiesAddressesByFilter(_filter);
+        address[]
+            memory _assetsStrategiesAddresses = assetsStrategiesAddressesByFilter(
+                _filter
+            );
         return strategies(_assetsStrategiesAddresses);
     }
 
@@ -542,36 +499,36 @@ contract StrategiesHelper {
         ) {
             string[] memory instruction = instructions[instructionsIdx];
             string memory instructionPart1 = instruction[1];
-            bool operandIsOperator = stringsEqual(instruction[0], "OPERATOR");
+            bool operandIsOperator = String.equal(instruction[0], "OPERATOR");
             if (operandIsOperator) {
                 bool result;
                 bytes32 operandTwo = stack[stackLength - 1];
                 bytes32 operandOne = stack[stackLength - 2];
-                if (stringsEqual(instruction[1], "EQ")) {
+                if (String.equal(instruction[1], "EQ")) {
                     result = uint256(operandTwo) == uint256(operandOne);
                 }
-                if (stringsEqual(instruction[1], "NE")) {
+                if (String.equal(instruction[1], "NE")) {
                     result = uint256(operandTwo) != uint256(operandOne);
                 }
-                if (stringsEqual(instruction[1], "GT")) {
+                if (String.equal(instruction[1], "GT")) {
                     result = uint256(operandTwo) > uint256(operandOne);
                 }
-                if (stringsEqual(instruction[1], "GTE")) {
+                if (String.equal(instruction[1], "GTE")) {
                     result = uint256(operandTwo) >= uint256(operandOne);
                 }
-                if (stringsEqual(instruction[1], "LT")) {
+                if (String.equal(instruction[1], "LT")) {
                     result = uint256(operandTwo) < uint256(operandOne);
                 }
-                if (stringsEqual(instruction[1], "LTE")) {
+                if (String.equal(instruction[1], "LTE")) {
                     result = uint256(operandTwo) <= uint256(operandOne);
                 }
-                if (stringsEqual(instruction[1], "AND")) {
+                if (String.equal(instruction[1], "AND")) {
                     result = uint256(operandTwo & operandOne) == 1;
                 }
-                if (stringsEqual(instruction[1], "OR")) {
+                if (String.equal(instruction[1], "OR")) {
                     result = uint256(operandTwo | operandOne) == 1;
                 }
-                if (stringsEqual(instruction[1], "LIKE")) {
+                if (String.equal(instruction[1], "LIKE")) {
                     string memory haystack = String.bytes32ToString(operandOne);
                     string memory needle = String.bytes32ToString(operandTwo);
                     result = String.contains(haystack, needle);
@@ -584,28 +541,28 @@ contract StrategiesHelper {
                 stackLength--;
             } else {
                 bytes32 stackItem;
-                bool operandIsKey = stringsEqual(instruction[0], "KEY");
+                bool operandIsKey = String.equal(instruction[0], "KEY");
                 bytes memory data;
                 if (operandIsKey) {
                     (, bytes memory matchBytes) = address(strategyAddress)
-                    .staticcall(
-                        abi.encodeWithSignature(
-                            string(abi.encodePacked(instruction[1], "()"))
-                        )
-                    );
+                        .staticcall(
+                            abi.encodeWithSignature(
+                                string(abi.encodePacked(instruction[1], "()"))
+                            )
+                        );
                     data = matchBytes;
                 }
-                if (stringsEqual(instruction[2], "HEX")) {
+                if (String.equal(instruction[2], "HEX")) {
                     if (operandIsKey == true) {
                         assembly {
                             stackItem := mload(add(data, 0x20))
                         }
                     } else {
                         stackItem = bytes32(
-                            atoi(String.uppercase(instruction[1]), 16)
+                            String.atoi(String.uppercase(instruction[1]), 16)
                         );
                     }
-                } else if (stringsEqual(instruction[2], "STRING")) {
+                } else if (String.equal(instruction[2], "STRING")) {
                     if (operandIsKey == true) {
                         assembly {
                             stackItem := mload(add(data, 0x60))
@@ -615,13 +572,13 @@ contract StrategiesHelper {
                             stackItem := mload(add(instructionPart1, 0x20))
                         }
                     }
-                } else if (stringsEqual(instruction[2], "DECIMAL")) {
+                } else if (String.equal(instruction[2], "DECIMAL")) {
                     if (operandIsKey == true) {
                         assembly {
                             stackItem := mload(add(data, 0x20))
                         }
                     } else {
-                        stackItem = bytes32(atoi(instruction[1], 10));
+                        stackItem = bytes32(String.atoi(instruction[1], 10));
                     }
                 }
                 stack[stackLength] = stackItem;
@@ -642,118 +599,5 @@ contract StrategiesHelper {
         assembly {
             sstore(slot, value)
         }
-    }
-}
-
-library String {
-    /**
-     * Convert a string to lowercase
-     */
-    function lowercase(string memory input)
-        internal
-        pure
-        returns (string memory)
-    {
-        bytes memory _input = bytes(input);
-        for (uint256 inputIdx = 0; inputIdx < _input.length; inputIdx++) {
-            uint8 character = uint8(_input[inputIdx]);
-            if (character >= 65 && character <= 90) {
-                character += 0x20;
-                _input[inputIdx] = bytes1(character);
-            }
-        }
-        return string(_input);
-    }
-
-    /**
-     * Convert a string to uppercase
-     */
-    function uppercase(string memory input)
-        internal
-        pure
-        returns (string memory)
-    {
-        bytes memory _input = bytes(input);
-        for (uint256 inputIdx = 0; inputIdx < _input.length; inputIdx++) {
-            uint8 character = uint8(_input[inputIdx]);
-            if (character >= 97 && character <= 122) {
-                character -= 0x20;
-                _input[inputIdx] = bytes1(character);
-            }
-        }
-        return string(_input);
-    }
-
-    /**
-     * Search for a needle in a haystack
-     */
-    function contains(string memory haystack, string memory needle)
-        internal
-        pure
-        returns (bool)
-    {
-        return indexOf(needle, haystack) >= 0;
-    }
-
-    /**
-     * Convert bytes32 to string and remove padding
-     */
-    function bytes32ToString(bytes32 _bytes32)
-        public
-        pure
-        returns (string memory)
-    {
-        uint8 i = 0;
-        while (i < 32 && _bytes32[i] != 0) {
-            i++;
-        }
-        bytes memory bytesArray = new bytes(i);
-        for (i = 0; i < 32 && _bytes32[i] != 0; i++) {
-            bytesArray[i] = _bytes32[i];
-        }
-        return string(bytesArray);
-    }
-
-    /**
-     * Case insensitive string search
-     *
-     * @param needle The string to search for
-     * @param haystack The string to search in
-     * @return Returns -1 if no match is found, otherwise returns the index of the match
-     */
-    function indexOf(string memory needle, string memory haystack)
-        internal
-        pure
-        returns (int256)
-    {
-        bytes memory _needle = bytes(lowercase(needle));
-        bytes memory _haystack = bytes(lowercase(haystack));
-        if (_haystack.length < _needle.length) {
-            return -1;
-        }
-        bool _match;
-        for (
-            uint256 haystackIdx;
-            haystackIdx < _haystack.length;
-            haystackIdx++
-        ) {
-            for (uint256 needleIdx; needleIdx < _needle.length; needleIdx++) {
-                uint8 needleChar = uint8(_needle[needleIdx]);
-                if (haystackIdx + needleIdx >= _haystack.length) {
-                    return -1;
-                }
-                uint8 haystackChar = uint8(_haystack[haystackIdx + needleIdx]);
-                if (needleChar == haystackChar) {
-                    _match = true;
-                    if (needleIdx == _needle.length - 1) {
-                        return int256(haystackIdx);
-                    }
-                } else {
-                    _match = false;
-                    break;
-                }
-            }
-        }
-        return -1;
     }
 }
