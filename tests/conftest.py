@@ -61,6 +61,9 @@ def registryAdapterCommonInterface():
 def introspection(Introspection, management):
     return Introspection.deploy({"from": management})
 
+@pytest.fixture(autouse=True)
+def strings(Strings, management):
+    return Strings.deploy({"from": management})
 
 @pytest.fixture
 def pricesHelper(PricesHelper, management, managementList, oracle):
