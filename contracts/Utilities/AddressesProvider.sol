@@ -52,7 +52,7 @@ contract AddressesProvider is Ownable {
     {
         for (uint256 addressIdx; addressIdx < addressesLength; addressIdx++) {
             string memory currentAddressId = addressIdMap[addressIdx];
-            if (stringsEqual(addressId, currentAddressId)) {
+            if (Strings.stringsEqual(addressId, currentAddressId)) {
                 return int256(addressIdx);
             }
         }
