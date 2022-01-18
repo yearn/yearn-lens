@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.2;
-
+pragma solidity 0.8.11;
 import "../../Utilities/Ownable.sol";
 
 interface ICalculations {
-    function getPriceUsdc(address tokenAddress)
-        external
-        view
-        returns (uint256);
+    function getPriceUsdc(address tokenAddress) external view returns (uint256);
 }
 
 interface IYearnAddressesProvider {
@@ -23,11 +19,17 @@ contract CalculationsOverrides is Ownable {
         addressesProviderAddress = _addressesProviderAddress;
     }
 
-    function setOverrideForToken(address tokenAddress, string memory addressesProviderId) public onlyOwner {
+    function setOverrideForToken(
+        address tokenAddress,
+        string memory addressesProviderId
+    ) public onlyOwner {
         calculationOverrides[tokenAddress] = addressesProviderId;
     }
 
-    function setAddressesProviderAddress(address _addressesProviderAddress) public onlyOwner {
+    function setAddressesProviderAddress(address _addressesProviderAddress)
+        public
+        onlyOwner
+    {
         addressesProviderAddress = _addressesProviderAddress;
     }
 
@@ -35,7 +37,9 @@ contract CalculationsOverrides is Ownable {
         string memory overrideId = calculationOverrides[tokenAddress];
         bool overrideSet = bytes(overrideId).length > 0;
         if (overrideSet) {
-            address overrideAddress = IYearnAddressesProvider(addressesProviderAddress).addressById(overrideId);
+            address overrideAddress = IYearnAddressesProvider(
+                addressesProviderAddress
+            ).addressById(overrideId);
             return ICalculations(overrideAddress).getPriceUsdc(tokenAddress);
         }
         revert();
