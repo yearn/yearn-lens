@@ -21,7 +21,7 @@ def ironBankGenerator(
 def test_generator_info(ironBankGenerator):
     adapterInfo = ironBankGenerator.generatorInfo()
     assert adapterInfo[0] == ironBankGenerator
-    assert adapterInfo[1] == "IRON_BANK"
+    assert adapterInfo[1] == "IRON_BANK_MARKET"
     assert adapterInfo[2] == "LENDING"
 
 
