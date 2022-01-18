@@ -36,11 +36,9 @@ def test_set_asset_deprecated(earnGenerator, management):
     originalAssetsLength = earnGenerator.assetsLength()
     originalAssetsAddressesLength = len(earnGenerator.assetsAddresses())
     assert originalAssetsLength > 0
-    print(earnGenerator.assetsAddresses())
     earnGenerator.setAssetDeprecated(yDaiV2Address, True, {"from": management})
     newAssetsLength = earnGenerator.assetsLength()
     newAssetsAddressesLength = len(earnGenerator.assetsAddresses())
-    print(earnGenerator.assetsAddresses())
     newAssetsLength = earnGenerator.assetsLength()
     assert earnGenerator.assetDeprecated(yDaiV2Address) == True
     assert newAssetsAddressesLength == originalAssetsAddressesLength - 1
