@@ -9,6 +9,11 @@ interface IOracle {
         external
         view
         returns (uint256);
+
+    function getNormalizedValueUsdc(address tokensAddress, uint256 amount)
+        external
+        view
+        returns (uint256);
 }
 
 contract PricesHelper is Manageable {
@@ -44,7 +49,33 @@ contract PricesHelper is Manageable {
         }
         return _tokensPrices;
     }
-    
+
+    function tokensPricesNormalizedUsdc(address[] memory tokenAddresses, uint256[] amounts)
+        external
+        view
+        returns (TokenPrice[] memory)
+    {
+      require(
+        tokenAddresses.length == amounts.length,
+        "tokenAddresses must be the same length as amounts"
+      );
+        TokenPrice[] memory _tokenPricesNormalized =
+            new TokenPrice[](tokenAddresses.length);
+        for (
+            uint256 tokenIdx = 0;
+            tokenIdx < tokenAddresses.length;
+            tokenIdx++
+        ) {
+            address tokenAddress = tokenAddresses[tokenIdx];
+            uint256 amount = amounts[tokenIdx];
+            _tokenPricesNormalized[tokenIdx] = TokenPrice({
+                tokenId: tokenAddress,
+                priceUsdc: IOracle(oracleAddress).getNormalizedValueUsdc(tokenAddress, amount)
+            });
+        }
+        return _tokenPricesNormalized;
+    }
+
     function updateOracleAddress(address _oracleAddress) external onlyManagers {
         oracleAddress = _oracleAddress;
     }
