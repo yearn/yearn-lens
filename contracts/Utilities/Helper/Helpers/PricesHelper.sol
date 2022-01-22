@@ -24,6 +24,11 @@ contract PricesHelper is Manageable {
         uint256 priceUsdc;
     }
 
+    struct Tokens {
+      address tokenId;
+      uint256 amoun;
+    }
+
     constructor(address _oracleAddress, address _managementListAddress) Manageable(_managementListAddress) {
         require(_oracleAddress != address(0), "Missing oracle address");
         oracleAddress = _oracleAddress;
@@ -50,7 +55,7 @@ contract PricesHelper is Manageable {
         return _tokensPrices;
     }
 
-    function tokensPricesNormalizedUsdc(address[] memory tokenAddresses, uint256[] amounts)
+    function tokensPricesNormalizedUsdc(Tokens[] tokens)
         external
         view
         returns (TokenPrice[] memory)
@@ -60,14 +65,14 @@ contract PricesHelper is Manageable {
         "tokenAddresses must be the same length as amounts"
       );
         TokenPrice[] memory _tokenPricesNormalized =
-            new TokenPrice[](tokenAddresses.length);
+            new TokenPrice[](tokens.length);
         for (
             uint256 tokenIdx = 0;
-            tokenIdx < tokenAddresses.length;
+            tokenIdx < tokens.length;
             tokenIdx++
         ) {
-            address tokenAddress = tokenAddresses[tokenIdx];
-            uint256 amount = amounts[tokenIdx];
+            address tokenAddress = tokens[tokenIdx].address;
+            uint256 amount = tokens[tokenIdx].address;
             _tokenPricesNormalized[tokenIdx] = TokenPrice({
                 tokenId: tokenAddress,
                 priceUsdc: IOracle(oracleAddress).getNormalizedValueUsdc(tokenAddress, amount)
