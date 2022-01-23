@@ -374,10 +374,10 @@ contract RegistryAdapterIronBank is Ownable {
     }
 
     /**
-     * Internal method for getting supply balance data
+     * Method for getting supply balance data
      */
-    function _userSupplyBalance(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
-        internal
+    function userSupplyBalanceUsdc(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
+        public
         view
         returns (uint256)
     {
@@ -392,10 +392,10 @@ contract RegistryAdapterIronBank is Ownable {
     }
 
     /**
-     * Internal method for getting borrow balance data
+     * Method for getting borrow balance data
      */
-    function _userBorrowBalance(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
-        internal
+    function userBorrowBalanceUsdc(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
+        public
         view
         returns (uint256)
     {
@@ -408,10 +408,10 @@ contract RegistryAdapterIronBank is Ownable {
     }
 
     /**
-     * Internal method for getting collateral balance data
+     * Method for getting collateral balance data
      */
-    function _userCollateralBalance(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
-        internal
+    function userCollateralBalanceUsdc(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
+        public
         view
         returns (uint256)
     {
@@ -520,9 +520,9 @@ contract RegistryAdapterIronBank is Ownable {
             IUnitroller(comptrollerAddress).markets(assetAddress);
         address tokenAddress = assetUnderlyingTokenAddress(assetAddress);
         uint256 tokenPriceUsdc = assetUnderlyingTokenPriceUsdc(assetAddress);
-        uint256 supplyBalanceUsdc = _userSupplyBalance(accountAddress, asset, tokenAddress, tokenPriceUsdc);
-        uint256 borrowBalanceUsdc = _userBorrowBalance(accountAddress, asset, tokenAddress, tokenPriceUsdc);
-        uint256 collateralBalanceUsdc = _userCollateralBalance(accountAddress, asset, tokenAddress, tokenPriceUsdc);
+        uint256 supplyBalanceUsdc = userSupplyBalanceUsdc(accountAddress, asset, tokenAddress, tokenPriceUsdc);
+        uint256 borrowBalanceUsdc = userBorrowBalanceUsdc(accountAddress, asset, tokenAddress, tokenPriceUsdc);
+        uint256 collateralBalanceUsdc = userCollateralBalanceUsdc(accountAddress, asset, tokenAddress, tokenPriceUsdc);
         uint256 borrowLimitUsdc =
             (collateralBalanceUsdc * market.collateralFactorMantissa) / 10**18;
 
