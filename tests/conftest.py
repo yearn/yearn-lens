@@ -10,9 +10,11 @@ sushiswapFactoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
 curveRegistryAddress = "0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c"
 unitrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
 usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+crvAddress =  "0xD533a949740bb3306d119CC777fa900bA034cd52"
 
 yearnAddressesProviderAddress = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
 curveAddressProviderAddress = "0x0000000022D53366457F9d5E68Ec105046FC4383"
+
 
 @pytest.fixture
 def gov(accounts):
@@ -66,8 +68,8 @@ def strings(String, management):
     return String.deploy({"from": management})
 
 @pytest.fixture
-def pricesHelper(PricesHelper, management, managementList, oracle):
-    return PricesHelper.deploy(oracle, managementList, {"from": management})
+def pricesHelper(PricesHelper, management,  oracle):
+    return PricesHelper.deploy(oracle, {"from": management})
 
 
 @pytest.fixture
@@ -192,7 +194,7 @@ def synth_calculations(CalculationsSynth, managementList, management):
     krw_usd_feed = "0x01435677FB11763550905594A16B645847C1d0F3"
 
     synth_calculations = CalculationsSynth.deploy(
-        managementList, 
+        managementList,
         eur_usd_feed,
         gbp_usd_feed,
         chf_usd_feed,
@@ -248,7 +250,7 @@ def oracle(
     usdpAddress = "0x1456688345527bE1f37E9e627DA0837D6f08C925"
     oBtcAddress = "0x8064d9Ae6cDf087b1bcd5BDf3531bD5d8C537a68"
     wbtcAddress = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
-    
+
     addressesProviderAddress = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
 
     # return Oracle.at("0x83d95e0d5f402511db06817aff3f9ea88224b030")
@@ -266,7 +268,7 @@ def oracle(
         ],
         {"from": management},
     )
-    
+
     calculationsYearnVaults = CalculationsYearnVaults.deploy(oracle, {"from": management})
     calculationsIronBank = CalculationsIronBank.deploy(
         unitrollerAddress, oracle, {"from": management}
