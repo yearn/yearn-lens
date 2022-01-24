@@ -1,7 +1,7 @@
 import pytest
 from brownie import Oracle
 from eth_account import Account
-from brownie import web3
+from brownie import web3, Contract
 
 uniswapRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
 uniswapFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
@@ -23,13 +23,14 @@ def gov(accounts):
 def managementList(ManagementList, management):
     return ManagementList.deploy("Managemenet list", {"from": management})
 
+@pytest.fixture
+def yearnAddressesProvider():
+    return Contract(yearnAddressesProviderAddress)
 
 @pytest.fixture
 def registryAdapterCommonInterface():
     return [
-        "oracleAddress()",  # Address of the current oracle
-        "helperAddress()",  # Address of the helper utility
-        "addressesGeneratorAddress()",  # Address of the addresses generator utility
+        "yearnAddressesProviderAddress()",  # Address of the current oracle
         "extensionsAddresses()",  # Addresses of fallback method extensions
         "setExtensionsAddresses(address[])",  # Update fallback extension contract addresses
         "assetsStatic(address[])",  # Fetch a list of static adapter assets given an array of asset addresses

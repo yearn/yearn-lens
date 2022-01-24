@@ -29,13 +29,12 @@ def ironBankAdapter(
     helper,
     ironBankAddressesGenerator,
     ironBankTvlAdapter,
+    yearnAddressesProvider,
     gov,
 ):
     ironBankAdapter = RegistryAdapterIronBank.deploy(
-        oracle,
-        helper,
-        ironBankAddressesGenerator,
-        {"from": gov},
+        yearnAddressesProvider,
+        {"from": gov}
     )
     ironBankAdapter.setExtensionsAddresses([ironBankTvlAdapter], {"from": gov})
     return ironBankAdapter

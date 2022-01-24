@@ -153,9 +153,7 @@ def main():
         {"from": management},
     )
     ironBankAdapter = RegistryAdapterIronBank.deploy(
-        oracle,
-        helper,
-        ironBankAddressesGenerator,
+        yearnAddressProvider,
         {"from": management},
     )
     ironBankAdapter.setExtensionsAddresses([ironBankTvlAdapter], {"from": management})

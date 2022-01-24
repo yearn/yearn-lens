@@ -7,6 +7,10 @@ import "../Utilities/Ownable.sol";
 /*******************************************************
  *                       Interfaces
  *******************************************************/
+ interface IYearnAddressesProvider {
+    function addressById(string memory) external view returns (address);
+}
+
 interface ICyToken {
     function underlying() external view returns (address);
 
@@ -132,14 +136,11 @@ interface IERC20 {
 contract RegistryAdapterIronBank is Ownable {
     // Adapter specific storage variables
     uint256 public blocksPerYear = 2102400; // Blocks per year is used to calculate lending APY
-    address public comptrollerAddress; // Comptroller address
 
     /*******************************************************
      *           Common code shared by all adapters
      *******************************************************/
-    address public oracleAddress; // The oracle is used to fetch USDC normalized pricing data
-    address public helperAddress; // A helper utility is used for batch allowance fetching and address array merging
-    address public addressesGeneratorAddress; // A utility for fetching assets addresses and length
+    address public yearnAddressesProviderAddress; // Yearn addresses provider
     address[] private _extensionsAddresses; // Optional contract extensions provide a way to add new features at a later date
 
     /**
@@ -274,7 +275,7 @@ contract RegistryAdapterIronBank is Ownable {
         assetAddresses[0] = assetAddress;
         bytes memory allowances =
             abi.encode(
-                IHelper(helperAddress).allowances(
+                helper().allowances(
                     accountAddress,
                     tokenAddresses,
                     assetAddresses
@@ -296,11 +297,10 @@ contract RegistryAdapterIronBank is Ownable {
         assetAddresses[0] = assetAddress;
         bytes memory allowances =
             abi.encode(
-                IHelper(helperAddress).allowances(
+                helper().allowances(
                     accountAddress,
                     assetAddresses,
-                    IAddressesGenerator(addressesGeneratorAddress)
-                        .getPositionSpenderAddresses()
+                    addressesGenerator().getPositionSpenderAddresses()
                 )
             );
         return abi.decode(allowances, (Allowance[]));
@@ -310,21 +310,56 @@ contract RegistryAdapterIronBank is Ownable {
      * Fetch the total number of assets for this adapter
      */
     function assetsLength() public view returns (uint256) {
-        return IAddressesGenerator(addressesGeneratorAddress).assetsLength();
+        return addressesGenerator().assetsLength();
     }
 
     /**
      * Fetch all asset addresses for this adapter
      */
     function assetsAddresses() public view returns (address[] memory) {
-        return IAddressesGenerator(addressesGeneratorAddress).assetsAddresses();
+        return addressesGenerator().assetsAddresses();
+    }
+
+    /**
+     * Fetch comptroller address from addresses generator
+     */
+    function comptrollerAddress() public view returns (address) {
+        return registryAddress();
     }
 
     /**
      * Fetch registry address from addresses generator
      */
     function registryAddress() public view returns (address) {
-        return IAddressesGenerator(addressesGeneratorAddress).registry();
+        return addressesGenerator().registry();
+    }
+
+    /**
+     * Fetch yearn addresses provider interface
+     */    
+    function yearnAddressesProvider() public view returns (IYearnAddressesProvider) {
+        return IYearnAddressesProvider(yearnAddressesProviderAddress);
+    }
+    
+    /**
+     * Fetch oracle
+     */
+    function oracle() public view returns (IOracle) {
+        return IOracle(yearnAddressesProvider().addressById("ORACLE"));
+    }
+
+    /**
+     * Fetch helper
+     */
+    function helper() public view returns (IHelper) {
+        return IHelper(yearnAddressesProvider().addressById("HELPER"));
+    }
+
+    /**
+     * Fetch Iron Bank addresses generator
+     */    
+    function addressesGenerator() public view returns (IAddressesGenerator) {
+        return IAddressesGenerator(yearnAddressesProvider().addressById("ADDRESSES_GENERATOR_IRON_BANK"));
     }
 
     /**
@@ -334,6 +369,13 @@ contract RegistryAdapterIronBank is Ownable {
         assembly {
             sstore(slot, value)
         }
+    }
+    
+    /**
+     * Owner can update addresses provider address
+     */
+    function updateYearnAddressesProviderAddress(address _yearnAddressesProviderAddress) external onlyOwner {
+        yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
     }
 
     /**
@@ -364,64 +406,12 @@ contract RegistryAdapterIronBank is Ownable {
         return
             TokenAmount({
                 amount: amount,
-                amountUsdc: IOracle(oracleAddress).getNormalizedValueUsdc(
+                amountUsdc: oracle().getNormalizedValueUsdc(
                     tokenAddress,
                     amount,
                     tokenPriceUsdc
                 )
             });
-    }
-
-    /**
-     * Method for getting supply balance data
-     */
-    function userSupplyBalanceUsdc(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
-        public
-        view
-        returns (uint256)
-    {
-        uint256 supplyBalanceShares = asset.balanceOf(accountAddress);
-        uint256 supplyBalanceUnderlying =
-            (supplyBalanceShares * asset.exchangeRateStored()) / 10**18;
-        return IOracle(oracleAddress).getNormalizedValueUsdc(
-            tokenAddress,
-            supplyBalanceUnderlying,
-            tokenPriceUsdc
-        );
-    }
-
-    /**
-     * Method for getting borrow balance data
-     */
-    function userBorrowBalanceUsdc(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
-        public
-        view
-        returns (uint256)
-    {
-        uint256 borrowBalanceShares = asset.borrowBalanceStored(accountAddress);
-        return IOracle(oracleAddress).getNormalizedValueUsdc(
-            tokenAddress,
-            borrowBalanceShares,
-            tokenPriceUsdc
-        );
-    }
-
-    /**
-     * Method for getting collateral balance data
-     */
-    function userCollateralBalanceUsdc(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
-        public
-        view
-        returns (uint256)
-    {
-        (, uint256 collateralBalanceShare, , ) = asset.getAccountSnapshot(accountAddress);
-        uint256 collateralBalanceUnderlying =
-            (collateralBalanceShare * asset.exchangeRateStored()) / 10**18;
-        return IOracle(oracleAddress).getNormalizedValueUsdc(
-            tokenAddress,
-            collateralBalanceUnderlying,
-            tokenPriceUsdc
-        );
     }
 
     /*******************************************************
@@ -431,15 +421,10 @@ contract RegistryAdapterIronBank is Ownable {
      * Configure adapter
      */
     constructor(
-        address _oracleAddress,
-        address _helperAddress,
-        address _addressesGeneratorAddress
+        address _yearnAddressesProviderAddress
+      
     ) {
-        require(_oracleAddress != address(0), "Missing oracle address");
-        oracleAddress = _oracleAddress;
-        helperAddress = _helperAddress;
-        addressesGeneratorAddress = _addressesGeneratorAddress;
-        comptrollerAddress = registryAddress();
+        yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
     }
 
     function adapterInfo() public view returns (AdapterInfo memory) {
@@ -506,7 +491,7 @@ contract RegistryAdapterIronBank is Ownable {
     {
         bool enteredMarket;
         address[] memory markets =
-            IUnitroller(comptrollerAddress).getAssetsIn(accountAddress);
+            IUnitroller(comptrollerAddress()).getAssetsIn(accountAddress);
         for (uint256 marketIdx; marketIdx < markets.length; marketIdx++) {
             address marketAddress = markets[marketIdx];
             if (marketAddress == assetAddress) {
@@ -516,7 +501,7 @@ contract RegistryAdapterIronBank is Ownable {
         }
         ICyToken asset = ICyToken(assetAddress);
         IUnitroller.Market memory market =
-            IUnitroller(comptrollerAddress).markets(assetAddress);
+            IUnitroller(comptrollerAddress()).markets(assetAddress);
         address tokenAddress = assetUnderlyingTokenAddress(assetAddress);
         uint256 tokenPriceUsdc = assetUnderlyingTokenPriceUsdc(assetAddress);
         uint256 supplyBalanceUsdc = userSupplyBalanceUsdc(accountAddress, asset, tokenAddress, tokenPriceUsdc);
@@ -614,7 +599,7 @@ contract RegistryAdapterIronBank is Ownable {
         IERC20 underlyingToken = IERC20(_underlyingTokenAddress);
         uint8 underlyingTokenDecimals = underlyingToken.decimals();
         uint256 underlyingTokenPrice =
-            ICreamOracle(IUnitroller(comptrollerAddress).oracle())
+            ICreamOracle(IUnitroller(comptrollerAddress()).oracle())
                 .getUnderlyingPrice(assetAddress) /
                 (10**(36 - underlyingTokenDecimals - 6));
         return underlyingTokenPrice;
@@ -634,20 +619,20 @@ contract RegistryAdapterIronBank is Ownable {
         uint256 liquidityUsdc;
         uint256 tokenPriceUsdc = assetUnderlyingTokenPriceUsdc(assetAddress);
         if (liquidity > 0) {
-            liquidityUsdc = IOracle(oracleAddress).getNormalizedValueUsdc(
+            liquidityUsdc = oracle().getNormalizedValueUsdc(
                 tokenAddress,
                 liquidity,
                 tokenPriceUsdc
             );
         }
         IUnitroller.Market memory market =
-            IUnitroller(comptrollerAddress).markets(assetAddress);
+            IUnitroller(comptrollerAddress()).markets(assetAddress);
 
         TokenAmount memory underlyingTokenBalance =
             tokenAmount(assetBalance(assetAddress), tokenAddress, tokenPriceUsdc);
 
         uint256 totalBorrowedUsdc =
-            IOracle(oracleAddress).getNormalizedValueUsdc(
+            oracle().getNormalizedValueUsdc(
                 tokenAddress,
                 asset.totalBorrows(),
                 tokenPriceUsdc
@@ -869,6 +854,59 @@ contract RegistryAdapterIronBank is Ownable {
         }
         return _tokensAddresses;
     }
+    
+    /**
+     * Method for getting supply balance data
+     */
+    function userSupplyBalanceUsdc(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 supplyBalanceShares = asset.balanceOf(accountAddress);
+        uint256 supplyBalanceUnderlying =
+            (supplyBalanceShares * asset.exchangeRateStored()) / 10**18;
+        return oracle().getNormalizedValueUsdc(
+            tokenAddress,
+            supplyBalanceUnderlying,
+            tokenPriceUsdc
+        );
+    }
+
+    /**
+     * Method for getting borrow balance data
+     */
+    function userBorrowBalanceUsdc(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 borrowBalanceShares = asset.borrowBalanceStored(accountAddress);
+        return oracle().getNormalizedValueUsdc(
+            tokenAddress,
+            borrowBalanceShares,
+            tokenPriceUsdc
+        );
+    }
+
+    /**
+     * Method for getting collateral balance data
+     */
+    function userCollateralBalanceUsdc(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
+        public
+        view
+        returns (uint256)
+    {
+        (, uint256 collateralBalanceShare, , ) = asset.getAccountSnapshot(accountAddress);
+        uint256 collateralBalanceUnderlying =
+            (collateralBalanceShare * asset.exchangeRateStored()) / 10**18;
+        return oracle().getNormalizedValueUsdc(
+            tokenAddress,
+            collateralBalanceUnderlying,
+            tokenPriceUsdc
+        );
+    }
+
 
     /**
      * Cascading fallback proxy provides the contract with the ability to add new features at a later time
