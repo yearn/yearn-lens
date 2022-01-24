@@ -135,7 +135,8 @@ interface IERC20 {
  *******************************************************/
 contract RegistryAdapterIronBank is Ownable {
     // Adapter specific storage variables
-    uint256 public blocksPerYear = 2102400; // Blocks per year is used to calculate lending APY
+    uint256 public blocksPerYear = 2300000; // Blocks per year is used to calculate lending APY
+    // uint256 public blocksPerYear = 31540000; // Fantom
 
     /*******************************************************
      *           Common code shared by all adapters
