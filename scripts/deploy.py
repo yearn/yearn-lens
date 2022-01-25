@@ -48,11 +48,6 @@ def main():
     positionSpenderAddresses = [trustedMigratorAddress]
 
     ####################################################
-    # Management list
-    ####################################################
-    managementList = ManagementList.deploy("Managemenet list", {"from": management})
-
-    ####################################################
     # Oracle
     ####################################################
     oracle = Oracle.deploy(usdcAddress, {"from": management})
@@ -176,11 +171,6 @@ def main():
         ],
         {"from": management},
     )
-
-    print("Management list")
-    print("---------------")
-    print("Management List:         ", managementList)
-    print("")
 
     print("Oracle")
     print("------")

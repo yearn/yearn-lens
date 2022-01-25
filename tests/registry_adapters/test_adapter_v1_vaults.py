@@ -1,7 +1,6 @@
 import pytest
 import brownie
-from brownie import interface, ZERO_ADDRESS
-from operator import itemgetter
+from brownie import interface
 
 yfiVaultAddress = "0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1"
 yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
@@ -20,7 +19,6 @@ def v1VaultsAdapter(
     helper,
     v1VaultsAddressesGenerator,
     v1VaultTvlAdapter,
-    managementList,
     oracle,
     management,
 ):

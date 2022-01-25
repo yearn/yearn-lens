@@ -3,9 +3,9 @@ pragma solidity ^0.8.2;
 
 import "../../interfaces/Common/IOracle.sol";
 import "../../interfaces/Common/IERC20.sol";
-import "../Utilities/Manageable.sol";
+import "../Utilities/Ownable.sol";
 
-contract Adapter is Manageable {
+contract Adapter is Ownable {
     IOracle public oracle;
     address public registryAddress;
     address[] public positionSpenderAddresses;
@@ -121,7 +121,7 @@ contract Adapter is Manageable {
 
     function setAssetDeprecated(address assetAddress, bool newDeprecationStatus)
         public
-        onlyManagers
+        onlyOwner
     {
         bool currentDeprecationStatus = assetDeprecated[assetAddress];
         if (currentDeprecationStatus == newDeprecationStatus) {
@@ -137,20 +137,12 @@ contract Adapter is Manageable {
 
     function setPositionSpenderAddresses(address[] memory addresses)
         public
-        onlyManagers
+        onlyOwner
     {
         positionSpenderAddresses = addresses;
     }
 
-    constructor(
-        address _registryAddress,
-        address _oracleAddress,
-        address _managementListAddress
-    ) Manageable(_managementListAddress) {
-        require(
-            _managementListAddress != address(0),
-            "Missing management list address"
-        );
+    constructor(address _registryAddress, address _oracleAddress) {
         require(_registryAddress != address(0), "Missing registry address");
         require(_oracleAddress != address(0), "Missing oracle address");
         registryAddress = _registryAddress;

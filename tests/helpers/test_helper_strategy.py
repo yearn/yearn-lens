@@ -1,17 +1,13 @@
 import pytest
-import brownie
-
-from web3 import Web3
-from brownie import Contract, interface
 
 yfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
 
 
 @pytest.fixture
-def v2VaultsAdapter(RegisteryAdapterV2Vault, managementList, oracle, management):
+def v2VaultsAdapter(RegisteryAdapterV2Vault, oracle, management):
     v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
     return RegisteryAdapterV2Vault.deploy(
-        v2RegistryAddress, oracle, managementList, {"from": management},
+        v2RegistryAddress, oracle, {"from": management},
     )
 
 
