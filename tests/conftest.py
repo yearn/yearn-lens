@@ -357,13 +357,11 @@ def v2VaultsAddressesGenerator(
 @pytest.fixture
 def v1VaultsAddressesGenerator(
     AddressesGeneratorV1Vaults,
-    managementList,
     management,
 ):
     registryAddress = "0x3eE41C098f9666ed2eA246f4D2558010e59d63A0"
     return AddressesGeneratorV1Vaults.deploy(
         registryAddress,
-        managementList,
         {"from": management},
     )
 
