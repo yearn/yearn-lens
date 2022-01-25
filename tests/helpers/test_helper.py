@@ -11,14 +11,14 @@ def allowancesHelper(AllowancesHelper, management):
 
 
 @pytest.fixture
-def helper(Helper, managementList, allowancesHelper, management):
-    helper = Helper.deploy(managementList, {"from": management})
+def helper(Helper, allowancesHelper, management):
+    helper = Helper.deploy({"from": management})
     helper.setHelpers([allowancesHelper])
     return helper
 
 
-def test_set_helpers(allowancesHelper, Helper, management, managementList):
-    helper = Helper.deploy(managementList, {"from": management})
+def test_set_helpers(allowancesHelper, Helper, management):
+    helper = Helper.deploy({"from": management})
     assert len(helper.helpers()) == 0
     helper.setHelpers([allowancesHelper])
     assert len(helper.helpers()) > 0

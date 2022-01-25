@@ -96,7 +96,7 @@ def main():
     ####################################################
     # Helper utility
     ####################################################
-    helper = Helper.deploy(managementList, {"from": management})
+    helper = Helper.deploy({"from": management})
 
     ####################################################
     # Addresses generators

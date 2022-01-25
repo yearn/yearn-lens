@@ -1,18 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.2;
 
-import "../Manageable.sol";
+import "../Ownable.sol";
 
-contract Helper is Manageable {
+contract Helper is Ownable {
     address[] private _helpers;
-
-    constructor(address _managementListAddress)
-        Manageable(_managementListAddress)
-    {}
 
     function setHelpers(address[] memory helperAddresses)
         external
-        onlyManagers
+        onlyOwner
     {
         _helpers = helperAddresses;
     }

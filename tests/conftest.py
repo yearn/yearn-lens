@@ -140,7 +140,7 @@ def addressMergeHelper(AddressMergeHelper, management):
 
 @pytest.fixture
 def helperInternal(Helper, managementList, management):
-    return Helper.deploy(managementList, {"from": management})
+    return Helper.deploy({"from": management})
 
 
 @pytest.fixture
