@@ -123,9 +123,7 @@ def main():
     ####################################################
     # Delegated balance mapping
     ####################################################
-    delegatedBalanceMapping = DelegatedBalanceMapping.deploy(
-        managementList, {"from": management}
-    )
+    delegatedBalanceMapping = DelegatedBalanceMapping.deploy({"from": management})
 
     ####################################################
     # TVL adapters

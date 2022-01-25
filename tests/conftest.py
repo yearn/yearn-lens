@@ -74,8 +74,8 @@ def pricesHelper(PricesHelper, management,  oracle):
 
 
 @pytest.fixture
-def delegationMapping(DelegatedBalanceMapping, management, managementList):
-    return DelegatedBalanceMapping.deploy(managementList, {"from": management})
+def delegationMapping(DelegatedBalanceMapping, management):
+    return DelegatedBalanceMapping.deploy({"from": management})
 
 
 @pytest.fixture
