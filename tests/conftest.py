@@ -406,8 +406,7 @@ def v2VaultsAdapter(
     v2AddressesGenerator,
     oracle,
     helperInternal,
-    management,
-    v2VaultsTvlAdapter,
+    management
 ):
     return RegisteryAdapterV2Vault.deploy(
         oracle,
