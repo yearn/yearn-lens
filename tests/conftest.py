@@ -182,7 +182,7 @@ def calculationsSushiswap(CalculationsSushiswap, management):
     return calculationsSushiswap
 
 @pytest.fixture
-def synth_calculations(CalculationsSynth, managementList, management):
+def synth_calculations(CalculationsSynth, management):
     eur_usd_feed = "0xb49f677943BC038e9857d61E7d053CaA2C1734C1"
     gbp_usd_feed = "0x5c0Ab2d9b5a7ed9f470386e82BB36A3613cDd4b5"
     chf_usd_feed = "0x449d117117838fFA61263B61dA6301AA2a88B13A"
@@ -191,7 +191,6 @@ def synth_calculations(CalculationsSynth, managementList, management):
     krw_usd_feed = "0x01435677FB11763550905594A16B645847C1d0F3"
 
     synth_calculations = CalculationsSynth.deploy(
-        managementList,
         eur_usd_feed,
         gbp_usd_feed,
         chf_usd_feed,
