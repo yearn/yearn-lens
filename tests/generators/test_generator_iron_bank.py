@@ -1,20 +1,16 @@
 import pytest
 import brownie
-from brownie import interface, ZERO_ADDRESS
-from operator import itemgetter
+from brownie import ZERO_ADDRESS
+
 
 cySusdAddress = "0x4e3a36A633f63aee0aB57b5054EC78867CB3C0b8"
 ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 
 
 @pytest.fixture
-def ironBankGenerator(
-    AddressesGeneratorIronBank, managementList, oracle, helper, management
-):
+def ironBankGenerator(AddressesGeneratorIronBank, management):
     registryAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
-    generator = AddressesGeneratorIronBank.deploy(
-        registryAddress, managementList, {"from": management},
-    )
+    generator = AddressesGeneratorIronBank.deploy(registryAddress, {"from": management})
     return generator
 
 

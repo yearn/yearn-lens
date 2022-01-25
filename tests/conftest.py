@@ -362,13 +362,11 @@ def v1VaultsAddressesGenerator(
 @pytest.fixture
 def ironBankAddressesGenerator(
     AddressesGeneratorIronBank,
-    managementList,
     management,
 ):
     registryAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
     generator = AddressesGeneratorIronBank.deploy(
         registryAddress,
-        managementList,
         {"from": management},
     )
     cySusdOldAddress = "0x4e3a36A633f63aee0aB57b5054EC78867CB3C0b8"

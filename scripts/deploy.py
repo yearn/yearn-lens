@@ -112,7 +112,6 @@ def main():
 
     ironBankAddressesGenerator = AddressesGeneratorIronBank.deploy(
         ironBankRegistryAddress,
-        managementList,
         {"from": management},
     )
     ironBankAddressesGenerator.setAssetDeprecated(
