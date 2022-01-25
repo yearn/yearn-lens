@@ -1,7 +1,6 @@
 import pytest
 import brownie
-from brownie import interface, ZERO_ADDRESS
-from operator import itemgetter
+from brownie import ZERO_ADDRESS
 
 v2YfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
 ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
@@ -9,11 +8,11 @@ ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 
 @pytest.fixture
 def v2VaultsGenerator(
-    AddressesGeneratorV2Vaults, managementList, oracle, helper, management
+    AddressesGeneratorV2Vaults, management
 ):
     v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
     generator = AddressesGeneratorV2Vaults.deploy(
-        v2RegistryAddress, managementList, {"from": management},
+        v2RegistryAddress, {"from": management},
     )
     return generator
 

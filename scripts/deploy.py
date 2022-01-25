@@ -102,7 +102,7 @@ def main():
     # Addresses generators
     ####################################################
     v2VaultsAddressesGenerator = AddressesGeneratorV2Vaults.deploy(
-        v2RegistryAddress, managementList, {"from": management}
+        v2RegistryAddress, {"from": management}
     )
 
     positionSpenderAddresses = [trustedMigratorAddress]

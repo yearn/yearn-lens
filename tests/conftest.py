@@ -80,11 +80,11 @@ def delegationMapping(DelegatedBalanceMapping, management):
 
 @pytest.fixture
 def v2AddressesGenerator(
-    AddressesGeneratorV2Vaults, management, managementList, oracle
+    AddressesGeneratorV2Vaults, management
 ):
     v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
     generator = AddressesGeneratorV2Vaults.deploy(
-        v2RegistryAddress, managementList, {"from": management}
+        v2RegistryAddress, {"from": management}
     )
     trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
     positionSpenderAddresses = [trustedMigratorAddress]
@@ -345,13 +345,11 @@ def v1VaultTvlAdapter(
 @pytest.fixture
 def v2VaultsAddressesGenerator(
     AddressesGeneratorV2Vaults,
-    managementList,
     management,
 ):
     registryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
     return AddressesGeneratorV2Vaults.deploy(
         registryAddress,
-        managementList,
         {"from": management},
     )
 
