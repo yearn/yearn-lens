@@ -55,7 +55,7 @@ def main():
     ####################################################
     # Oracle
     ####################################################
-    oracle = Oracle.deploy(managementList, usdcAddress, {"from": management})
+    oracle = Oracle.deploy(usdcAddress, {"from": management})
 
     oracle.addTokenAliases(
         [

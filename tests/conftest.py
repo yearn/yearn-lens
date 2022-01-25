@@ -99,7 +99,6 @@ def ironBankTvlAdapter(
     TvlAdapterIronBank,
     ironBankAddressesGenerator,
     delegationMapping,
-    managementList,
     oracle,
     management,
 ):
@@ -115,7 +114,6 @@ def ironBankTvlAdapter(
 def v2VaultsTvlAdapter(
     TvlAdapterV2Vaults,
     v2VaultsAddressesGenerator,
-    managementList,
     oracle,
     helperInternal,
     management,
@@ -139,7 +137,7 @@ def addressMergeHelper(AddressMergeHelper, management):
 
 
 @pytest.fixture
-def helperInternal(Helper, managementList, management):
+def helperInternal(Helper, management):
     return Helper.deploy({"from": management})
 
 
@@ -154,8 +152,6 @@ def strategiesHelper(StrategiesHelper, v2AddressesGenerator, addressMergeHelper,
 def helper(
     helperInternal,
     management,
-    managementList,
-    oracle,
     allowancesHelper,
     pricesHelper,
     addressMergeHelper,
@@ -229,7 +225,6 @@ def chainlink_calculations(CalculationsChainlink, management):
 def oracle(
     Oracle,
     management,
-    managementList,
     calculationsSushiswap,
     synth_calculations,
     curve_calculations,
@@ -256,7 +251,7 @@ def oracle(
 
     # return Oracle.at("0x83d95e0d5f402511db06817aff3f9ea88224b030")
 
-    oracle = Oracle.deploy(managementList, usdcAddress, {"from": management})
+    oracle = Oracle.deploy(usdcAddress, {"from": management})
 
     oracle.addTokenAliases(
         [
@@ -330,7 +325,6 @@ def v1VaultTvlAdapter(
     TvlAdapterV1Vaults,
     v1VaultsAddressesGenerator,
     delegationMapping,
-    managementList,
     oracle,
     management,
 ):
@@ -386,13 +380,11 @@ def ironBankAddressesGenerator(
 @pytest.fixture
 def earnAddressesGenerator(
     AddressesGeneratorEarn,
-    managementList,
     management,
 ):
     registryAddress = "0x62a4e0E7574E5407656A65CC8DbDf70f3C6EB04B"
     return AddressesGeneratorEarn.deploy(
         registryAddress,
-        managementList,
         {"from": management},
     )
 

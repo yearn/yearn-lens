@@ -70,9 +70,9 @@ def test_add_token_aliases(oracle, management):
 
 
 def test_set_calculations(
-    Oracle, managementList, CalculationsCurve, gov, management, rando
+    Oracle, CalculationsCurve, gov, management, rando
 ):
-    oracle = Oracle.deploy(managementList, usdcAddress, {"from": management})
+    oracle = Oracle.deploy(usdcAddress, {"from": management})
     calculationsCurve = CalculationsCurve.deploy(
         curveAddressProvider, oracle, {"from": gov}
     )
@@ -96,7 +96,9 @@ def test_set_calculations(
     )
 
     # Oracle should return managementList address
-    assert not oracle.managementList() == ZERO_ADDRESS
+
+    # TODO: what should this test be evaluating now that it is onlyOwner
+    # assert not oracle.managementList() == ZERO_ADDRESS
 
 
 def test_get_price_usdc_sushiswap(oracle):
@@ -180,8 +182,8 @@ def test_calculations_overrides(oracle, calculationsOverrides, management):
     calculationsOverrides.setOverrideForToken(yvBOOSTAddress, "CALCULATIONS_SUSHISWAP", {"from": management})
     yvBOOSTPriceAfter = oracle.getPriceUsdcRecommended(yvBOOSTAddress)
     assert yvBOOSTPriceBefore != yvBOOSTPriceAfter
-    
-    
+
+
 def test_tri_crypto_price(curve_calculations):
     price = curve_calculations.getPriceUsdc(triCryptoAddress)
     assert price > 0
@@ -250,7 +252,7 @@ def test_update_curve_addresses_provider_only_possible_by_owner(curve_calculatio
 
 # Sushiswap
 def test_router_override(calculationsSushiswap, oracle):
-    yveCRVPriceBefore = calculationsSushiswap.getPriceUsdc(yveCRVAddress)    
+    yveCRVPriceBefore = calculationsSushiswap.getPriceUsdc(yveCRVAddress)
     calculationsSushiswap.setRouterOverrideForToken(yveCRVAddress, uniswapRouterAddress)
     yveCRVPriceAfter = calculationsSushiswap.getPriceUsdc(yveCRVAddress)
     assert yveCRVPriceBefore != yveCRVPriceAfter
@@ -310,5 +312,5 @@ def test_chainlink(chainlink_calculations, management):
         chainlink_calculations.getPriceUsdc(eurt)
 
     chainlink_calculations.setNamehash(eurt, eurt_namehash, {"from": management})
-    
+
     assert chainlink_calculations.getPriceUsdc(eurt) > 0
