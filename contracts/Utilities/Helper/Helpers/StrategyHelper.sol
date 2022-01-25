@@ -321,19 +321,6 @@ contract StrategiesHelper {
     /**
      * Fetch metadata for all strategies
      */
-    function assetsStrategies()
-        external
-        view
-        returns (StrategyMetadata[] memory)
-    {
-        address[]
-            memory _assetsStrategiesAddresses = assetsStrategiesAddresses();
-        return strategies(_assetsStrategiesAddresses);
-    }
-
-    /**
-     * Fetch metadata for all strategies
-     */
     function assetsStrategiesByFilter(string[][] memory _filter)
         external
         view
