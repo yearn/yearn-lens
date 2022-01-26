@@ -186,6 +186,10 @@ def calculationsSushiswap(CalculationsSushiswap, management):
     return calculationsSushiswap
 
 @pytest.fixture
+def calculationsFixedforex(CalculationsFixedForex, management):
+    return CalculationsFixedForex.deploy(yearnAddressesProviderAddress, {"from": management})
+
+@pytest.fixture
 def synth_calculations(CalculationsSynth, management):
     return CalculationsSynth.deploy(yearnAddressesProviderAddress, {"from": management})
 
