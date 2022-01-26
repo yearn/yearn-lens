@@ -210,6 +210,17 @@ def chainlink_calculations(CalculationsChainlink, management):
     return chainlink_calculations
 
 @pytest.fixture
+def calculationsIronBank(CalculationsIronBank, management):
+    calculations = CalculationsIronBank.deploy(
+        yearnAddressesProviderAddress, {"from": management}
+    )
+    calculations.addUnitrollers([
+        "UNITROLLER_IRON_BANK",
+        "UNITROLLER_COMPOUND"
+    ], {"from": management})
+    return calculations
+
+@pytest.fixture
 def oracle(
     Oracle,
     management,
@@ -217,7 +228,7 @@ def oracle(
     calculationsSushiswap,
     synth_calculations,
     curve_calculations,
-    CalculationsIronBank,
+    calculationsIronBank,
     CalculationsYearnVaults,
     calculationsOverrides,
     chainlink_calculations
@@ -255,9 +266,6 @@ def oracle(
     )
 
     calculationsYearnVaults = CalculationsYearnVaults.deploy(oracle, {"from": management})
-    calculationsIronBank = CalculationsIronBank.deploy(
-        unitrollerAddress, oracle, {"from": management}
-    )
 
     oracle.setCalculations(
         [
