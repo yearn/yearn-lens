@@ -82,7 +82,7 @@ def main():
         yearnAddressProvider, curveAddressProvider, {"from": management}
     )
     calculationsIronBank = CalculationsIronBank.deploy(
-        ironBankRegistryAddress, oracle, {"from": management}
+        yearnAddressProvider, {"from": management}
     )
     oracle.setCalculations(
         [

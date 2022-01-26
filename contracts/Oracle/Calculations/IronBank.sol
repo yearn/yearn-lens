@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity ^0.8.2;
+pragma solidity 0.8.11;
+import "../../Utilities/AddressesProviderConsumer.sol";
 
 interface IUnitroller {
     function getAllMarkets() external view returns (address[] memory);
@@ -25,21 +25,44 @@ interface IOracle {
         returns (uint256);
 }
 
-contract CalculationsIronBank {
-    address public unitrollerAddress;
-    address public oracleAddress;
+contract CalculationsIronBank is AddressesProviderConsumer {
+    string[] public unitrollerIds;
 
-    constructor(address _unitrollerAddress, address _oracleAddress) {
-        unitrollerAddress = _unitrollerAddress;
-        oracleAddress = _oracleAddress;
-    }
+    constructor(address _addressesProviderAddress)
+        AddressesProviderConsumer(_addressesProviderAddress)
+    {}
 
-    function getIronBankMarkets() public view returns (address[] memory) {
+    function getIronBankMarkets(address unitrollerAddress)
+        public
+        view
+        returns (address[] memory)
+    {
         return IUnitroller(unitrollerAddress).getAllMarkets();
     }
 
-    function isIronBankMarket(address tokenAddress) public view returns (bool) {
-        address[] memory ironBankMarkets = getIronBankMarkets();
+    function addUnitroller(string memory unitrollerId) public onlyOwner {
+        unitrollerIds.push(unitrollerId);
+    }
+
+    function addUnitrollers(string[] memory _unitrollerIds) external onlyOwner {
+        for (
+            uint256 unitrollerIdx;
+            unitrollerIdx < _unitrollerIds.length;
+            unitrollerIdx++
+        ) {
+            string memory unitrollerId = _unitrollerIds[unitrollerIdx];
+            unitrollerIds.push(unitrollerId);
+        }
+    }
+
+    function isIronBankMarket(address unitrollerAddress, address tokenAddress)
+        public
+        view
+        returns (bool)
+    {
+        address[] memory ironBankMarkets = getIronBankMarkets(
+            unitrollerAddress
+        );
         uint256 numIronBankMarkets = ironBankMarkets.length;
         for (
             uint256 marketIdx = 0;
@@ -54,11 +77,10 @@ contract CalculationsIronBank {
         return false;
     }
 
-    function getIronBankMarketPriceUsdc(address tokenAddress)
-        public
-        view
-        returns (uint256)
-    {
+    function getIronBankMarketPriceUsdc(
+        address unitrollerAddress,
+        address tokenAddress
+    ) public view returns (uint256) {
         ICyToken cyToken = ICyToken(tokenAddress);
         uint256 exchangeRateStored = cyToken.exchangeRateStored();
         address underlyingTokenAddress = cyToken.underlying();
@@ -66,19 +88,29 @@ contract CalculationsIronBank {
         IERC20 underlyingToken = IERC20(underlyingTokenAddress);
         uint8 underlyingTokenDecimals = underlyingToken.decimals();
 
-        IOracle oracle = IOracle(oracleAddress);
-        uint256 underlyingTokenPrice =
-            oracle.getPriceUsdcRecommended(underlyingTokenAddress);
+        IOracle oracle = IOracle(addressById("ORACLE"));
+        uint256 underlyingTokenPrice = oracle.getPriceUsdcRecommended(
+            underlyingTokenAddress
+        );
 
-        uint256 price =
-            (underlyingTokenPrice * exchangeRateStored) /
-                10**(underlyingTokenDecimals + decimals);
+        uint256 price = (underlyingTokenPrice * exchangeRateStored) /
+            10**(underlyingTokenDecimals + decimals);
         return price;
     }
 
     function getPriceUsdc(address tokenAddress) public view returns (uint256) {
-        if (isIronBankMarket(tokenAddress)) {
-            return getIronBankMarketPriceUsdc(tokenAddress);
+        for (
+            uint256 unitrollerIdx;
+            unitrollerIdx < unitrollerIds.length;
+            unitrollerIdx++
+        ) {
+            address unitrollerAddress = addressById(
+                unitrollerIds[unitrollerIdx]
+            );
+            if (isIronBankMarket(unitrollerAddress, tokenAddress)) {
+                return
+                    getIronBankMarketPriceUsdc(unitrollerAddress, tokenAddress);
+            }
         }
         revert();
     }
