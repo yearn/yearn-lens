@@ -23,7 +23,8 @@ def gov(accounts):
 
 @pytest.fixture
 def yearnAddressesProvider():
-    return Contract(yearnAddressesProviderAddress)
+    #return Contract(yearnAddressesProviderAddress)
+    return Contract.from_explorer(yearnAddressesProviderAddress)
 
 @pytest.fixture
 def registryAdapterCommonInterface():
