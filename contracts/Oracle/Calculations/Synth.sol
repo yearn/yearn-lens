@@ -1,178 +1,125 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.8.2;
+pragma solidity 0.8.11;
+import "../../Utilities/AddressesProviderConsumer.sol";
 
-import "../../Utilities/Ownable.sol";
-
-interface AggregatorV3Interface {
-  function latestRoundData()
-    external
-    view
-    returns (
-      uint80 roundId,
-      int256 answer,
-      uint256 startedAt,
-      uint256 updatedAt,
-      uint80 answeredInRound
-    );
+interface IAddressResolver {
+    function getAddress(bytes32) external view returns (address);
 }
 
-contract CalculationsSynth is Ownable {
+interface ISynth {
+    function target() external view returns (address);
+}
 
-    mapping (address => bool) public eurSynths;
-    mapping (address => bool) public gbpSynths;
-    mapping (address => bool) public chfSynths;
-    mapping (address => bool) public audSynths;
-    mapping (address => bool) public jpySynths;
-    mapping (address => bool) public krwSynths;
+interface ISynthetix {
+    function availableSynthCount() external view returns (uint256);
 
-    AggregatorV3Interface public eurChainlinkFeed;
-    AggregatorV3Interface public gbpChainlinkFeed;
-    AggregatorV3Interface public chfChainlinkFeed;
-    AggregatorV3Interface public audChainlinkFeed;
-    AggregatorV3Interface public jpyChainlinkFeed;
-    AggregatorV3Interface public krwChainlinkFeed;
+    function availableSynths(uint256) external view returns (address);
+}
 
-    constructor(
-        address _eurChainlinkFeed,
-        address _gbpChainlinkFeed,
-        address _chfChainlinkFeed,
-        address _audChainlinkFeed,
-        address _jpyChainlinkFeed,
-        address _krwChainlinkFeed
-    ) {
-        eurChainlinkFeed = AggregatorV3Interface(_eurChainlinkFeed);
-        gbpChainlinkFeed = AggregatorV3Interface(_gbpChainlinkFeed);
-        chfChainlinkFeed = AggregatorV3Interface(_chfChainlinkFeed);
-        audChainlinkFeed = AggregatorV3Interface(_audChainlinkFeed);
-        jpyChainlinkFeed = AggregatorV3Interface(_jpyChainlinkFeed);
-        krwChainlinkFeed = AggregatorV3Interface(_krwChainlinkFeed);
-    }
+interface ISynthTarget {
+    function currencyKey() external view returns (bytes32);
+}
 
-    function setEurFeed(address _eurChainlinkFeed) public onlyOwner {
-        eurChainlinkFeed = AggregatorV3Interface(_eurChainlinkFeed);
-    }
+interface IExchangeRates {
+    function ratesForCurrencies(bytes32[] calldata)
+        external
+        view
+        returns (uint256[] memory);
+}
 
-    function setGbpFeed(address _gbpChainlinkFeed) public onlyOwner {
-        gbpChainlinkFeed = AggregatorV3Interface(_gbpChainlinkFeed);
-    }
+contract CalculationsSynth is AddressesProviderConsumer {
+    constructor(address _addressesProviderAddress)
+        AddressesProviderConsumer(_addressesProviderAddress)
+    {}
 
-    function setChfFeed(address _chfChainlinkFeed) public onlyOwner {
-        chfChainlinkFeed = AggregatorV3Interface(_chfChainlinkFeed);
-    }
-
-    function setAudFeed(address _audChainlinkFeed) public onlyOwner {
-        audChainlinkFeed = AggregatorV3Interface(_audChainlinkFeed);
-    }
-
-    function setJpyFeed(address _jpyChainlinkFeed) public onlyOwner {
-        jpyChainlinkFeed = AggregatorV3Interface(_jpyChainlinkFeed);
-    }
-
-    function setKrwFeed(address _krwChainlinkFeed) public onlyOwner {
-        krwChainlinkFeed = AggregatorV3Interface(_krwChainlinkFeed);
-    }
-
-    function setSynths(
-        address[] memory _eurSynths,
-        address[] memory _gbpSynths,
-        address[] memory _chfSynths,
-        address[] memory _audSynths,
-        address[] memory _jpySynths,
-        address[] memory _krwSynths
-    ) public onlyOwner {
-        for (uint i = 0; i < _eurSynths.length; i++) {
-            eurSynths[_eurSynths[i]] = true;
+    function getAddressByName(string memory nameString)
+        public
+        view
+        returns (address)
+    {
+        bytes32 name = bytes32(bytes(nameString));
+        address resolvedAddress = IAddressResolver(
+            addressById("SYNTHETIX_ADDRESS_RESOLVER")
+        ).getAddress(name);
+        address targetAddress = targetAddressByProxyAddress(resolvedAddress);
+        if (targetAddress != address(0)) {
+            return targetAddress;
         }
-        for (uint i = 0; i < _gbpSynths.length; i++) {
-            gbpSynths[_gbpSynths[i]] = true;
-        }
-        for (uint i = 0; i < _chfSynths.length; i++) {
-            chfSynths[_chfSynths[i]] = true;
-        }
-        for (uint i = 0; i < _audSynths.length; i++) {
-            audSynths[_audSynths[i]] = true;
-        }
-        for (uint i = 0; i < _jpySynths.length; i++) {
-            jpySynths[_jpySynths[i]] = true;
-        }
-        for (uint i = 0; i < _krwSynths.length; i++) {
-            krwSynths[_krwSynths[i]] = true;
+        return resolvedAddress;
+    }
+
+    function synthetixProxyTarget() public view returns (ISynthetix) {
+        return ISynthetix(getAddressByName("ProxyERC20"));
+    }
+
+    function exchangeRates() public view returns (IExchangeRates) {
+        return IExchangeRates(getAddressByName("ExchangeRates"));
+    }
+
+    function synthsAddresses()
+        external
+        view
+        returns (address[] memory _synthsAddresses)
+    {
+        ISynthetix synthetix = synthetixProxyTarget();
+        uint256 availableSynthCount = synthetix.availableSynthCount();
+        _synthsAddresses = new address[](availableSynthCount);
+        for (uint256 synthIdx; synthIdx < availableSynthCount; synthIdx++) {
+            _synthsAddresses[synthIdx] = synthetix.availableSynths(synthIdx);
         }
     }
 
-    function setEurSynth(address synthAddress, bool isSynth) public onlyOwner {
-        eurSynths[synthAddress] = isSynth;
+    function targetAddressByProxyAddress(address contractAddress)
+        public
+        view
+        returns (address)
+    {
+        try ISynth(contractAddress).target() returns (address targetAddress) {
+            return targetAddress;
+        } catch {
+            return address(0);
+        }
     }
 
-    function setGbpSynth(address synthAddress, bool isSynth) public onlyOwner {
-        gbpSynths[synthAddress] = isSynth;
+    function isSynth(address tokenAddress) external view returns (bool) {
+        address targetAddress = targetAddressByProxyAddress(tokenAddress);
+        if (targetAddress == address(0)) {
+            return false;
+        }
+        ISynthetix synthetix = synthetixProxyTarget();
+        uint256 availableSynthCount = synthetix.availableSynthCount();
+        for (uint256 synthIdx; synthIdx < availableSynthCount; synthIdx++) {
+            address synthAddress = synthetix.availableSynths(synthIdx);
+            if (targetAddress == synthAddress) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    function setChfSynth(address synthAddress, bool isSynth) public onlyOwner {
-        chfSynths[synthAddress] = isSynth;
-    }
-
-    function setAudSynth(address synthAddress, bool isSynth) public onlyOwner {
-        audSynths[synthAddress] = isSynth;
-    }
-
-    function setJpySynth(address synthAddress, bool isSynth) public onlyOwner {
-        jpySynths[synthAddress] = isSynth;
-    }
-
-    function setKrwSynth(address synthAddress, bool isSynth) public onlyOwner {
-        krwSynths[synthAddress] = isSynth;
-    }
-
-    function getEurPrice() public view returns (int256) {
-        (,int price,,,) = eurChainlinkFeed.latestRoundData();
-        return price;
-    }
-
-    function getGbpPrice() public view returns (int256) {
-        (,int price,,,) = gbpChainlinkFeed.latestRoundData();
-        return price;
-    }
-
-    function getChfPrice() public view returns (int256) {
-        (,int price,,,) = chfChainlinkFeed.latestRoundData();
-        return price;
-    }
-
-    function getAudPrice() public view returns (int256) {
-        (,int price,,,) = audChainlinkFeed.latestRoundData();
-        return price;
-    }
-
-    function getJpyPrice() public view returns (int256) {
-        (,int price,,,) = jpyChainlinkFeed.latestRoundData();
-        return price;
-    }
-
-    function getKrwPrice() public view returns (int256) {
-        (,int price,,,) = krwChainlinkFeed.latestRoundData();
-        return price;
-    }
-
-    function getPriceUsdc(address tokenAddress) public view returns (int256) {
-        int256 price;
-
-        if (eurSynths[tokenAddress]) {
-            price = getEurPrice();
-        } else if (gbpSynths[tokenAddress]) {
-            price = getGbpPrice();
-        } else if (chfSynths[tokenAddress]) {
-            price = getChfPrice();
-        } else if (audSynths[tokenAddress]) {
-            price = getAudPrice();
-        } else if (jpySynths[tokenAddress]) {
-            price = getJpyPrice();
-        } else if (krwSynths[tokenAddress]) {
-            price = getKrwPrice();
-        } else {
+    function currencyKeyByTokenAddress(address tokenAddress)
+        public
+        view
+        returns (bytes32)
+    {
+        address targetAddress = targetAddressByProxyAddress(tokenAddress);
+        if (targetAddress == address(0)) {
             revert("token not a synth");
         }
+        return ISynthTarget(targetAddress).currencyKey();
+    }
 
-        return price / 10 ** 2;
+    function getPriceUsdc(address tokenAddress)
+        external
+        view
+        returns (uint256)
+    {
+        bytes32 currencyKey = currencyKeyByTokenAddress(tokenAddress);
+        bytes32[] memory currenciesKeys = new bytes32[](1);
+        currenciesKeys[0] = currencyKey;
+        uint256[] memory rates = exchangeRates().ratesForCurrencies(
+            currenciesKeys
+        );
+        return rates[0] / 10**12;
     }
 }
