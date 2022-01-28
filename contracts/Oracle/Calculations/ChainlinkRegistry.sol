@@ -22,8 +22,8 @@ contract CalculationsChainlinkRegistry is Ownable {
 
     function setTokenFeeds(TokenFeedData[] memory tokenFeedData) external onlyOwner {
         for (uint256 idx; idx < tokenFeedData.length; idx++) {
-            TokenFeedData memory tokenFeedData = tokenFeedData[idx];
-            tokenToFeed[tokenFeedData.token] = tokenFeedData.feed;
+            TokenFeedData memory tokenFeedDatum = tokenFeedData[idx];
+            tokenToFeed[tokenFeedDatum.token] = tokenFeedDatum.feed;
         }
     }
 
