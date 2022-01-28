@@ -417,5 +417,5 @@ def chad(accounts):
 
 
 @pytest.fixture
-def rando(accounts):
+def rando():
     yield Account.create().address
