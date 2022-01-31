@@ -1,3 +1,4 @@
+# Brownie
 __pycache__
 .history
 .hypothesis/
@@ -6,3 +7,7 @@ build/
 reports/
 .DS_Store
 .python-version
+.pytest_cache
+
+# Node/npm
+node_modules/
