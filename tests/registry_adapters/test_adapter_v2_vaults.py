@@ -1,7 +1,7 @@
 import pytest
 import brownie
-from brownie import interface, Contract, ZERO_ADDRESS
-from operator import itemgetter
+from brownie import interface, ZERO_ADDRESS
+
 
 yfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
 yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
@@ -19,12 +19,10 @@ zapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 @pytest.fixture
 def v2VaultsAdapter(
     RegisteryAdapterV2Vault,
-    managementList,
     v2AddressesGenerator,
     oracle,
     helper,
     management,
-    v2VaultsTvlAdapter,
 ):
     trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
     positionSpenderAddresses = [trustedMigratorAddress]
@@ -41,7 +39,7 @@ def v2VaultsAdapter(
 
 
 def test_interface(
-    v2VaultsAdapter, introspection, management, registryAdapterCommonInterface
+    v2VaultsAdapter, introspection, registryAdapterCommonInterface
 ):
     for method in registryAdapterCommonInterface:
         methodImplemented = introspection.implementsMethod(v2VaultsAdapter, method)
@@ -123,7 +121,7 @@ def test_asset_static(v2VaultsAdapter):
     assert decimals == 6
 
 
-def test_asset_dynamic(v2VaultsAdapter, oracle, management):
+def test_asset_dynamic(v2VaultsAdapter, oracle):
     assetDynamic = v2VaultsAdapter.assetDynamic(v2UsdcVaultV1Address)
     assetId = assetDynamic[0]
     typeId = assetDynamic[1]
@@ -195,7 +193,7 @@ def test_assets_dynamic(v2VaultsAdapter):
     # print(assets)
 
 
-def test_asset_positions_of(v2VaultsAdapter, oracle, management, accounts):
+def test_asset_positions_of(v2VaultsAdapter, oracle, accounts):
     # Deposit into YFI vault
     yfiAccount = accounts.at(vestedYfiAddress, force=True)
     yfi = interface.IERC20(yfiAddress)

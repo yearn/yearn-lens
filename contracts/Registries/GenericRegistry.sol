@@ -2,27 +2,20 @@
 
 pragma solidity ^0.8.2;
 
-import "../Utilities/Manageable.sol";
+import "../Utilities/Ownable.sol";
 
-contract GenericRegistry is Manageable {
+contract GenericRegistry is Ownable {
     mapping(uint256 => address) private _assets;
     uint256 public numAssets;
     mapping(address => uint256) private isRegistered;
 
-    constructor(
-        address _managementListAddress,
-        address[] memory _initialAddresses
-    ) Manageable(_managementListAddress) {
-        require(
-            _managementListAddress != address(0),
-            "Missing management list address"
-        );
+    constructor(address[] memory _initialAddresses) {
         if (_initialAddresses.length > 0) {
             addAssets(_initialAddresses);
         }
     }
 
-    function addAsset(address assetAddress) public onlyManagers {
+    function addAsset(address assetAddress) public onlyOwner {
         if (isRegistered[assetAddress] == 0) {
             numAssets += 1;
             _assets[numAssets] = assetAddress;
@@ -30,14 +23,14 @@ contract GenericRegistry is Manageable {
         }
     }
 
-    function addAssets(address[] memory assetAddresses) public onlyManagers {
+    function addAssets(address[] memory assetAddresses) public onlyOwner {
         for (uint256 i = 0; i < assetAddresses.length; i++) {
             address assetAddress = assetAddresses[i];
             addAsset(assetAddress);
         }
     }
 
-    function removeAsset(address assetAddress) external onlyManagers {
+    function removeAsset(address assetAddress) external onlyOwner {
         if (isRegistered[assetAddress] != 0) {
             uint256 registryIndex = isRegistered[assetAddress];
             delete _assets[registryIndex];

@@ -1,6 +1,5 @@
 import pytest
-import brownie
-from brownie import interface, ZERO_ADDRESS
+from brownie import interface
 from operator import itemgetter
 
 yDaiV2Address = "0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01"
@@ -12,7 +11,6 @@ def earnTvlAdapter(
     TvlAdapterEarn,
     earnAddressesGenerator,
     delegationMapping,
-    managementList,
     oracle,
     management,
 ):

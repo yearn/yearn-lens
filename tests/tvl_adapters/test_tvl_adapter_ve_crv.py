@@ -1,12 +1,11 @@
 import pytest
-import brownie
-from brownie import interface, ZERO_ADDRESS
+from brownie import interface
 from operator import itemgetter
 
 
 @pytest.fixture
 def veCrvTvlAdapter(
-    TvlAdapterVeCrv, managementList, oracle, management,
+    TvlAdapterVeCrv, oracle, management,
 ):
     return TvlAdapterVeCrv.deploy(oracle, {"from": management},)
 
@@ -18,7 +17,7 @@ def test_generator_info(veCrvTvlAdapter):
     assert adapterInfo[2] == "SPECIAL"
 
 
-def test_asset_tvl_usdc(veCrvTvlAdapter, management):
+def test_asset_tvl_usdc(veCrvTvlAdapter):
     assetsAddresses = veCrvTvlAdapter.assetsAddresses()
     print(
         "acab",
@@ -51,7 +50,7 @@ def test_asset_tvl_usdc(veCrvTvlAdapter, management):
     print("Total tvl", totalTvl)
 
 
-def test_asset_tvl(veCrvTvlAdapter, management):
+def test_asset_tvl(veCrvTvlAdapter):
     assetsAddresses = veCrvTvlAdapter.assetsAddresses()
     # for address in assetsAddresses:
     #     tvl = veCrvTvlAdapter.assetTvlUsdc(address) / 10 ** 12

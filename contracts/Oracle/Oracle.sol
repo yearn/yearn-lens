@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.2;
 
-import "../Utilities/Manageable.sol";
+import "../Utilities/Ownable.sol";
 
 interface IERC20 {
     function decimals() external view returns (uint8);
 }
 
-contract Oracle is Manageable {
+contract Oracle is Ownable {
     address[] private _calculations;
     address public usdcAddress;
     mapping(address => address) public tokenAliases;
@@ -20,9 +20,7 @@ contract Oracle is Manageable {
         address tokenAliasAddress;
     }
 
-    constructor(address _managementListAddress, address _usdcAddress)
-        Manageable(_managementListAddress)
-    {
+    constructor(address _usdcAddress) {
         usdcAddress = _usdcAddress;
     }
 
@@ -33,7 +31,7 @@ contract Oracle is Manageable {
      */
     function setCalculations(address[] memory calculationAddresses)
         external
-        onlyManagers
+        onlyOwner
     {
         _calculations = calculationAddresses;
     }
@@ -44,7 +42,7 @@ contract Oracle is Manageable {
 
     function addTokenAlias(address tokenAddress, address tokenAliasAddress)
         public
-        onlyManagers
+        onlyOwner
     {
         tokenAliases[tokenAddress] = tokenAliasAddress;
         emit TokenAliasAdded(tokenAddress, tokenAliasAddress);
@@ -52,7 +50,7 @@ contract Oracle is Manageable {
 
     function addTokenAliases(TokenAlias[] memory _tokenAliases)
         public
-        onlyManagers
+        onlyOwner
     {
         for (uint256 i = 0; i < _tokenAliases.length; i++) {
             addTokenAlias(
@@ -62,7 +60,7 @@ contract Oracle is Manageable {
         }
     }
 
-    function removeTokenAlias(address tokenAddress) public onlyManagers {
+    function removeTokenAlias(address tokenAddress) public onlyOwner {
         delete tokenAliases[tokenAddress];
         emit TokenAliasRemoved(tokenAddress);
     }
@@ -120,6 +118,7 @@ contract Oracle is Manageable {
             return abi.decode(data, (uint256));
         }
         return 0;
+
     }
 
     /**
