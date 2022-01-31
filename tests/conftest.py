@@ -16,6 +16,11 @@ yearnAddressesProviderAddress = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
 curveAddressProviderAddress = "0x0000000022D53366457F9d5E68Ec105046FC4383"
 
 
+@pytest.fixture(scope="function", autouse=True)
+def shared_setup(fn_isolation):
+  pass
+
+
 @pytest.fixture
 def gov(accounts):
     yield accounts.at(web3.ens.resolve("ychad.eth"), force=True)
