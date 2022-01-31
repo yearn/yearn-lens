@@ -1,12 +1,8 @@
 name: Test
 
 on:
-  # disabled before linting PR comes in
-  # push:
-  #   branches:
-  #     - master
-  #     - develop
-  # pull_request:
+  push:
+    branches: master
   workflow_dispatch:
 
 env:

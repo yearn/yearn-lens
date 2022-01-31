@@ -10,7 +10,7 @@ sushiswapFactoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
 curveRegistryAddress = "0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c"
 unitrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
 usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-crvAddress =  "0xD533a949740bb3306d119CC777fa900bA034cd52"
+crvAddress = "0xD533a949740bb3306d119CC777fa900bA034cd52"
 
 yearnAddressesProviderAddress = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
 curveAddressProviderAddress = "0x0000000022D53366457F9d5E68Ec105046FC4383"
@@ -18,7 +18,7 @@ curveAddressProviderAddress = "0x0000000022D53366457F9d5E68Ec105046FC4383"
 
 @pytest.fixture(scope="function", autouse=True)
 def shared_setup(fn_isolation):
-  pass
+    pass
 
 
 @pytest.fixture
@@ -28,8 +28,9 @@ def gov(accounts):
 
 @pytest.fixture
 def yearnAddressesProvider():
-    #return Contract(yearnAddressesProviderAddress)
+    # return Contract(yearnAddressesProviderAddress)
     return Contract.from_explorer(yearnAddressesProviderAddress)
+
 
 @pytest.fixture
 def registryAdapterCommonInterface():
@@ -66,12 +67,14 @@ def registryAdapterCommonInterface():
 def introspection(Introspection, management):
     return Introspection.deploy({"from": management})
 
+
 @pytest.fixture(autouse=True)
 def strings(String, management):
     return String.deploy({"from": management})
 
+
 @pytest.fixture
-def pricesHelper(PricesHelper, management,  oracle):
+def pricesHelper(PricesHelper, management, oracle):
     return PricesHelper.deploy(oracle, {"from": management})
 
 
@@ -81,9 +84,7 @@ def delegationMapping(DelegatedBalanceMapping, management):
 
 
 @pytest.fixture
-def v2AddressesGenerator(
-    AddressesGeneratorV2Vaults, management
-):
+def v2AddressesGenerator(AddressesGeneratorV2Vaults, management):
     v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
     generator = AddressesGeneratorV2Vaults.deploy(
         v2RegistryAddress, {"from": management}
@@ -144,7 +145,9 @@ def helperInternal(Helper, management):
 
 
 @pytest.fixture
-def strategiesHelper(StrategiesHelper, v2AddressesGenerator, addressMergeHelper, oracle, management):
+def strategiesHelper(
+    StrategiesHelper, v2AddressesGenerator, addressMergeHelper, oracle, management
+):
     return StrategiesHelper.deploy(
         v2AddressesGenerator, addressMergeHelper, oracle, {"from": management}
     )
@@ -183,13 +186,18 @@ def calculationsSushiswap(CalculationsSushiswap, management):
     )
     return calculationsSushiswap
 
+
 @pytest.fixture
 def calculationsFixedforex(CalculationsFixedForex, management):
-    return CalculationsFixedForex.deploy(yearnAddressesProviderAddress, {"from": management})
+    return CalculationsFixedForex.deploy(
+        yearnAddressesProviderAddress, {"from": management}
+    )
+
 
 @pytest.fixture
 def synth_calculations(CalculationsSynth, management):
     return CalculationsSynth.deploy(yearnAddressesProviderAddress, {"from": management})
+
 
 @pytest.fixture
 def curve_calculations(CalculationsCurve, management):
@@ -198,25 +206,30 @@ def curve_calculations(CalculationsCurve, management):
     )
     return calculations_curve
 
+
 @pytest.fixture
 def calculationsOverrides(CalculationsOverrides, management):
-    return CalculationsOverrides.deploy(yearnAddressesProviderAddress, {"from": management})
+    return CalculationsOverrides.deploy(
+        yearnAddressesProviderAddress, {"from": management}
+    )
+
 
 @pytest.fixture
 def chainlink_calculations(CalculationsChainlink, management):
     chainlink_calculations = CalculationsChainlink.deploy({"from": management})
     return chainlink_calculations
 
+
 @pytest.fixture
 def calculationsIronBank(CalculationsIronBank, management):
     calculations = CalculationsIronBank.deploy(
         yearnAddressesProviderAddress, {"from": management}
     )
-    calculations.addUnitrollers([
-        "UNITROLLER_IRON_BANK",
-        "UNITROLLER_COMPOUND"
-    ], {"from": management})
+    calculations.addUnitrollers(
+        ["UNITROLLER_IRON_BANK", "UNITROLLER_COMPOUND"], {"from": management}
+    )
     return calculations
+
 
 @pytest.fixture
 def oracle(
@@ -228,7 +241,7 @@ def oracle(
     calculationsIronBank,
     CalculationsYearnVaults,
     calculationsOverrides,
-    chainlink_calculations
+    chainlink_calculations,
 ):
 
     unitrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
@@ -262,7 +275,9 @@ def oracle(
         {"from": management},
     )
 
-    calculationsYearnVaults = CalculationsYearnVaults.deploy(oracle, {"from": management})
+    calculationsYearnVaults = CalculationsYearnVaults.deploy(
+        oracle, {"from": management}
+    )
 
     oracle.setCalculations(
         [
@@ -272,7 +287,7 @@ def oracle(
             calculationsYearnVaults,
             calculationsIronBank,
             synth_calculations,
-            calculationsSushiswap
+            calculationsSushiswap,
         ],
         {"from": management},
     )
@@ -392,11 +407,7 @@ def earnAdapter(RegistryAdapterEarn, earnRegistry, management, oracle):
 
 @pytest.fixture
 def v2VaultsAdapter(
-    RegisteryAdapterV2Vault,
-    v2AddressesGenerator,
-    oracle,
-    helperInternal,
-    management
+    RegisteryAdapterV2Vault, v2AddressesGenerator, oracle, helperInternal, management
 ):
     return RegisteryAdapterV2Vault.deploy(
         oracle,

@@ -1,12 +1,10 @@
 name: Lint
 
 on:
-  # disabled before linting PR comes in
-  # push:
-  #   branches:
-  #     - master
-  #     - develop
-  # pull_request:
+  push:
+    branches: master
+  pull_request:
+    branches: master
   workflow_dispatch:
 
 env:

@@ -14,7 +14,30 @@
 
 This mix is configured for use with [Ganache](https://github.com/trufflesuite/ganache-cli) on a [forked mainnet](https://eth-brownie.readthedocs.io/en/stable/network-management.html#using-a-forked-development-network).
 
-## Basic Use
+# Basic Use
+
+## Installing dependencies
+
+```bash
+yarn install
+pip3 install -r requirements-dev.txt
+```
+
+## Running linting
+
+#### Solidity linting
+
+```bash
+yarn lint:check
+yarn lint
+```
+
+#### Python tests linting
+
+```bash
+yarn lint:tests-check
+yarn lint:tests
+```
 
 ## Tests
 

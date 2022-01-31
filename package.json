@@ -11,7 +11,9 @@
   "scripts": {
     "lint": "pretty-quick --pattern '**/*.*(sol|json)' --verbose",
     "lint:check": "prettier --check **/*.sol **/*.json",
-    "lint:fix": "pretty-quick --pattern '**/*.*(sol|json)' --staged --verbose"
+    "lint:fix": "pretty-quick --pattern '**/*.*(sol|json)' --staged --verbose",
+    "lint:tests-check": "black --check --include \"(tests|scripts)\" .",
+    "lint:tests": "black --include \"(tests|scripts)\" ."
   },
   "husky": {
     "hooks": {

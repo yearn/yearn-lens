@@ -15,7 +15,10 @@ def earnTvlAdapter(
     management,
 ):
     return TvlAdapterEarn.deploy(
-        oracle, earnAddressesGenerator, delegationMapping, {"from": management},
+        oracle,
+        earnAddressesGenerator,
+        delegationMapping,
+        {"from": management},
     )
 
 

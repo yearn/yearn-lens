@@ -198,4 +198,3 @@
 #         earnAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": rando})
 #     earnAdapter.setPositionSpenderAddresses([ethZapAddress], {"from": management})
 #     assert earnAdapter.positionSpenderAddresses(0) == ethZapAddress
-
