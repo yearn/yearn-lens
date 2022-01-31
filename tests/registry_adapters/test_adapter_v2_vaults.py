@@ -10,8 +10,7 @@ v2UsdcVaultV1Address = "0xe2F6b9773BF3A015E2aA70741Bde1498bdB9425b"
 v2UsdcVaultV2Address = "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9"
 ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 v2YfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
-vestedYfiAddress = "0x42A28ADDC15E627d19e780c89043b4B1d3629D34"
-yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
+vestedYfiAddress = "0x34dDFC06ce0c39242Fb380066Ee01e409a4a525e"
 trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
 zapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 
@@ -177,7 +176,7 @@ def test_assets_static(v2VaultsAdapter):
 
 
 def test_assets_dynamic(v2VaultsAdapter):
-    assets = v2VaultsAdapter.assetsDynamic()
+    assets = v2VaultsAdapter.assetsDynamic([v2YfiVaultAddress, v2UsdcVaultV2Address])
     assert len(assets) > 1
     firstAsset = assets[0]
     assetId = firstAsset[0]
@@ -190,16 +189,27 @@ def test_assets_dynamic(v2VaultsAdapter):
     assert assetTokenId == yfiAddress
     assert assetUnderlyingTokenBalance[0] > 0
     assert assetUnderlyingTokenBalance[1] > 0
+    secondAsset = assets[1]
+    assetId = secondAsset[0]
+    assetTypeId = secondAsset[1]
+    assetTokenId = secondAsset[2]
+    assetUnderlyingTokenBalance = secondAsset[3]
+    assetMetadata = secondAsset[4]
+    assert assetId == v2UsdcVaultV2Address
+    assert assetTypeId == "VAULT_V2"
+    assert assetTokenId == usdcAddress
+    assert assetUnderlyingTokenBalance[0] > 0
+    assert assetUnderlyingTokenBalance[1] > 0
     # print(assets)
 
 
 def test_asset_positions_of(v2VaultsAdapter, oracle, accounts):
     # Deposit into YFI vault
     yfiAccount = accounts.at(vestedYfiAddress, force=True)
-    yfi = interface.IERC20(yfiAddress)
+    yfi = Contract.from_explorer(yfiAddress)
     yfi.approve(v2YfiVaultAddress, 2 ** 256 - 1, {"from": vestedYfiAddress})
     yfiVault = interface.IV2Vault(v2YfiVaultAddress)
-    yfiVault.deposit(1 * 10 ** 18, {"from": yfiAccount})
+    # yfiVault.deposit(0.5 * 10 ** 18, {"from": yfiAccount})
     yfiVault.approve(trustedMigratorAddress, 100, {"from": vestedYfiAddress})
     pricePerShare = yfiVault.pricePerShare()
     decimals = yfiVault.decimals()
@@ -247,8 +257,6 @@ def test_asset_positions_of(v2VaultsAdapter, oracle, accounts):
     assert allowance == 100
 
     # Test assetPositionOf
-    positions = v2VaultsAdapter.adapterPositionOf(vestedYfiAddress)
-    assert positions[0] > 0
 
 
 def test_assets_positions_of(v2VaultsAdapter, oracle, accounts):
@@ -257,7 +265,7 @@ def test_assets_positions_of(v2VaultsAdapter, oracle, accounts):
     yfi = interface.IERC20(yfiAddress)
     yfi.approve(v2YfiVaultAddress, 2 ** 256 - 1, {"from": vestedYfiAddress})
     yfiVault = interface.IV2Vault(v2YfiVaultAddress)
-    yfiVault.deposit(1 * 10 ** 18, {"from": yfiAccount})
+    # yfiVault.deposit(1 * 10 ** 18, {"from": yfiAccount})
     yfiVault.approve(trustedMigratorAddress, 100, {"from": vestedYfiAddress})
     pricePerShare = yfiVault.pricePerShare()
     decimals = yfiVault.decimals()
@@ -265,13 +273,6 @@ def test_assets_positions_of(v2VaultsAdapter, oracle, accounts):
     userVaultBalance = userVaultBalanceShares * pricePerShare / 10 ** decimals
     userVaultBalanceUsdc = oracle.getNormalizedValueUsdc(yfiAddress, userVaultBalance)
     assert userVaultBalanceShares > 0
-
-    # Test positionsOf(address)
-    positions = v2VaultsAdapter.assetsPositionsOf(vestedYfiAddress)
-    position = positions[0]
-    assetId = position[0]
-    assert len(positions) > 0
-    assert assetId == v2YfiVaultAddress
 
     # Test positionsOf(address, [...address])
     positions = v2VaultsAdapter.assetsPositionsOf(
