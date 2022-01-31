@@ -27,12 +27,9 @@ def gov(accounts):
 
 
 @pytest.fixture
-def managementList(ManagementList, management):
-    return ManagementList.deploy("Managemenet list", {"from": management})
-
-@pytest.fixture
 def yearnAddressesProvider():
-    return Contract(yearnAddressesProviderAddress)
+    #return Contract(yearnAddressesProviderAddress)
+    return Contract.from_explorer(yearnAddressesProviderAddress)
 
 @pytest.fixture
 def registryAdapterCommonInterface():
@@ -79,17 +76,17 @@ def pricesHelper(PricesHelper, management,  oracle):
 
 
 @pytest.fixture
-def delegationMapping(DelegatedBalanceMapping, management, managementList):
-    return DelegatedBalanceMapping.deploy(managementList, {"from": management})
+def delegationMapping(DelegatedBalanceMapping, management):
+    return DelegatedBalanceMapping.deploy({"from": management})
 
 
 @pytest.fixture
 def v2AddressesGenerator(
-    AddressesGeneratorV2Vaults, management, managementList, oracle
+    AddressesGeneratorV2Vaults, management
 ):
     v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
     generator = AddressesGeneratorV2Vaults.deploy(
-        v2RegistryAddress, managementList, {"from": management}
+        v2RegistryAddress, {"from": management}
     )
     trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
     positionSpenderAddresses = [trustedMigratorAddress]
@@ -104,7 +101,6 @@ def ironBankTvlAdapter(
     TvlAdapterIronBank,
     ironBankAddressesGenerator,
     delegationMapping,
-    managementList,
     oracle,
     management,
 ):
@@ -120,7 +116,6 @@ def ironBankTvlAdapter(
 def v2VaultsTvlAdapter(
     TvlAdapterV2Vaults,
     v2VaultsAddressesGenerator,
-    managementList,
     oracle,
     helperInternal,
     management,
@@ -144,8 +139,8 @@ def addressMergeHelper(AddressMergeHelper, management):
 
 
 @pytest.fixture
-def helperInternal(Helper, managementList, management):
-    return Helper.deploy(managementList, {"from": management})
+def helperInternal(Helper, management):
+    return Helper.deploy({"from": management})
 
 
 @pytest.fixture
@@ -159,8 +154,6 @@ def strategiesHelper(StrategiesHelper, v2AddressesGenerator, addressMergeHelper,
 def helper(
     helperInternal,
     management,
-    managementList,
-    oracle,
     allowancesHelper,
     pricesHelper,
     addressMergeHelper,
@@ -229,7 +222,6 @@ def calculationsIronBank(CalculationsIronBank, management):
 def oracle(
     Oracle,
     management,
-    managementList,
     calculationsSushiswap,
     synth_calculations,
     curve_calculations,
@@ -256,7 +248,7 @@ def oracle(
 
     # return Oracle.at("0x83d95e0d5f402511db06817aff3f9ea88224b030")
 
-    oracle = Oracle.deploy(managementList, usdcAddress, {"from": management})
+    oracle = Oracle.deploy(usdcAddress, {"from": management})
 
     oracle.addTokenAliases(
         [
@@ -327,7 +319,6 @@ def v1VaultTvlAdapter(
     TvlAdapterV1Vaults,
     v1VaultsAddressesGenerator,
     delegationMapping,
-    managementList,
     oracle,
     management,
 ):
@@ -342,13 +333,11 @@ def v1VaultTvlAdapter(
 @pytest.fixture
 def v2VaultsAddressesGenerator(
     AddressesGeneratorV2Vaults,
-    managementList,
     management,
 ):
     registryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
     return AddressesGeneratorV2Vaults.deploy(
         registryAddress,
-        managementList,
         {"from": management},
     )
 
@@ -356,13 +345,11 @@ def v2VaultsAddressesGenerator(
 @pytest.fixture
 def v1VaultsAddressesGenerator(
     AddressesGeneratorV1Vaults,
-    managementList,
     management,
 ):
     registryAddress = "0x3eE41C098f9666ed2eA246f4D2558010e59d63A0"
     return AddressesGeneratorV1Vaults.deploy(
         registryAddress,
-        managementList,
         {"from": management},
     )
 
@@ -370,13 +357,11 @@ def v1VaultsAddressesGenerator(
 @pytest.fixture
 def ironBankAddressesGenerator(
     AddressesGeneratorIronBank,
-    managementList,
     management,
 ):
     registryAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
     generator = AddressesGeneratorIronBank.deploy(
         registryAddress,
-        managementList,
         {"from": management},
     )
     cySusdOldAddress = "0x4e3a36A633f63aee0aB57b5054EC78867CB3C0b8"
@@ -387,27 +372,20 @@ def ironBankAddressesGenerator(
 @pytest.fixture
 def earnAddressesGenerator(
     AddressesGeneratorEarn,
-    managementList,
     management,
 ):
     registryAddress = "0x62a4e0E7574E5407656A65CC8DbDf70f3C6EB04B"
     return AddressesGeneratorEarn.deploy(
         registryAddress,
-        managementList,
         {"from": management},
     )
 
 
 @pytest.fixture
-def earnAdapter(RegistryAdapterEarn, earnRegistry, management, managementList, oracle):
+def earnAdapter(RegistryAdapterEarn, earnRegistry, management, oracle):
     trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
     positionSpenderAddresses = [trustedMigratorAddress]
-    adapter = RegistryAdapterEarn.deploy(
-        earnRegistry,
-        oracle,
-        managementList,
-        {"from": management},
-    )
+    adapter = RegistryAdapterEarn.deploy(earnRegistry, oracle, {"from": management})
     adapter.setPositionSpenderAddresses(positionSpenderAddresses, {"from": management})
     return adapter
 
@@ -418,8 +396,7 @@ def v2VaultsAdapter(
     v2AddressesGenerator,
     oracle,
     helperInternal,
-    management,
-    v2VaultsTvlAdapter,
+    management
 ):
     return RegisteryAdapterV2Vault.deploy(
         oracle,
@@ -445,5 +422,5 @@ def chad(accounts):
 
 
 @pytest.fixture
-def rando(accounts):
+def rando():
     yield Account.create().address

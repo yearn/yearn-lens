@@ -1,8 +1,4 @@
-from unicodedata import decimal
 import pytest
-import brownie
-from operator import itemgetter
-
 from brownie import interface, ZERO_ADDRESS, Contract
 
 
@@ -24,10 +20,6 @@ cyYfiAddress = "0xFa3472f7319477c9bFEcdD66E4B948569E7621b9"
 @pytest.fixture
 def ironBankAdapter(
     RegistryAdapterIronBank,
-    oracle,
-    managementList,
-    helper,
-    ironBankAddressesGenerator,
     ironBankTvlAdapter,
     yearnAddressesProvider,
     gov,

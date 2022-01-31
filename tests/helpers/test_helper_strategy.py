@@ -1,11 +1,6 @@
 import pytest
-import brownie
-
-from web3 import Web3
-from brownie import Contract, interface
 
 yfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
-
 
 @pytest.fixture
 def v2VaultsAdapter(RegisteryAdapterV2Vault, managementList, oracle, management):
@@ -59,3 +54,4 @@ def test_asset_strategies(strategyHelper, management):
 def test_assets_strategies(strategyHelper, management):
     strategies = strategyHelper.assetsStrategies()
     assert len(strategies) > 0
+

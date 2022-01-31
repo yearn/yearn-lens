@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.2;
 
-import "../Utilities/Manageable.sol";
+import "../Utilities/Ownable.sol";
 
 /*******************************************************
  *                       Interfaces                    *
@@ -16,7 +16,7 @@ interface IEarnRegistry {
 /*******************************************************
  *                    Generator Logic                  *
  *******************************************************/
-contract AddressesGeneratorEarn is Manageable {
+contract AddressesGeneratorEarn is Ownable {
     mapping(address => bool) public assetDeprecated; // Support for deprecating assets. If an asset is deprecated it will not appear is results
     uint256 public numberOfDeprecatedAssets; // Used to keep track of the number of deprecated assets for an adapter
     address[] public positionSpenderAddresses; // A settable list of spender addresses with which to fetch asset allowances
@@ -34,13 +34,7 @@ contract AddressesGeneratorEarn is Manageable {
     /**
      * Configure generator
      */
-    constructor(address _registryAddress, address _managementListAddress)
-        Manageable(_managementListAddress)
-    {
-        require(
-            _managementListAddress != address(0),
-            "Missing management list address"
-        );
+    constructor(address _registryAddress) {
         require(_registryAddress != address(0), "Missing registry address");
         registry = IEarnRegistry(_registryAddress);
     }
@@ -50,7 +44,7 @@ contract AddressesGeneratorEarn is Manageable {
      */
     function setAssetDeprecated(address assetAddress, bool newDeprecationStatus)
         public
-        onlyManagers
+        onlyOwner
     {
         bool currentDeprecationStatus = assetDeprecated[assetAddress];
         if (currentDeprecationStatus == newDeprecationStatus) {
@@ -69,7 +63,7 @@ contract AddressesGeneratorEarn is Manageable {
      */
     function setPositionSpenderAddresses(address[] memory addresses)
         public
-        onlyManagers
+        onlyOwner
     {
         positionSpenderAddresses = addresses;
     }
@@ -77,7 +71,7 @@ contract AddressesGeneratorEarn is Manageable {
     /**
      * Set registry address
      */
-    function setRegistryAddress(address _registryAddress) public onlyManagers {
+    function setRegistryAddress(address _registryAddress) public onlyOwner {
         require(_registryAddress != address(0), "Missing registry address");
         registry = IEarnRegistry(_registryAddress);
     }

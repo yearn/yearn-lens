@@ -48,14 +48,9 @@ def main():
     positionSpenderAddresses = [trustedMigratorAddress]
 
     ####################################################
-    # Management list
-    ####################################################
-    managementList = ManagementList.deploy("Managemenet list", {"from": management})
-
-    ####################################################
     # Oracle
     ####################################################
-    oracle = Oracle.deploy(managementList, usdcAddress, {"from": management})
+    oracle = Oracle.deploy(usdcAddress, {"from": management})
 
     oracle.addTokenAliases(
         [
@@ -96,13 +91,13 @@ def main():
     ####################################################
     # Helper utility
     ####################################################
-    helper = Helper.deploy(managementList, {"from": management})
+    helper = Helper.deploy({"from": management})
 
     ####################################################
     # Addresses generators
     ####################################################
     v2VaultsAddressesGenerator = AddressesGeneratorV2Vaults.deploy(
-        v2RegistryAddress, managementList, {"from": management}
+        v2RegistryAddress, {"from": management}
     )
 
     positionSpenderAddresses = [trustedMigratorAddress]
@@ -112,7 +107,6 @@ def main():
 
     ironBankAddressesGenerator = AddressesGeneratorIronBank.deploy(
         ironBankRegistryAddress,
-        managementList,
         {"from": management},
     )
     ironBankAddressesGenerator.setAssetDeprecated(
@@ -123,9 +117,7 @@ def main():
     ####################################################
     # Delegated balance mapping
     ####################################################
-    delegatedBalanceMapping = DelegatedBalanceMapping.deploy(
-        managementList, {"from": management}
-    )
+    delegatedBalanceMapping = DelegatedBalanceMapping.deploy({"from": management})
 
     ####################################################
     # TVL adapters
@@ -179,11 +171,6 @@ def main():
         ],
         {"from": management},
     )
-
-    print("Management list")
-    print("---------------")
-    print("Management List:         ", managementList)
-    print("")
 
     print("Oracle")
     print("------")

@@ -61,8 +61,7 @@
 //     constructor(
 //         address _registryAddress,
 //         address _oracleAddress,
-//         address _managementListAddress
-//     ) Adapter(_registryAddress, _oracleAddress, _managementListAddress) {}
+//     ) Adapter(_registryAddress, _oracleAddress) {}
 
 //     /**
 //      * Common code shared by v1 vaults, v2 vaults and earn
