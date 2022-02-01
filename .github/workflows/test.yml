@@ -61,7 +61,6 @@ jobs:
       - name: Compile Code
         run: brownie compile --size
 
-      # TODO: secrets to be added to the repository
       - name: Run Tests
         env:
           ETHERSCAN_TOKEN: ${{ secrets.ETHERSCAN_TOKEN }}

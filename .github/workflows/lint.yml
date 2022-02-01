@@ -58,7 +58,7 @@ jobs:
       - name: Run commitlint
         uses: wagoid/commitlint-github-action@v2
 
-  brownie:
+  black:
     runs-on: ubuntu-latest
 
     steps:

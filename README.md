@@ -19,8 +19,7 @@ This mix is configured for use with [Ganache](https://github.com/trufflesuite/ga
 ## Installing dependencies
 
 ```bash
-yarn install
-pip3 install -r requirements-dev.txt
+yarn requirements
 ```
 
 ## Running linting
