@@ -22,13 +22,17 @@ def shared_setup(fn_isolation):
 
 
 @pytest.fixture
+def managementList(ManagementList, management):
+    return ManagementList.deploy("Managemenet list", {"from": management})
+
+
+@pytest.fixture
 def gov(accounts):
     yield accounts.at(web3.ens.resolve("ychad.eth"), force=True)
 
 
 @pytest.fixture
 def yearnAddressesProvider():
-    # return Contract(yearnAddressesProviderAddress)
     return Contract.from_explorer(yearnAddressesProviderAddress)
 
 
