@@ -1,5 +1,5 @@
 import pytest
-from brownie import interface, ZERO_ADDRESS, Contract
+from brownie import ZERO_ADDRESS, Contract
 
 
 usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
@@ -32,9 +32,7 @@ def ironBankAdapter(
     return ironBankAdapter
 
 
-def test_interface(
-    ironBankAdapter, introspection, management, registryAdapterCommonInterface
-):
+def test_interface(ironBankAdapter, introspection,registryAdapterCommonInterface):
     for method in registryAdapterCommonInterface:
         methodImplemented = introspection.implementsMethod(
             ironBankAdapter, method)
@@ -48,9 +46,9 @@ def test_assets_tokens_addresses(ironBankAdapter):
     assert len(tokens) > 0
 
 
-def test_asset_user_metadata(ironBankAdapter, management, accounts, oracle):
+def test_asset_user_metadata(ironBankAdapter, accounts, oracle):
     sushi = Contract(sushiAddress)
-    cySushi = Contract(cySushiAddress)
+    cySushi = Contract.from_explorer(cySushiAddress)
     whale = accounts.at(whaleAddress, force=True)
     MAX_UINT256 = 2 ** 256 - 1
     sushi.approve(cySushi, MAX_UINT256, {"from": whale})
@@ -93,10 +91,10 @@ def test_asset_user_metadata(ironBankAdapter, management, accounts, oracle):
     assert asset_user_metadata[5] == borrowLimitUsdc
 
 
-def test_assets_user_metadata(ironBankAdapter, management, accounts, oracle):
+def test_assets_user_metadata(ironBankAdapter, accounts, oracle):
     # sushi and cySuchi
     sushi = Contract(sushiAddress)
-    cySushi = Contract(cySushiAddress)
+    cySushi = Contract.from_explorer(cySushiAddress)
     whale = accounts.at(whaleAddress, force=True)
     MAX_UINT256 = 2 ** 256 - 1
     sushi.approve(cySushi, MAX_UINT256, {"from": whale})
@@ -381,7 +379,7 @@ def test_assets_dynamic(ironBankAdapter):
     assert assetUnderlyingTokenBalance[1] > 0
 
 
-def test_asset_positions_of(ironBankAdapter, accounts, oracle):
+def test_asset_positions_of(ironBankAdapter, accounts):
 
     weth = Contract(wethAddress)
     cyWeth = Contract(cyWethAddress)
@@ -462,7 +460,7 @@ def test_asset_positions_of(ironBankAdapter, accounts, oracle):
     assert allowance > 0
 
 
-def test_assets_positions_of(ironBankAdapter, oracle, accounts):
+def test_assets_positions_of(ironBankAdapter):
     cyWeth = Contract(cyWethAddress)
 
     userSupplyBalanceShares = cyWeth.balanceOf(userAddress)
