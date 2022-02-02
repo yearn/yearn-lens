@@ -1,17 +1,14 @@
 import pytest
-import brownie
 
-from web3 import Web3
 from brownie import Contract, interface, accounts
 
 
-def test_set_helpers(BalancesHelper, PairsHelper, UniqueAddressesHelper, management):
-    unique = UniqueAddressesHelper.deploy({"from": accounts[0]})
+def test_set_helpers(BalancesHelper, iv2Registry):
     factoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
     routerAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
     oracleAddress = "0x83d95e0D5f402511dB06817Aff3f9eA88224B030"
-    usdcVaultAddress = "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9"
     usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    usdcVaultAddress = iv2Registry.latestVault(usdcAddress)
     crvAddress = "0xD533a949740bb3306d119CC777fa900bA034cd52"
     wbtcAddress = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
 

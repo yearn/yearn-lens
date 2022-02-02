@@ -1,7 +1,7 @@
 import pytest
 from brownie import Oracle
 from eth_account import Account
-from brownie import web3, Contract
+from brownie import web3, Contract, interface
 
 uniswapRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
 uniswapFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
@@ -15,6 +15,8 @@ crvAddress =  "0xD533a949740bb3306d119CC777fa900bA034cd52"
 yearnAddressesProviderAddress = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
 curveAddressProviderAddress = "0x0000000022D53366457F9d5E68Ec105046FC4383"
 
+v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
+
 
 @pytest.fixture(scope="function", autouse=True)
 def shared_setup(fn_isolation):
@@ -22,10 +24,12 @@ def shared_setup(fn_isolation):
 
 
 @pytest.fixture
-def v2VaultsGenerator(
-    AddressesGeneratorV2Vaults, management
-):
-    v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
+def iv2Registry():
+    return interface.IV2Registry(v2RegistryAddress)
+
+
+@pytest.fixture
+def v2VaultsGenerator(AddressesGeneratorV2Vaults, management):
     generator = AddressesGeneratorV2Vaults.deploy(
         v2RegistryAddress, {"from": management},
     )
