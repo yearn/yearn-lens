@@ -9,7 +9,6 @@
     "pretty-quick": "^3.1.3"
   },
   "scripts": {
-    "requirements": "yarn install --frozen-lockfile && pip install -r requirements-dev.txt",
     "lint": "pretty-quick --pattern '**/*.*(sol|json)' --verbose",
     "lint:check": "prettier --write **/*.sol **/*.json",
     "lint:fix": "pretty-quick --pattern '**/*.*(sol|json)' --staged --verbose",

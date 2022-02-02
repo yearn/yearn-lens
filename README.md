@@ -19,7 +19,8 @@ This mix is configured for use with [Ganache](https://github.com/trufflesuite/ga
 ## Installing dependencies
 
 ```bash
-yarn requirements
+yarn install --frozen-lockfile
+pip install -r requirements-dev.txt
 ```
 
 ## Running linting
