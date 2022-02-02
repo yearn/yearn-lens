@@ -22,6 +22,17 @@ def shared_setup(fn_isolation):
 
 
 @pytest.fixture
+def v2VaultsGenerator(
+    AddressesGeneratorV2Vaults, management
+):
+    v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
+    generator = AddressesGeneratorV2Vaults.deploy(
+        v2RegistryAddress, {"from": management},
+    )
+    return generator
+
+
+@pytest.fixture
 def managementList(ManagementList, management):
     return ManagementList.deploy("Managemenet list", {"from": management})
 
