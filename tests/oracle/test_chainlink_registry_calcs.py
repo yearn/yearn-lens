@@ -2,11 +2,11 @@ import brownie
 import pytest
 from brownie import ZERO_ADDRESS, chain
 
-YFI = "0x82e3A8F066a6989666b031d916c43672085b1582"
-YFI_USD_FEED = "0x745Ab5b69E01E2BE1104Ca84937Bb71f96f5fB21"
+YFI = "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e"
+YFI_USD_FEED = "0xa027702dbb89fbd58938e4324ac03b58d812b0e1"
 
 WETH = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
-WETH_USD_FEED = "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612"
+WETH_USD_FEED = "0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419"
 
 @pytest.fixture
 def calculations_chainlink_registry(CalculationsChainlinkRegistry, management):
