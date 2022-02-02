@@ -1,6 +1,6 @@
 import pytest
 import brownie
-from brownie import interface, ZERO_ADDRESS
+from brownie import interface, ZERO_ADDRESS, Contract
 
 
 yfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
