@@ -34,7 +34,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install ganache
-        run: npm install -g ${{ env.GANACHE_CLI_PACKAGE_NAME }}@${env.GANACHE_CLI_VERSION}
+        run: npm install -g ${{ env.GANACHE_CLI_PACKAGE_NAME }}@${{ env.GANACHE_CLI_VERSION }}
 
       - name: Set up python ${env.PYTHON_VERSION}
         uses: actions/setup-python@v2
