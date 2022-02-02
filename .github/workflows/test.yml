@@ -63,7 +63,7 @@ jobs:
       # removes defaults mainnet used by Brownie
       - name: Add brownie networks
         run: |
-          brownie networks remove 'mainnet'
+          brownie networks delete 'mainnet'
           brownie networks add 'Ethereum' 'mainnet' host='https://eth-mainnet.alchemyapi.io/v2/$ALCHEMY_SECRET_KEY' explorer='$EXPLORER_URL' chainid='1'
 
       - name: Compile Code
