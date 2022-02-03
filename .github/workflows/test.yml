@@ -66,7 +66,7 @@ jobs:
       - name: Add brownie networks
         run: |
           brownie networks delete 'mainnet'
-          brownie networks add 'Ethereum' 'mainnet' host='https://eth-mainnet.alchemyapi.io/v2/$ALCHEMY_SECRET_KEY' explorer='$EXPLORER_URL' chainid='1'
+          brownie networks add 'Ethereum' 'mainnet' host='https://eth-mainnet.alchemyapi.io/v2/$ALCHEMY_SECRET_KEY' explorer='${{ secrets.EXPLORER_URL }}' chainid='1'
 
       - name: Compile Code
         run: brownie compile --size
@@ -74,5 +74,5 @@ jobs:
       - name: Run Tests
         env:
           ALCHEMY_SECRET_KEY: ${{ secrets.ALCHEMY_SECRET_KEY }}
-          EXPLORER_URL: ${{ secrets.EXPLORER_URL }}
+          PY_COLORS: 1
         run: brownie test
