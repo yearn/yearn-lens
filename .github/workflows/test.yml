@@ -3,8 +3,10 @@ name: Test
 on:
   push:
     branches: master
-  pull_request:
-    branches: master
+  # PR test runs are disabled for now
+  # need to speed up + fix tests first
+  # pull_request_target:
+  #  branches: master
   workflow_dispatch:
 
 env:
