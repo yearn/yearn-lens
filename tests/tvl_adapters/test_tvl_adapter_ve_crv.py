@@ -5,9 +5,14 @@ from operator import itemgetter
 
 @pytest.fixture
 def veCrvTvlAdapter(
-    TvlAdapterVeCrv, oracle, management,
+    TvlAdapterVeCrv,
+    oracle,
+    management,
 ):
-    return TvlAdapterVeCrv.deploy(oracle, {"from": management},)
+    return TvlAdapterVeCrv.deploy(
+        oracle,
+        {"from": management},
+    )
 
 
 def test_generator_info(veCrvTvlAdapter):

@@ -249,14 +249,13 @@ contract RegisteryAdapterV2Vault is Ownable {
         address[] memory assetAddresses = new address[](1);
         tokenAddresses[0] = tokenAddress;
         assetAddresses[0] = assetAddress;
-        bytes memory allowances =
-            abi.encode(
-                IHelper(helperAddress).allowances(
-                    accountAddress,
-                    tokenAddresses,
-                    assetAddresses
-                )
-            );
+        bytes memory allowances = abi.encode(
+            IHelper(helperAddress).allowances(
+                accountAddress,
+                tokenAddresses,
+                assetAddresses
+            )
+        );
         return abi.decode(allowances, (Allowance[]));
     }
 
@@ -271,15 +270,14 @@ contract RegisteryAdapterV2Vault is Ownable {
     {
         address[] memory assetAddresses = new address[](1);
         assetAddresses[0] = assetAddress;
-        bytes memory allowances =
-            abi.encode(
-                IHelper(helperAddress).allowances(
-                    accountAddress,
-                    assetAddresses,
-                    IAddressesGenerator(addressesGeneratorAddress)
-                        .getPositionSpenderAddresses()
-                )
-            );
+        bytes memory allowances = abi.encode(
+            IHelper(helperAddress).allowances(
+                accountAddress,
+                assetAddresses,
+                IAddressesGenerator(addressesGeneratorAddress)
+                    .getPositionSpenderAddresses()
+            )
+        );
         return abi.decode(allowances, (Allowance[]));
     }
 
@@ -364,8 +362,10 @@ contract RegisteryAdapterV2Vault is Ownable {
         uint256 currentPositionIdx;
         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
             address assetAddress = _assetsAddresses[assetIdx];
-            Position memory position =
-                assetPositionsOf(accountAddress, assetAddress)[0];
+            Position memory position = assetPositionsOf(
+                accountAddress,
+                assetAddress
+            )[0];
             if (position.balance > 0) {
                 positions[currentPositionIdx] = position;
                 currentPositionIdx++;
@@ -520,22 +520,24 @@ contract RegisteryAdapterV2Vault is Ownable {
             pricePerShare = vault.pricePerShare();
         }
 
-        address latestVaultAddress =
-            IV2Registry(registryAddress()).latestVault(tokenAddress);
+        address latestVaultAddress = IV2Registry(registryAddress()).latestVault(
+            tokenAddress
+        );
         bool migrationAvailable = latestVaultAddress != assetAddress;
 
-        AssetMetadata memory metadata =
-            AssetMetadata({
-                pricePerShare: pricePerShare,
-                migrationAvailable: migrationAvailable,
-                latestVaultAddress: latestVaultAddress,
-                depositLimit: vault.depositLimit(),
-                emergencyShutdown: vault.emergencyShutdown()
-            });
+        AssetMetadata memory metadata = AssetMetadata({
+            pricePerShare: pricePerShare,
+            migrationAvailable: migrationAvailable,
+            latestVaultAddress: latestVaultAddress,
+            depositLimit: vault.depositLimit(),
+            emergencyShutdown: vault.emergencyShutdown()
+        });
 
         uint256 balance = assetBalance(assetAddress);
-        TokenAmount memory underlyingTokenBalance =
-            tokenAmount(balance, tokenAddress);
+        TokenAmount memory underlyingTokenBalance = tokenAmount(
+            balance,
+            tokenAddress
+        );
 
         return
             AssetDynamic({
@@ -559,8 +561,8 @@ contract RegisteryAdapterV2Vault is Ownable {
         uint8 assetDecimals = _asset.decimals();
         address tokenAddress = assetUnderlyingTokenAddress(assetAddress);
         uint256 balance = _asset.balanceOf(accountAddress);
-        uint256 _underlyingTokenBalance =
-            (balance * _asset.pricePerShare()) / 10**assetDecimals;
+        uint256 _underlyingTokenBalance = (balance * _asset.pricePerShare()) /
+            10**assetDecimals;
         Position[] memory positions = new Position[](1);
         positions[0] = Position({
             assetId: assetAddress,

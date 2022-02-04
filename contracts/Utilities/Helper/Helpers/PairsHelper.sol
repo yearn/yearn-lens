@@ -89,8 +89,9 @@ contract PairsHelper {
         address[] memory _pairsAddresses = new address[](_pairsLength);
         uint256 pairIdx;
         for (; pairIdx + startIdx <= endIdx; pairIdx++) {
-            address pairAddress =
-                IUniswapV2Factory(factoryAddress).allPairs(pairIdx + startIdx);
+            address pairAddress = IUniswapV2Factory(factoryAddress).allPairs(
+                pairIdx + startIdx
+            );
             _pairsAddresses[pairIdx] = pairAddress;
         }
         bytes memory pairsAddressesEncoded = abi.encode(_pairsAddresses);
@@ -107,8 +108,12 @@ contract PairsHelper {
         uint256 pageNbr,
         uint256 offset
     ) public view returns (address[] memory) {
-        address[] memory _pairsAddresses =
-            pairsAddresses(factoryAddress, pageSize, pageNbr, offset);
+        address[] memory _pairsAddresses = pairsAddresses(
+            factoryAddress,
+            pageSize,
+            pageNbr,
+            offset
+        );
         uint256 _pairsLength = _pairsAddresses.length;
         uint256 maxTokensLength = (_pairsLength * 2) + 1;
         address[] memory _tokensAddresses = new address[](maxTokensLength);

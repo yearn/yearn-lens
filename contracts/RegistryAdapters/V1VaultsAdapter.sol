@@ -234,14 +234,9 @@ contract RegisteryAdapterV1Vault {
         address[] memory assetAddresses = new address[](1);
         tokenAddresses[0] = tokenAddress;
         assetAddresses[0] = assetAddress;
-        bytes memory allowances =
-            abi.encode(
-                helper.allowances(
-                    accountAddress,
-                    tokenAddresses,
-                    assetAddresses
-                )
-            );
+        bytes memory allowances = abi.encode(
+            helper.allowances(accountAddress, tokenAddresses, assetAddresses)
+        );
         return abi.decode(allowances, (Allowance[]));
     }
 
@@ -256,14 +251,13 @@ contract RegisteryAdapterV1Vault {
     {
         address[] memory assetAddresses = new address[](1);
         assetAddresses[0] = assetAddress;
-        bytes memory allowances =
-            abi.encode(
-                helper.allowances(
-                    accountAddress,
-                    assetAddresses,
-                    addressesGenerator.getPositionSpenderAddresses()
-                )
-            );
+        bytes memory allowances = abi.encode(
+            helper.allowances(
+                accountAddress,
+                assetAddresses,
+                addressesGenerator.getPositionSpenderAddresses()
+            )
+        );
         return abi.decode(allowances, (Allowance[]));
     }
 
@@ -352,8 +346,10 @@ contract RegisteryAdapterV1Vault {
         Position[] memory positions = new Position[](numberOfAssets);
         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
             address assetAddress = _assetsAddresses[assetIdx];
-            Position memory position =
-                assetPositionsOf(accountAddress, assetAddress)[0];
+            Position memory position = assetPositionsOf(
+                accountAddress,
+                assetAddress
+            )[0];
             positions[assetIdx] = position;
         }
         return positions;
@@ -454,18 +450,19 @@ contract RegisteryAdapterV1Vault {
         // address latestVaultAddress = registry.latestVault(tokenAddress);
         // bool migrationAvailable = latestVaultAddress != assetAddress;
 
-        AssetMetadata memory metadata =
-            AssetMetadata({
-                symbol: vault.symbol(),
-                pricePerShare: pricePerShare,
-                migrationAvailable: false,
-                latestVaultAddress: address(0),
-                totalSupply: totalSupply
-            });
+        AssetMetadata memory metadata = AssetMetadata({
+            symbol: vault.symbol(),
+            pricePerShare: pricePerShare,
+            migrationAvailable: false,
+            latestVaultAddress: address(0),
+            totalSupply: totalSupply
+        });
 
         uint256 balance = assetBalance(assetAddress);
-        TokenAmount memory underlyingTokenBalance =
-            tokenAmount(balance, tokenAddress);
+        TokenAmount memory underlyingTokenBalance = tokenAmount(
+            balance,
+            tokenAddress
+        );
 
         return
             AssetDynamic({
@@ -488,26 +485,25 @@ contract RegisteryAdapterV1Vault {
 
         uint256 balance = _asset.balanceOf(accountAddress);
         uint256 _accountTokenBalance = token.balanceOf(accountAddress);
-        uint256 _underlyingTokenBalance =
-            (balance * _asset.getPricePerFullShare()) / 10**18;
+        uint256 _underlyingTokenBalance = (balance *
+            _asset.getPricePerFullShare()) / 10**18;
 
-        Position memory position =
-            Position({
-                assetId: assetAddress,
-                tokenId: tokenAddress,
-                typeId: "DEPOSIT",
-                balance: balance,
-                underlyingTokenBalance: tokenAmount(
-                    _underlyingTokenBalance,
-                    tokenAddress
-                ),
-                accountTokenBalance: tokenAmount(
-                    _accountTokenBalance,
-                    tokenAddress
-                ),
-                tokenAllowances: tokenAllowances(accountAddress, assetAddress),
-                assetAllowances: assetAllowances(accountAddress, assetAddress)
-            });
+        Position memory position = Position({
+            assetId: assetAddress,
+            tokenId: tokenAddress,
+            typeId: "DEPOSIT",
+            balance: balance,
+            underlyingTokenBalance: tokenAmount(
+                _underlyingTokenBalance,
+                tokenAddress
+            ),
+            accountTokenBalance: tokenAmount(
+                _accountTokenBalance,
+                tokenAddress
+            ),
+            tokenAllowances: tokenAllowances(accountAddress, assetAddress),
+            assetAllowances: assetAllowances(accountAddress, assetAddress)
+        });
         Position[] memory positions = new Position[](1);
         positions[0] = position;
         return positions;

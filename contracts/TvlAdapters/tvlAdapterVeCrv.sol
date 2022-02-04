@@ -111,8 +111,9 @@ contract TvlAdapterVeCrv {
      * Fetch asset balance in underlying tokens
      */
     function assetBalance(address assetAddress) public view returns (uint256) {
-        IVotingEscrow votingEscrow =
-            IVotingEscrow(0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2);
+        IVotingEscrow votingEscrow = IVotingEscrow(
+            0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2
+        );
         return votingEscrow.balanceOf(curveYCrvVoterAddress);
     }
 
@@ -133,9 +134,9 @@ contract TvlAdapterVeCrv {
     function assetTvlUsdc(address assetAddress) public view returns (uint256) {
         address tokenAddress = underlyingTokenAddress(assetAddress);
         uint256 underlyingBalanceAmount = assetBalance(assetAddress);
-        uint256 adjustedBalanceUsdc =
-            IOracle(0x190c2CFC69E68A8e8D5e2b9e2B9Cc3332CafF77B)
-                .getNormalizedValueUsdc(tokenAddress, underlyingBalanceAmount);
+        uint256 adjustedBalanceUsdc = IOracle(
+            0x190c2CFC69E68A8e8D5e2b9e2B9Cc3332CafF77B
+        ).getNormalizedValueUsdc(tokenAddress, underlyingBalanceAmount);
         return adjustedBalanceUsdc;
     }
 
@@ -168,9 +169,9 @@ contract TvlAdapterVeCrv {
     {
         address tokenAddress = underlyingTokenAddress(assetAddress);
         uint256 underlyingBalanceAmount = assetBalance(assetAddress);
-        uint256 tokenPriceUsdc =
-            IOracle(0x190c2CFC69E68A8e8D5e2b9e2B9Cc3332CafF77B)
-                .getPriceUsdcRecommended(tokenAddress);
+        uint256 tokenPriceUsdc = IOracle(
+            0x190c2CFC69E68A8e8D5e2b9e2B9Cc3332CafF77B
+        ).getPriceUsdcRecommended(tokenAddress);
         uint256 delegatedBalanceAmount = 0;
         return
             AssetTvlBreakdown({
@@ -183,12 +184,11 @@ contract TvlAdapterVeCrv {
                     delegatedBalanceAmount,
                 adjustedBalanceUsdc: IOracle(
                     0x190c2CFC69E68A8e8D5e2b9e2B9Cc3332CafF77B
-                )
-                    .getNormalizedValueUsdc(
-                    tokenAddress,
-                    underlyingBalanceAmount,
-                    tokenPriceUsdc
-                )
+                ).getNormalizedValueUsdc(
+                        tokenAddress,
+                        underlyingBalanceAmount,
+                        tokenPriceUsdc
+                    )
             });
     }
 

@@ -66,8 +66,9 @@ contract BalancesHelper {
         address accountAddress,
         address[] memory tokensAddresses
     ) public view returns (TokenBalance[] memory) {
-        TokenBalance[] memory _tokensBalances =
-            new TokenBalance[](tokensAddresses.length);
+        TokenBalance[] memory _tokensBalances = new TokenBalance[](
+            tokensAddresses.length
+        );
         for (
             uint256 tokenIdx = 0;
             tokenIdx < tokensAddresses.length;
@@ -76,14 +77,14 @@ contract BalancesHelper {
             address tokenAddress = tokensAddresses[tokenIdx];
             IERC20 token = IERC20(tokenAddress);
             uint256 balance = token.balanceOf(accountAddress);
-            uint256 priceUsdc =
-                IOracle(oracleAddress).getPriceUsdcRecommended(tokenAddress);
-            uint256 balanceUsdc =
-                IOracle(oracleAddress).getNormalizedValueUsdc(
-                    tokenAddress,
-                    balance,
-                    priceUsdc
-                );
+            uint256 priceUsdc = IOracle(oracleAddress).getPriceUsdcRecommended(
+                tokenAddress
+            );
+            uint256 balanceUsdc = IOracle(oracleAddress).getNormalizedValueUsdc(
+                tokenAddress,
+                balance,
+                priceUsdc
+            );
 
             _tokensBalances[tokenIdx] = TokenBalance({
                 tokenId: tokenAddress,
@@ -103,8 +104,9 @@ contract BalancesHelper {
         view
         returns (TokenPrice[] memory)
     {
-        TokenPrice[] memory _tokensPrices =
-            new TokenPrice[](tokensAddresses.length);
+        TokenPrice[] memory _tokensPrices = new TokenPrice[](
+            tokensAddresses.length
+        );
         for (
             uint256 tokenIdx = 0;
             tokenIdx < tokensAddresses.length;
@@ -129,8 +131,9 @@ contract BalancesHelper {
         view
         returns (TokenMetadata[] memory)
     {
-        TokenMetadata[] memory _tokensMetadata =
-            new TokenMetadata[](tokensAddresses.length);
+        TokenMetadata[] memory _tokensMetadata = new TokenMetadata[](
+            tokensAddresses.length
+        );
         for (
             uint256 tokenIdx = 0;
             tokenIdx < tokensAddresses.length;

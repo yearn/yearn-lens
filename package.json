@@ -10,8 +10,12 @@
   },
   "scripts": {
     "lint": "pretty-quick --pattern '**/*.*(sol|json)' --verbose",
-    "lint:check": "prettier --check **/*.sol **/*.json",
-    "lint:fix": "pretty-quick --pattern '**/*.*(sol|json)' --staged --verbose"
+    "lint:check": "prettier --write **/*.sol **/*.json",
+    "lint:fix": "pretty-quick --pattern '**/*.*(sol|json)' --staged --verbose",
+    "lint:tests-check": "black --check --include \"(tests|scripts)\" .",
+    "lint:tests": "black --include \"(tests|scripts)\" .",
+    "test": "brownie test",
+    "coverage": "brownie test --coverage"
   },
   "husky": {
     "hooks": {

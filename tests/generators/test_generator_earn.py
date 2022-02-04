@@ -10,7 +10,8 @@ ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 def earnGenerator(AddressesGeneratorEarn, oracle, helper, management):
     registryAddress = "0x62a4e0E7574E5407656A65CC8DbDf70f3C6EB04B"
     generator = AddressesGeneratorEarn.deploy(
-        registryAddress, {"from": management},
+        registryAddress,
+        {"from": management},
     )
     return generator
 

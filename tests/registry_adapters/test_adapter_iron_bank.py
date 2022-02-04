@@ -25,8 +25,7 @@ def ironBankAdapter(
     gov,
 ):
     ironBankAdapter = RegistryAdapterIronBank.deploy(
-        yearnAddressesProvider,
-        {"from": gov}
+        yearnAddressesProvider, {"from": gov}
     )
     ironBankAdapter.setExtensionsAddresses([ironBankTvlAdapter], {"from": gov})
     return ironBankAdapter
@@ -36,8 +35,7 @@ def test_interface(
     ironBankAdapter, introspection, management, registryAdapterCommonInterface
 ):
     for method in registryAdapterCommonInterface:
-        methodImplemented = introspection.implementsMethod(
-            ironBankAdapter, method)
+        methodImplemented = introspection.implementsMethod(ironBankAdapter, method)
         if not methodImplemented:
             print(f"Missing method implementation: {method}")
         assert methodImplemented == True
@@ -68,21 +66,24 @@ def test_asset_user_metadata(ironBankAdapter, management, accounts, oracle):
     tokenPriceUsdc = ironBankAdapter.assetUnderlyingTokenPriceUsdc(cySushi)
     exchangeRate = cySushi.exchangeRateStored()
     supplyBalanceShares = cySushi.balanceOf(whale)
-    supplyBalanceUnderlying = (supplyBalanceShares * exchangeRate) / 10**18
+    supplyBalanceUnderlying = (supplyBalanceShares * exchangeRate) / 10 ** 18
     supplyBalanceUsdc = oracle.getNormalizedValueUsdc(
-        tokenAddress, supplyBalanceUnderlying, tokenPriceUsdc)
+        tokenAddress, supplyBalanceUnderlying, tokenPriceUsdc
+    )
 
     borrowBalanceShares = cySushi.borrowBalanceStored(whale)
     borrowBalanceUsdc = oracle.getNormalizedValueUsdc(
-        tokenAddress, borrowBalanceShares, tokenPriceUsdc)
+        tokenAddress, borrowBalanceShares, tokenPriceUsdc
+    )
 
     _, collateralBalanceShare, _, _ = cySushi.getAccountSnapshot(whale)
-    collateralBalanceUnderlying = collateralBalanceShare * exchangeRate / 10**18
+    collateralBalanceUnderlying = collateralBalanceShare * exchangeRate / 10 ** 18
 
     collateralBalanceUsdc = oracle.getNormalizedValueUsdc(
-        tokenAddress, collateralBalanceUnderlying, tokenPriceUsdc)
+        tokenAddress, collateralBalanceUnderlying, tokenPriceUsdc
+    )
 
-    borrowLimitUsdc = collateralBalanceUsdc * collateralFactor / 10**18
+    borrowLimitUsdc = collateralBalanceUsdc * collateralFactor / 10 ** 18
 
     asset_user_metadata = ironBankAdapter.assetUserMetadata(whale, cySushi)
     assert asset_user_metadata[0] == cySushi
@@ -127,46 +128,52 @@ def test_assets_user_metadata(ironBankAdapter, management, accounts, oracle):
     sushiPriceUsdc = ironBankAdapter.assetUnderlyingTokenPriceUsdc(cySushi)
     sushiExchangeRate = cySushi.exchangeRateStored()
     sushiSupplyBalShares = cySushi.balanceOf(whale)
-    sushiSupplyBalUnderlying = (
-        sushiSupplyBalShares * sushiExchangeRate) / 10**18
+    sushiSupplyBalUnderlying = (sushiSupplyBalShares * sushiExchangeRate) / 10 ** 18
     sushiSupplyBalUsdc = oracle.getNormalizedValueUsdc(
-        sushiTokenAddress, sushiSupplyBalUnderlying, sushiPriceUsdc)
+        sushiTokenAddress, sushiSupplyBalUnderlying, sushiPriceUsdc
+    )
 
     sushiBorrowBalShares = cySushi.borrowBalanceStored(whale)
     sushiBorrowBalUsdc = oracle.getNormalizedValueUsdc(
-        sushiTokenAddress, sushiBorrowBalShares, sushiPriceUsdc)
+        sushiTokenAddress, sushiBorrowBalShares, sushiPriceUsdc
+    )
 
     _, sushiCollateralBalShare, _, _ = cySushi.getAccountSnapshot(whale)
-    sushiCollateralBalUnderlying = sushiCollateralBalShare * sushiExchangeRate / 10**18
+    sushiCollateralBalUnderlying = (
+        sushiCollateralBalShare * sushiExchangeRate / 10 ** 18
+    )
 
     sushiCollateralBalUsdc = oracle.getNormalizedValueUsdc(
-        sushiTokenAddress, sushiCollateralBalUnderlying, sushiPriceUsdc)
+        sushiTokenAddress, sushiCollateralBalUnderlying, sushiPriceUsdc
+    )
 
-    sushiBorrowLimitUsdc = sushiCollateralBalUsdc * sushiCollateralFactor / 10**18
+    sushiBorrowLimitUsdc = sushiCollateralBalUsdc * sushiCollateralFactor / 10 ** 18
 
     # yfi
     yfiTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyYfi)
     yfiPriceUsdc = ironBankAdapter.assetUnderlyingTokenPriceUsdc(cyYfi)
     yfiExchangeRate = cyYfi.exchangeRateStored()
     yfiSupplyBalShares = cyYfi.balanceOf(whale)
-    yfiSupplyBalUnderlying = (yfiSupplyBalShares * yfiExchangeRate) / 10**18
+    yfiSupplyBalUnderlying = (yfiSupplyBalShares * yfiExchangeRate) / 10 ** 18
     yfiSupplyBalUsdc = oracle.getNormalizedValueUsdc(
-        yfiTokenAddress, yfiSupplyBalUnderlying, yfiPriceUsdc)
+        yfiTokenAddress, yfiSupplyBalUnderlying, yfiPriceUsdc
+    )
 
     yfiBorrowBalShares = cyYfi.borrowBalanceStored(whale)
     yfiBorrowBalUsdc = oracle.getNormalizedValueUsdc(
-        yfiTokenAddress, yfiBorrowBalShares, yfiPriceUsdc)
+        yfiTokenAddress, yfiBorrowBalShares, yfiPriceUsdc
+    )
 
     _, yfiCollateralBalShare, _, _ = cyYfi.getAccountSnapshot(whale)
-    yfiCollateralBalUnderlying = yfiCollateralBalShare * yfiExchangeRate / 10**18
+    yfiCollateralBalUnderlying = yfiCollateralBalShare * yfiExchangeRate / 10 ** 18
 
     yfiCollateralBalUsdc = oracle.getNormalizedValueUsdc(
-        yfiTokenAddress, yfiCollateralBalUnderlying, yfiPriceUsdc)
+        yfiTokenAddress, yfiCollateralBalUnderlying, yfiPriceUsdc
+    )
 
-    yfiBorrowLimitUsdc = yfiCollateralBalUsdc * yfiCollateralFactor / 10**18
+    yfiBorrowLimitUsdc = yfiCollateralBalUsdc * yfiCollateralFactor / 10 ** 18
 
-    asset_user_metadata = ironBankAdapter.assetsUserMetadata(whale, [
-                                                             cySushi, cyYfi])
+    asset_user_metadata = ironBankAdapter.assetsUserMetadata(whale, [cySushi, cyYfi])
     assert asset_user_metadata[0][0] == cySushi
     assert asset_user_metadata[0][1] == True
     assert asset_user_metadata[0][2] == sushiSupplyBalUsdc
@@ -206,8 +213,7 @@ def test_assets_addresses(ironBankAdapter):
 
 def test_asset_static(ironBankAdapter):
     cyUsdcToken = Contract(cyUsdcAddress)
-    usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(
-        cyUsdcAddress)
+    usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyUsdcAddress)
     _, typeId, _ = ironBankAdapter.adapterInfo()
     usdcTokenName = cyUsdcToken.name()
     usdcTokenSymbol = cyUsdcToken.symbol()
@@ -233,31 +239,31 @@ def test_asset_static(ironBankAdapter):
 
 def test_asset_dynamic(ironBankAdapter, oracle):
     cyUsdcToken = Contract(cyUsdcAddress)
-    usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(
-        cyUsdcAddress)
+    usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyUsdcAddress)
     liquidity = cyUsdcToken.getCash()
-    usdcTokenPrice = ironBankAdapter.assetUnderlyingTokenPriceUsdc(
-        cyUsdcAddress)
+    usdcTokenPrice = ironBankAdapter.assetUnderlyingTokenPriceUsdc(cyUsdcAddress)
     assert liquidity > 0
     assert usdcTokenPrice > 0
 
     liquidityUsdc = oracle.getNormalizedValueUsdc(
-        usdcTokenAddress, liquidity, usdcTokenPrice)
+        usdcTokenAddress, liquidity, usdcTokenPrice
+    )
     assert liquidityUsdc > 0
 
     cyUsdcAddressBalance = ironBankAdapter.assetBalance(cyUsdcAddress)
     assert cyUsdcAddressBalance > 0
 
     underlyingTokenBalanceUsdc = oracle.getNormalizedValueUsdc(
-        usdcTokenAddress, cyUsdcAddressBalance, usdcTokenPrice)
+        usdcTokenAddress, cyUsdcAddressBalance, usdcTokenPrice
+    )
     underlyingTokenBalance = (cyUsdcAddressBalance, underlyingTokenBalanceUsdc)
     totalBorrowedUsdc = oracle.getNormalizedValueUsdc(
-        usdcTokenAddress, cyUsdcToken.totalBorrows(), usdcTokenPrice)
+        usdcTokenAddress, cyUsdcToken.totalBorrows(), usdcTokenPrice
+    )
     assert totalBorrowedUsdc > 0
 
     comptroller = Contract(comptrollerAddress)
-    isListed, collateralFactorMantissa, version = comptroller.markets(
-        cyUsdcAddress)
+    isListed, collateralFactorMantissa, version = comptroller.markets(cyUsdcAddress)
     assert version >= 1
 
     collateralCap = cyUsdcToken.collateralCap()
@@ -267,8 +273,8 @@ def test_asset_dynamic(ironBankAdapter, oracle):
     assert totalCollateralTokens > 0
 
     blocksPerYear = 2102400
-    lendApyBips = cyUsdcToken.supplyRatePerBlock() * blocksPerYear / 10**14
-    borrowApyBips = cyUsdcToken.borrowRatePerBlock() * blocksPerYear / 10**14
+    lendApyBips = cyUsdcToken.supplyRatePerBlock() * blocksPerYear / 10 ** 14
+    borrowApyBips = cyUsdcToken.borrowRatePerBlock() * blocksPerYear / 10 ** 14
     assert lendApyBips > 0
     assert borrowApyBips > 0
     collateralFactor = collateralFactorMantissa
@@ -312,12 +318,10 @@ def test_asset_dynamic(ironBankAdapter, oracle):
 
 def test_assets_static(ironBankAdapter):
     cyUsdcToken = Contract(cyUsdcAddress)
-    usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(
-        cyUsdcAddress)
+    usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyUsdcAddress)
 
     cySushiToken = Contract(cySushiAddress)
-    sushiTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(
-        cySushiAddress)
+    sushiTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cySushiAddress)
 
     _, typeId, _ = ironBankAdapter.adapterInfo()
     usdcTokenName = cyUsdcToken.name()
@@ -396,10 +400,8 @@ def test_asset_positions_of(ironBankAdapter, accounts, oracle):
     comptroller.enterMarkets([cyWeth], {"from": user})
 
     cyWeth = Contract(cyWethAddress)
-    cyWethTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(
-        cyWethAddress)
-    cyWethTokenPrice = ironBankAdapter.assetUnderlyingTokenPriceUsdc(
-        cyWethAddress)
+    cyWethTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyWethAddress)
+    cyWethTokenPrice = ironBankAdapter.assetUnderlyingTokenPriceUsdc(cyWethAddress)
     decimal = cyWeth.decimals()
 
     userSupplyBalanceShares = cyWeth.balanceOf(userAddress)
@@ -480,7 +482,8 @@ def test_assets_positions_of(ironBankAdapter, oracle, accounts):
 
     # Test positionsOf(address, [...address])
     positions = ironBankAdapter.assetsPositionsOf(
-        userAddress, [cyWethAddress, cyUsdcAddress])
+        userAddress, [cyWethAddress, cyUsdcAddress]
+    )
 
     position = positions[0]
     assetId = position[0]

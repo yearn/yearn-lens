@@ -25,8 +25,8 @@ contract PricesHelper is Ownable {
     }
 
     struct TokenAmount {
-      address tokenId;
-      uint256 amount;
+        address tokenId;
+        uint256 amount;
     }
 
     constructor(address _oracleAddress) {
@@ -39,8 +39,9 @@ contract PricesHelper is Ownable {
         view
         returns (TokenPrice[] memory)
     {
-        TokenPrice[] memory _tokensPrices =
-            new TokenPrice[](tokensAddresses.length);
+        TokenPrice[] memory _tokensPrices = new TokenPrice[](
+            tokensAddresses.length
+        );
         for (
             uint256 tokenIdx = 0;
             tokenIdx < tokensAddresses.length;
@@ -49,7 +50,9 @@ contract PricesHelper is Ownable {
             address tokenAddress = tokensAddresses[tokenIdx];
             _tokensPrices[tokenIdx] = TokenPrice({
                 tokenId: tokenAddress,
-                priceUsdc: IOracle(oracleAddress).getPriceUsdcRecommended(tokenAddress)
+                priceUsdc: IOracle(oracleAddress).getPriceUsdcRecommended(
+                    tokenAddress
+                )
             });
         }
         return _tokensPrices;
@@ -60,18 +63,18 @@ contract PricesHelper is Ownable {
         view
         returns (TokenPrice[] memory)
     {
-        TokenPrice[] memory _tokenPricesNormalized =
-            new TokenPrice[](tokens.length);
-        for (
-            uint256 tokenIdx = 0;
-            tokenIdx < tokens.length;
-            tokenIdx++
-        ) {
+        TokenPrice[] memory _tokenPricesNormalized = new TokenPrice[](
+            tokens.length
+        );
+        for (uint256 tokenIdx = 0; tokenIdx < tokens.length; tokenIdx++) {
             address tokenAddress = tokens[tokenIdx].tokenId;
             uint256 amount = tokens[tokenIdx].amount;
             _tokenPricesNormalized[tokenIdx] = TokenPrice({
                 tokenId: tokenAddress,
-                priceUsdc: IOracle(oracleAddress).getNormalizedValueUsdc(tokenAddress, amount)
+                priceUsdc: IOracle(oracleAddress).getNormalizedValueUsdc(
+                    tokenAddress,
+                    amount
+                )
             });
         }
         return _tokenPricesNormalized;
@@ -80,5 +83,4 @@ contract PricesHelper is Ownable {
     function updateOracleAddress(address _oracleAddress) external onlyOwner {
         oracleAddress = _oracleAddress;
     }
-
 }

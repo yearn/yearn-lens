@@ -65,14 +65,15 @@ contract Adapter is Ownable {
     ) public view returns (Allowance[] memory) {
         IERC20 _token = IERC20(tokenAddress);
         Allowance[] memory allowances = new Allowance[](1);
-        uint256 allowanceAmount =
-            _token.allowance(accountAddress, assetAddress);
-        Allowance memory allowance =
-            Allowance({
-                owner: accountAddress,
-                spender: assetAddress,
-                amount: allowanceAmount
-            });
+        uint256 allowanceAmount = _token.allowance(
+            accountAddress,
+            assetAddress
+        );
+        Allowance memory allowance = Allowance({
+            owner: accountAddress,
+            spender: assetAddress,
+            amount: allowanceAmount
+        });
         allowances[0] = allowance;
         return allowances;
     }
@@ -91,14 +92,15 @@ contract Adapter is Ownable {
             spenderIdx++
         ) {
             address spenderAddress = positionSpenderAddresses[spenderIdx];
-            uint256 allowanceAmount =
-                _asset.allowance(accountAddress, spenderAddress);
-            Allowance memory allowance =
-                Allowance({
-                    owner: accountAddress,
-                    spender: spenderAddress,
-                    amount: allowanceAmount
-                });
+            uint256 allowanceAmount = _asset.allowance(
+                accountAddress,
+                spenderAddress
+            );
+            Allowance memory allowance = Allowance({
+                owner: accountAddress,
+                spender: spenderAddress,
+                amount: allowanceAmount
+            });
             allowances[spenderIdx] = allowance;
         }
         return allowances;

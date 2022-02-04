@@ -10,7 +10,8 @@ ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 def v1Generator(AddressesGeneratorV1Vaults, management):
     registryAddress = "0x3eE41C098f9666ed2eA246f4D2558010e59d63A0"
     generator = AddressesGeneratorV1Vaults.deploy(
-        registryAddress, {"from": management},
+        registryAddress,
+        {"from": management},
     )
     return generator
 
