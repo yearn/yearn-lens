@@ -128,8 +128,9 @@ contract TvlAdapterIronBank {
     {
         uint256 numberOfAssets = _assetsAddresses.length;
 
-        AssetTvlBreakdown[] memory tvlData =
-            new AssetTvlBreakdown[](numberOfAssets);
+        AssetTvlBreakdown[] memory tvlData = new AssetTvlBreakdown[](
+            numberOfAssets
+        );
         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
             address assetAddress = _assetsAddresses[assetIdx];
             tvlData[assetIdx] = assetTvlBreakdown(assetAddress);
@@ -160,8 +161,8 @@ contract TvlAdapterIronBank {
         address tokenAddress = underlyingTokenAddress(assetAddress);
         uint256 underlyingBalanceAmount = assetBalance(assetAddress);
         uint256 delegatedBalanceAmount = assetDelegatedBalance(assetAddress);
-        uint256 adjustedBalance =
-            underlyingBalanceAmount - delegatedBalanceAmount;
+        uint256 adjustedBalance = underlyingBalanceAmount -
+            delegatedBalanceAmount;
         uint256 tokenPriceUsdc = oracle.getPriceUsdcRecommended(tokenAddress);
         return
             AssetTvlBreakdown({
@@ -253,10 +254,12 @@ contract TvlAdapterIronBank {
         address tokenAddress = underlyingTokenAddress(assetAddress);
         uint256 underlyingBalanceAmount = assetBalance(assetAddress);
         uint256 delegatedBalanceAmount = assetDelegatedBalance(assetAddress);
-        uint256 adjustedBalanceAmount =
-            underlyingBalanceAmount - delegatedBalanceAmount;
-        uint256 adjustedBalanceUsdc =
-            oracle.getNormalizedValueUsdc(tokenAddress, adjustedBalanceAmount);
+        uint256 adjustedBalanceAmount = underlyingBalanceAmount -
+            delegatedBalanceAmount;
+        uint256 adjustedBalanceUsdc = oracle.getNormalizedValueUsdc(
+            tokenAddress,
+            adjustedBalanceAmount
+        );
         return adjustedBalanceUsdc;
     }
 
@@ -265,8 +268,9 @@ contract TvlAdapterIronBank {
         view
         returns (uint256)
     {
-        bool balanceIsDelegated =
-            delegationMapping.assetBalanceIsDelegated(assetAddress);
+        bool balanceIsDelegated = delegationMapping.assetBalanceIsDelegated(
+            assetAddress
+        );
         if (balanceIsDelegated) {
             return assetBalance(assetAddress);
         }

@@ -6,10 +6,7 @@ import "../Ownable.sol";
 contract Helper is Ownable {
     address[] private _helpers;
 
-    function setHelpers(address[] memory helperAddresses)
-        external
-        onlyOwner
-    {
+    function setHelpers(address[] memory helperAddresses) external onlyOwner {
         _helpers = helperAddresses;
     }
 

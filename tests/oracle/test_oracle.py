@@ -56,6 +56,7 @@ def test_update_prices_helper_oracle_address(pricesHelper, management):
     assert pricesHelper.oracleAddress() == newOracleAddress
     chain.revert()
 
+
 def test_add_and_remove_token_alias(oracle, management):
     assert oracle.tokenAliases(ethAddress) != ZERO_ADDRESS
     oracle.removeTokenAlias(ethAddress, {"from": management})
@@ -69,9 +70,7 @@ def test_add_token_aliases(oracle, management):
     assert oracle.tokenAliases(ethAddress) == yfiAddress
 
 
-def test_set_calculations(
-    Oracle, CalculationsCurve, gov, management, rando
-):
+def test_set_calculations(Oracle, CalculationsCurve, gov, management, rando):
     oracle = Oracle.deploy(usdcAddress, {"from": management})
     calculationsCurve = CalculationsCurve.deploy(
         curveAddressProvider, oracle, {"from": gov}
@@ -146,6 +145,7 @@ def test_get_curve_price_usdc(oracleProxyCurve):
     price = oracleProxyCurve.getCurvePriceUsdc(threeCrvAddress)
     assert price > 0
 
+
 def test_base_price(oracleProxyCurve):
     price = oracleProxyCurve.getBasePrice(threeCrvAddress)
     assert price > 0
@@ -179,7 +179,9 @@ def test_cvx_crv_pool_price(oracle):
 # Calculations overrides
 def test_calculations_overrides(oracle, calculationsOverrides, management):
     yvBOOSTPriceBefore = oracle.getPriceUsdcRecommended(yvBOOSTAddress)
-    calculationsOverrides.setOverrideForToken(yvBOOSTAddress, "CALCULATIONS_SUSHISWAP", {"from": management})
+    calculationsOverrides.setOverrideForToken(
+        yvBOOSTAddress, "CALCULATIONS_SUSHISWAP", {"from": management}
+    )
     yvBOOSTPriceAfter = oracle.getPriceUsdcRecommended(yvBOOSTAddress)
     assert yvBOOSTPriceBefore != yvBOOSTPriceAfter
 
@@ -193,7 +195,9 @@ def test_curv_eurs_usdc_underlying_coins(curve_calculations):
     eursUsdcPool = "0x98a7F18d4E56Cfe84E3D081B40001B3d5bD3eB8B"
     usdc = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
     eurs = "0xdB25f211AB05b1c97D595516F45794528a807ad8"
-    coins = curve_calculations.cryptoPoolUnderlyingTokensAddressesByPoolAddress(eursUsdcPool)
+    coins = curve_calculations.cryptoPoolUnderlyingTokensAddressesByPoolAddress(
+        eursUsdcPool
+    )
     assert coins == [usdc, eurs]
 
 
@@ -223,32 +227,45 @@ def test_update_yearn_addresses_provider(curve_calculations, management):
     chain.snapshot()
     old_address = curve_calculations.yearnAddressesProviderAddress()
     new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
-    curve_calculations.updateYearnAddressesProviderAddress(new_address, {"from": management})
+    curve_calculations.updateYearnAddressesProviderAddress(
+        new_address, {"from": management}
+    )
     assert curve_calculations.yearnAddressesProviderAddress() == new_address
     assert curve_calculations.yearnAddressesProviderAddress() != old_address
     chain.revert()
 
 
-def test_update_yearn_addresses_provider_only_possible_by_owner(curve_calculations, rando):
+def test_update_yearn_addresses_provider_only_possible_by_owner(
+    curve_calculations, rando
+):
     new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
     with brownie.reverts():
-        curve_calculations.updateYearnAddressesProviderAddress(new_address, {"from": rando})
+        curve_calculations.updateYearnAddressesProviderAddress(
+            new_address, {"from": rando}
+        )
 
 
 def test_update_curve_addresses_provider(curve_calculations, management):
     chain.snapshot()
     old_address = curve_calculations.curveAddressesProviderAddress()
     new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
-    curve_calculations.updateCurveAddressesProviderAddress(new_address, {"from": management})
+    curve_calculations.updateCurveAddressesProviderAddress(
+        new_address, {"from": management}
+    )
     assert curve_calculations.curveAddressesProviderAddress() == new_address
     assert curve_calculations.curveAddressesProviderAddress() != old_address
     chain.revert()
 
 
-def test_update_curve_addresses_provider_only_possible_by_owner(curve_calculations, rando):
+def test_update_curve_addresses_provider_only_possible_by_owner(
+    curve_calculations, rando
+):
     new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
     with brownie.reverts():
-        curve_calculations.updateCurveAddressesProviderAddress(new_address, {"from": rando})
+        curve_calculations.updateCurveAddressesProviderAddress(
+            new_address, {"from": rando}
+        )
+
 
 # Sushiswap
 def test_router_override(calculationsSushiswap):
@@ -256,7 +273,9 @@ def test_router_override(calculationsSushiswap):
     calculationsSushiswap.setRouterOverrideForToken(yveCRVAddress, uniswapRouterAddress)
     yveCRVPriceAfter = calculationsSushiswap.getPriceUsdc(yveCRVAddress)
     assert yveCRVPriceBefore != yveCRVPriceAfter
-    calculationsSushiswap.setRouterOverrideForToken(yveCRVAddress, sushiswapRouterAddress)
+    calculationsSushiswap.setRouterOverrideForToken(
+        yveCRVAddress, sushiswapRouterAddress
+    )
 
 
 def test_get_lp_token_price_usdc(oracleProxySushiswap):
@@ -268,9 +287,11 @@ def test_is_lp_token(oracleProxySushiswap):
     tokenIsLp = oracleProxySushiswap.isLpToken(uniswapLpTokenAddress)
     assert tokenIsLp
 
+
 def test_eth_is_not_lp_token(oracleProxySushiswap):
     is_lp_token = oracleProxySushiswap.isLpToken(ethAddress)
     assert is_lp_token == False
+
 
 def test_get_price_from_router(oracleProxySushiswap):
     ethPrice = oracleProxySushiswap.getPriceFromRouter(ethAddress, usdcAddress)
@@ -293,14 +314,15 @@ def test_get_lp_token_total_liquidity_usdc(oracleProxySushiswap):
 
 
 # Synth
-'''
+"""
 def test_synth_calculations(oracle, synth_calculations):
     sEUR = "0xD71eCFF9342A5Ced620049e616c5035F1dB98620"
     synth_calculations.setEurSynth(sEUR, True)
     assert oracle.getPriceUsdcRecommended(sEUR) > 0
-'''
+"""
 
 # Chainlink
+
 
 def test_chainlink(chainlink_calculations, management):
     eurt_namehash = "0xd5aa869323f85cb893514ce48950ba7e84a8d0bf062a7e3058bcc494217da39f"

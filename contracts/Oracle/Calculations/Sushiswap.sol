@@ -50,17 +50,17 @@ contract CalculationsSushiswap is Ownable {
     address ethAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     address zeroAddress = 0x0000000000000000000000000000000000000000;
 
-    constructor(
-        address _defaultRouterAddress,
-        address _usdcAddress
-    ) {
+    constructor(address _defaultRouterAddress, address _usdcAddress) {
         defaultRouterAddress = _defaultRouterAddress;
         usdcAddress = _usdcAddress;
         defaultRouter = PriceRouter(defaultRouterAddress);
         wethAddress = defaultRouter.WETH();
     }
-    
-    function setRouterOverrideForToken(address tokenAddress, address routerAddress) public onlyOwner {
+
+    function setRouterOverrideForToken(
+        address tokenAddress,
+        address routerAddress
+    ) public onlyOwner {
         routerOverrides[tokenAddress] = routerAddress;
     }
 
@@ -87,8 +87,8 @@ contract CalculationsSushiswap is Ownable {
 
         address[] memory path;
         uint8 numberOfJumps;
-        bool inputTokenIsWeth =
-            token0Address == wethAddress || token1Address == wethAddress;
+        bool inputTokenIsWeth = token0Address == wethAddress ||
+            token1Address == wethAddress;
         if (inputTokenIsWeth) {
             // path = [token0, weth] or [weth, token1]
             numberOfJumps = 1;
@@ -157,9 +157,8 @@ contract CalculationsSushiswap is Ownable {
         uint256 token0Price = getPriceUsdc(token0Address);
         uint256 token1Price = getPriceUsdc(token1Address);
         (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
-        uint256 totalLiquidity =
-            ((reserve0 / 10**token0Decimals) * token0Price) +
-                ((reserve1 / 10**token1Decimals) * token1Price);
+        uint256 totalLiquidity = ((reserve0 / 10**token0Decimals) *
+            token0Price) + ((reserve1 / 10**token1Decimals) * token1Price);
         return totalLiquidity;
     }
 
@@ -172,8 +171,8 @@ contract CalculationsSushiswap is Ownable {
         uint256 totalLiquidity = getLpTokenTotalLiquidityUsdc(tokenAddress);
         uint256 totalSupply = pair.totalSupply();
         uint8 pairDecimals = pair.decimals();
-        uint256 pricePerLpTokenUsdc =
-            (totalLiquidity * 10**pairDecimals) / totalSupply;
+        uint256 pricePerLpTokenUsdc = (totalLiquidity * 10**pairDecimals) /
+            totalSupply;
         return pricePerLpTokenUsdc;
     }
 }

@@ -39,8 +39,10 @@ contract AddressMergeHelper {
         assembly {
             mstore(add(addressesPacked, 0x40), totalNumberOfAddresses)
         }
-        address[] memory addressesMerged =
-            abi.decode(addressesPacked, (address[]));
+        address[] memory addressesMerged = abi.decode(
+            addressesPacked,
+            (address[])
+        );
         return addressesMerged;
     }
 }

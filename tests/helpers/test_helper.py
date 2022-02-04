@@ -78,4 +78,3 @@ def test_allowances(helper, rando, AllowancesHelper):
     assert allowanceOwner3 == rando
     assert allowanceSpender3 == masterChefAddress
     assert allowanceAmount3 == 200
-

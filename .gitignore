@@ -11,3 +11,4 @@ reports/
 
 # Node/npm
 node_modules/
+yarn-error.log

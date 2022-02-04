@@ -37,9 +37,7 @@ def v2VaultsAdapter(
     return adapter
 
 
-def test_interface(
-    v2VaultsAdapter, introspection, registryAdapterCommonInterface
-):
+def test_interface(v2VaultsAdapter, introspection, registryAdapterCommonInterface):
     for method in registryAdapterCommonInterface:
         methodImplemented = introspection.implementsMethod(v2VaultsAdapter, method)
         if not methodImplemented:

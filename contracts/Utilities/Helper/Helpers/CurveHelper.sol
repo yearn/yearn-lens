@@ -206,13 +206,15 @@ contract CurveHelper {
         address[] memory underlyingTokensAddresses = new address[](16);
         uint256 currentIdx;
 
+        address[8]
+            memory registryUnderlyingTokensAddresses = registryTokensAddressesFromPoolAddress(
+                poolAddress
+            );
 
-            address[8] memory registryUnderlyingTokensAddresses
-         = registryTokensAddressesFromPoolAddress(poolAddress);
-
-
-            address[8] memory metapoolUnderlyingTokensAddresses
-         = metapoolTokensAddressesFromPoolAddress(poolAddress);
+        address[8]
+            memory metapoolUnderlyingTokensAddresses = metapoolTokensAddressesFromPoolAddress(
+                poolAddress
+            );
         for (
             uint256 tokenIdx;
             tokenIdx < registryUnderlyingTokensAddresses.length;
@@ -291,9 +293,10 @@ contract CurveHelper {
         view
         returns (address)
     {
-
-            address[8] memory metapoolTokensAddresses
-         = metapoolTokensAddressesFromPoolAddress(lpAddress);
+        address[8]
+            memory metapoolTokensAddresses = metapoolTokensAddressesFromPoolAddress(
+                lpAddress
+            );
         for (uint256 tokenIdx; tokenIdx < 8; tokenIdx++) {
             address tokenAddress = metapoolTokensAddresses[tokenIdx];
             if (tokenAddress != address(0)) {
@@ -350,9 +353,10 @@ contract CurveHelper {
         for (uint256 poolIdx = 0; poolIdx < _poolsAddresses.length; poolIdx++) {
             address poolAddress = _poolsAddresses[poolIdx];
 
-
-                address[] memory _poolGaugesAddresses
-             = gaugesAddressesFromPoolAddress(poolAddress);
+            address[]
+                memory _poolGaugesAddresses = gaugesAddressesFromPoolAddress(
+                    poolAddress
+                );
             _gaugesAddresses[poolIdx] = _poolGaugesAddresses;
         }
         return _gaugesAddresses;
@@ -370,9 +374,10 @@ contract CurveHelper {
         for (uint256 poolIdx = 0; poolIdx < _poolsAddresses.length; poolIdx++) {
             address poolAddress = _poolsAddresses[poolIdx];
 
-
-                address[] memory _poolGaugesAddresses
-             = gaugesAddressesFromPoolAddress(poolAddress);
+            address[]
+                memory _poolGaugesAddresses = gaugesAddressesFromPoolAddress(
+                    poolAddress
+                );
             for (
                 uint256 gaugeIdx;
                 gaugeIdx < _poolGaugesAddresses.length;
@@ -617,9 +622,10 @@ contract CurveHelper {
             _lpsAddresses
         );
 
-
-            address[][] memory _gaugesAddressesSet
-         = gaugesAddressesByPoolsAddressesSets(_poolsAddresses);
+        address[][]
+            memory _gaugesAddressesSet = gaugesAddressesByPoolsAddressesSets(
+                _poolsAddresses
+            );
 
         uint256 poolsLength = _poolsAddresses.length;
         LpAddresses[] memory _lpsMetadata = new LpAddresses[](poolsLength);
@@ -673,18 +679,18 @@ contract CurveHelper {
             _lpsAddresses
         );
 
-
-            address[][] memory _gaugesAddressesSets
-         = gaugesAddressesByPoolsAddressesSets(_poolsAddresses);
+        address[][]
+            memory _gaugesAddressesSets = gaugesAddressesByPoolsAddressesSets(
+                _poolsAddresses
+            );
         uint256 vaultsLength = _vaultsAddresses.length;
 
-
-            VaultAddressesMetadata[] memory _vaultsMetadata
-         = new VaultAddressesMetadata[](vaultsLength);
+        VaultAddressesMetadata[]
+            memory _vaultsMetadata = new VaultAddressesMetadata[](vaultsLength);
         for (uint256 vaultIdx; vaultIdx < vaultsLength; vaultIdx++) {
             address vaultAddress = _vaultsAddresses[vaultIdx];
             address[] memory _strategiesAddresses = strategiesHelper()
-            .assetStrategiesAddresses(vaultAddress);
+                .assetStrategiesAddresses(vaultAddress);
             VaultAddressesMetadata memory metadata = VaultAddressesMetadata({
                 vaultAddress: vaultAddress,
                 lpAddress: _lpsAddresses[vaultIdx],
@@ -743,12 +749,16 @@ contract CurveHelper {
         return getAddress("ORACLE");
     }
 
-    function lpMetadata(address lpAddress) public view returns (LpMetadata memory) {
+    function lpMetadata(address lpAddress)
+        public
+        view
+        returns (LpMetadata memory)
+    {
         address gaugeAddress = gaugesAddressesFromLpAddress(lpAddress)[0];
         address poolAddress = poolAddressFromLpAddress(lpAddress);
         IGauge gauge = IGauge(gaugeAddress);
         uint256 gaugeWeight = IGaugeController(gaugeControllerAddress())
-        .gauge_relative_weight(gaugeAddress);
+            .gauge_relative_weight(gaugeAddress);
         uint256 workingSupply = gauge.working_supply();
         uint256 inflationWeight = gauge.inflation_rate();
         uint256 poolPrice = registry().get_virtual_price_from_lp_token(

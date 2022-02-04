@@ -1,0 +1,3 @@
+# following contracts disabled at the moment and error out
+contracts/RegistryAdapters/EarnRegistryAdapter.sol
+contracts/RegistryAdapters/VeCrvRegistryAdapter.sol
