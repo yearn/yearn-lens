@@ -2,11 +2,15 @@ import pytest
 
 yfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
 
+
 @pytest.fixture
 def v2VaultsAdapter(RegisteryAdapterV2Vault, managementList, oracle, management):
     v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
     return RegisteryAdapterV2Vault.deploy(
-        v2RegistryAddress, oracle, managementList, {"from": management},
+        v2RegistryAddress,
+        oracle,
+        managementList,
+        {"from": management},
     )
 
 
@@ -54,4 +58,3 @@ def test_asset_strategies(strategyHelper, management):
 def test_assets_strategies(strategyHelper, management):
     strategies = strategyHelper.assetsStrategies()
     assert len(strategies) > 0
-

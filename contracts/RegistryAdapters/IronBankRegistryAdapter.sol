@@ -7,7 +7,7 @@ import "../Utilities/Ownable.sol";
 /*******************************************************
  *                       Interfaces
  *******************************************************/
- interface IYearnAddressesProvider {
+interface IYearnAddressesProvider {
     function addressById(string memory) external view returns (address);
 }
 
@@ -28,7 +28,15 @@ interface ICyToken {
 
     function getCash() external view returns (uint256);
 
-    function getAccountSnapshot(address account) external view returns (uint256, uint256, uint256, uint256);
+    function getAccountSnapshot(address account)
+        external
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        );
 
     function totalBorrows() external view returns (uint256);
 
@@ -274,14 +282,9 @@ contract RegistryAdapterIronBank is Ownable {
         address[] memory assetAddresses = new address[](1);
         tokenAddresses[0] = tokenAddress;
         assetAddresses[0] = assetAddress;
-        bytes memory allowances =
-            abi.encode(
-                helper().allowances(
-                    accountAddress,
-                    tokenAddresses,
-                    assetAddresses
-                )
-            );
+        bytes memory allowances = abi.encode(
+            helper().allowances(accountAddress, tokenAddresses, assetAddresses)
+        );
         return abi.decode(allowances, (Allowance[]));
     }
 
@@ -296,14 +299,13 @@ contract RegistryAdapterIronBank is Ownable {
     {
         address[] memory assetAddresses = new address[](1);
         assetAddresses[0] = assetAddress;
-        bytes memory allowances =
-            abi.encode(
-                helper().allowances(
-                    accountAddress,
-                    assetAddresses,
-                    addressesGenerator().getPositionSpenderAddresses()
-                )
-            );
+        bytes memory allowances = abi.encode(
+            helper().allowances(
+                accountAddress,
+                assetAddresses,
+                addressesGenerator().getPositionSpenderAddresses()
+            )
+        );
         return abi.decode(allowances, (Allowance[]));
     }
 
@@ -337,11 +339,15 @@ contract RegistryAdapterIronBank is Ownable {
 
     /**
      * Fetch yearn addresses provider interface
-     */    
-    function yearnAddressesProvider() public view returns (IYearnAddressesProvider) {
+     */
+    function yearnAddressesProvider()
+        public
+        view
+        returns (IYearnAddressesProvider)
+    {
         return IYearnAddressesProvider(yearnAddressesProviderAddress);
     }
-    
+
     /**
      * Fetch oracle
      */
@@ -358,9 +364,14 @@ contract RegistryAdapterIronBank is Ownable {
 
     /**
      * Fetch Iron Bank addresses generator
-     */    
+     */
     function addressesGenerator() public view returns (IAddressesGenerator) {
-        return IAddressesGenerator(yearnAddressesProvider().addressById("ADDRESSES_GENERATOR_IRON_BANK"));
+        return
+            IAddressesGenerator(
+                yearnAddressesProvider().addressById(
+                    "ADDRESSES_GENERATOR_IRON_BANK"
+                )
+            );
     }
 
     /**
@@ -371,11 +382,13 @@ contract RegistryAdapterIronBank is Ownable {
             sstore(slot, value)
         }
     }
-    
+
     /**
      * Owner can update addresses provider address
      */
-    function updateYearnAddressesProviderAddress(address _yearnAddressesProviderAddress) external onlyOwner {
+    function updateYearnAddressesProviderAddress(
+        address _yearnAddressesProviderAddress
+    ) external onlyOwner {
         yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
     }
 
@@ -421,10 +434,7 @@ contract RegistryAdapterIronBank is Ownable {
     /**
      * Configure adapter
      */
-    constructor(
-        address _yearnAddressesProviderAddress
-      
-    ) {
+    constructor(address _yearnAddressesProviderAddress) {
         yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
     }
 
@@ -491,8 +501,8 @@ contract RegistryAdapterIronBank is Ownable {
         returns (AssetUserMetadata memory)
     {
         bool enteredMarket;
-        address[] memory markets =
-            IUnitroller(comptrollerAddress()).getAssetsIn(accountAddress);
+        address[] memory markets = IUnitroller(comptrollerAddress())
+            .getAssetsIn(accountAddress);
         for (uint256 marketIdx; marketIdx < markets.length; marketIdx++) {
             address marketAddress = markets[marketIdx];
             if (marketAddress == assetAddress) {
@@ -501,15 +511,30 @@ contract RegistryAdapterIronBank is Ownable {
             }
         }
         ICyToken asset = ICyToken(assetAddress);
-        IUnitroller.Market memory market =
-            IUnitroller(comptrollerAddress()).markets(assetAddress);
+        IUnitroller.Market memory market = IUnitroller(comptrollerAddress())
+            .markets(assetAddress);
         address tokenAddress = assetUnderlyingTokenAddress(assetAddress);
         uint256 tokenPriceUsdc = assetUnderlyingTokenPriceUsdc(assetAddress);
-        uint256 supplyBalanceUsdc = userSupplyBalanceUsdc(accountAddress, asset, tokenAddress, tokenPriceUsdc);
-        uint256 borrowBalanceUsdc = userBorrowBalanceUsdc(accountAddress, asset, tokenAddress, tokenPriceUsdc);
-        uint256 collateralBalanceUsdc = userCollateralBalanceUsdc(accountAddress, asset, tokenAddress, tokenPriceUsdc);
-        uint256 borrowLimitUsdc =
-            (collateralBalanceUsdc * market.collateralFactorMantissa) / 10**18;
+        uint256 supplyBalanceUsdc = userSupplyBalanceUsdc(
+            accountAddress,
+            asset,
+            tokenAddress,
+            tokenPriceUsdc
+        );
+        uint256 borrowBalanceUsdc = userBorrowBalanceUsdc(
+            accountAddress,
+            asset,
+            tokenAddress,
+            tokenPriceUsdc
+        );
+        uint256 collateralBalanceUsdc = userCollateralBalanceUsdc(
+            accountAddress,
+            asset,
+            tokenAddress,
+            tokenPriceUsdc
+        );
+        uint256 borrowLimitUsdc = (collateralBalanceUsdc *
+            market.collateralFactorMantissa) / 10**18;
 
         return
             AssetUserMetadata({
@@ -525,14 +550,15 @@ contract RegistryAdapterIronBank is Ownable {
     /**
      * Fetch asset metadata about an array of assets scoped to a user . This method can be used for off-chain pagination.
      */
-    function assetsUserMetadata(address accountAddress, address[] memory _assetsAddresses)
-        public
-        view
-        returns (AssetUserMetadata[] memory)
-    {
+    function assetsUserMetadata(
+        address accountAddress,
+        address[] memory _assetsAddresses
+    ) public view returns (AssetUserMetadata[] memory) {
         uint256 numberOfAssets = _assetsAddresses.length;
-        AssetUserMetadata[] memory _assetsUserMetadata =
-            new AssetUserMetadata[](numberOfAssets);
+        AssetUserMetadata[]
+            memory _assetsUserMetadata = new AssetUserMetadata[](
+                numberOfAssets
+            );
         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
             address assetAddress = _assetsAddresses[assetIdx];
             _assetsUserMetadata[assetIdx] = assetUserMetadata(
@@ -595,14 +621,15 @@ contract RegistryAdapterIronBank is Ownable {
         view
         returns (uint256)
     {
-        address _underlyingTokenAddress =
-            assetUnderlyingTokenAddress(assetAddress);
+        address _underlyingTokenAddress = assetUnderlyingTokenAddress(
+            assetAddress
+        );
         IERC20 underlyingToken = IERC20(_underlyingTokenAddress);
         uint8 underlyingTokenDecimals = underlyingToken.decimals();
-        uint256 underlyingTokenPrice =
-            ICreamOracle(IUnitroller(comptrollerAddress()).oracle())
-                .getUnderlyingPrice(assetAddress) /
-                (10**(36 - underlyingTokenDecimals - 6));
+        uint256 underlyingTokenPrice = ICreamOracle(
+            IUnitroller(comptrollerAddress()).oracle()
+        ).getUnderlyingPrice(assetAddress) /
+            (10**(36 - underlyingTokenDecimals - 6));
         return underlyingTokenPrice;
     }
 
@@ -626,18 +653,20 @@ contract RegistryAdapterIronBank is Ownable {
                 tokenPriceUsdc
             );
         }
-        IUnitroller.Market memory market =
-            IUnitroller(comptrollerAddress()).markets(assetAddress);
+        IUnitroller.Market memory market = IUnitroller(comptrollerAddress())
+            .markets(assetAddress);
 
-        TokenAmount memory underlyingTokenBalance =
-            tokenAmount(assetBalance(assetAddress), tokenAddress, tokenPriceUsdc);
+        TokenAmount memory underlyingTokenBalance = tokenAmount(
+            assetBalance(assetAddress),
+            tokenAddress,
+            tokenPriceUsdc
+        );
 
-        uint256 totalBorrowedUsdc =
-            oracle().getNormalizedValueUsdc(
-                tokenAddress,
-                asset.totalBorrows(),
-                tokenPriceUsdc
-            );
+        uint256 totalBorrowedUsdc = oracle().getNormalizedValueUsdc(
+            tokenAddress,
+            asset.totalBorrows(),
+            tokenPriceUsdc
+        );
 
         uint256 collateralCap = type(uint256).max;
         uint256 totalCollateralTokens;
@@ -646,23 +675,21 @@ contract RegistryAdapterIronBank is Ownable {
             totalCollateralTokens = asset.totalCollateralTokens();
         }
 
-        AssetMetadata memory metadata =
-            AssetMetadata({
-                totalSuppliedUsdc: underlyingTokenBalance.amountUsdc,
-                totalBorrowedUsdc: totalBorrowedUsdc,
-                lendApyBips: (asset.supplyRatePerBlock() * blocksPerYear) /
-                    10**14,
-                borrowApyBips: (asset.borrowRatePerBlock() * blocksPerYear) /
-                    10**14,
-                liquidity: liquidity,
-                liquidityUsdc: liquidityUsdc,
-                totalCollateralTokens: totalCollateralTokens,
-                collateralFactor: market.collateralFactorMantissa,
-                collateralCap: collateralCap,
-                isActive: market.isListed,
-                reserveFactor: asset.reserveFactorMantissa(),
-                exchangeRate: asset.exchangeRateStored()
-            });
+        AssetMetadata memory metadata = AssetMetadata({
+            totalSuppliedUsdc: underlyingTokenBalance.amountUsdc,
+            totalBorrowedUsdc: totalBorrowedUsdc,
+            lendApyBips: (asset.supplyRatePerBlock() * blocksPerYear) / 10**14,
+            borrowApyBips: (asset.borrowRatePerBlock() * blocksPerYear) /
+                10**14,
+            liquidity: liquidity,
+            liquidityUsdc: liquidityUsdc,
+            totalCollateralTokens: totalCollateralTokens,
+            collateralFactor: market.collateralFactorMantissa,
+            collateralCap: collateralCap,
+            isActive: market.isListed,
+            reserveFactor: asset.reserveFactorMantissa(),
+            exchangeRate: asset.exchangeRateStored()
+        });
 
         return
             AssetDynamic({
@@ -693,8 +720,8 @@ contract RegistryAdapterIronBank is Ownable {
         uint256 tokenPriceUsdc = assetUnderlyingTokenPriceUsdc(assetAddress);
 
         if (supplyBalanceShares > 0) {
-            uint256 supplyBalanceUnderlying =
-                (supplyBalanceShares * asset.exchangeRateStored()) / 10**18;
+            uint256 supplyBalanceUnderlying = (supplyBalanceShares *
+                asset.exchangeRateStored()) / 10**18;
             positions[currentPositionIdx] = Position({
                 assetId: assetAddress,
                 tokenId: tokenAddress,
@@ -711,7 +738,8 @@ contract RegistryAdapterIronBank is Ownable {
             currentPositionIdx++;
         }
         if (borrowBalanceShares > 0) {
-            uint256 borrowedCyTokenBalance = (borrowBalanceShares * 10**18) / asset.exchangeRateStored();
+            uint256 borrowedCyTokenBalance = (borrowBalanceShares * 10**18) /
+                asset.exchangeRateStored();
             positions[currentPositionIdx] = Position({
                 assetId: assetAddress,
                 tokenId: tokenAddress,
@@ -752,8 +780,10 @@ contract RegistryAdapterIronBank is Ownable {
         uint256 currentPositionIdx;
         for (uint256 assetIdx = 0; assetIdx < numberOfAssets; assetIdx++) {
             address assetAddress = _assetsAddresses[assetIdx];
-            Position[] memory assetPositions =
-                assetPositionsOf(accountAddress, assetAddress);
+            Position[] memory assetPositions = assetPositionsOf(
+                accountAddress,
+                assetAddress
+            );
 
             for (
                 uint256 assetPositionIdx = 0;
@@ -809,8 +839,9 @@ contract RegistryAdapterIronBank is Ownable {
         view
         returns (AdapterPosition memory)
     {
-        AssetUserMetadata[] memory _assetsUserMetadata =
-            assetsUserMetadata(accountAddress);
+        AssetUserMetadata[] memory _assetsUserMetadata = assetsUserMetadata(
+            accountAddress
+        );
         uint256 supplyBalanceUsdc;
         uint256 borrowBalanceUsdc;
         uint256 borrowLimitUsdc;
@@ -819,8 +850,9 @@ contract RegistryAdapterIronBank is Ownable {
             metadataIdx < _assetsUserMetadata.length;
             metadataIdx++
         ) {
-            AssetUserMetadata memory _assetUserMetadata =
-                _assetsUserMetadata[metadataIdx];
+            AssetUserMetadata memory _assetUserMetadata = _assetsUserMetadata[
+                metadataIdx
+            ];
             supplyBalanceUsdc += _assetUserMetadata.supplyBalanceUsdc;
             borrowBalanceUsdc += _assetUserMetadata.borrowBalanceUsdc;
             borrowLimitUsdc += _assetUserMetadata.borrowLimitUsdc;
@@ -855,59 +887,66 @@ contract RegistryAdapterIronBank is Ownable {
         }
         return _tokensAddresses;
     }
-    
+
     /**
      * Method for getting supply balance data
      */
-    function userSupplyBalanceUsdc(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
-        public
-        view
-        returns (uint256)
-    {
+    function userSupplyBalanceUsdc(
+        address accountAddress,
+        ICyToken asset,
+        address tokenAddress,
+        uint256 tokenPriceUsdc
+    ) public view returns (uint256) {
         uint256 supplyBalanceShares = asset.balanceOf(accountAddress);
-        uint256 supplyBalanceUnderlying =
-            (supplyBalanceShares * asset.exchangeRateStored()) / 10**18;
-        return oracle().getNormalizedValueUsdc(
-            tokenAddress,
-            supplyBalanceUnderlying,
-            tokenPriceUsdc
-        );
+        uint256 supplyBalanceUnderlying = (supplyBalanceShares *
+            asset.exchangeRateStored()) / 10**18;
+        return
+            oracle().getNormalizedValueUsdc(
+                tokenAddress,
+                supplyBalanceUnderlying,
+                tokenPriceUsdc
+            );
     }
 
     /**
      * Method for getting borrow balance data
      */
-    function userBorrowBalanceUsdc(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
-        public
-        view
-        returns (uint256)
-    {
+    function userBorrowBalanceUsdc(
+        address accountAddress,
+        ICyToken asset,
+        address tokenAddress,
+        uint256 tokenPriceUsdc
+    ) public view returns (uint256) {
         uint256 borrowBalanceShares = asset.borrowBalanceStored(accountAddress);
-        return oracle().getNormalizedValueUsdc(
-            tokenAddress,
-            borrowBalanceShares,
-            tokenPriceUsdc
-        );
+        return
+            oracle().getNormalizedValueUsdc(
+                tokenAddress,
+                borrowBalanceShares,
+                tokenPriceUsdc
+            );
     }
 
     /**
      * Method for getting collateral balance data
      */
-    function userCollateralBalanceUsdc(address accountAddress, ICyToken asset, address tokenAddress, uint256 tokenPriceUsdc)
-        public
-        view
-        returns (uint256)
-    {
-        (, uint256 collateralBalanceShare, , ) = asset.getAccountSnapshot(accountAddress);
-        uint256 collateralBalanceUnderlying =
-            (collateralBalanceShare * asset.exchangeRateStored()) / 10**18;
-        return oracle().getNormalizedValueUsdc(
-            tokenAddress,
-            collateralBalanceUnderlying,
-            tokenPriceUsdc
+    function userCollateralBalanceUsdc(
+        address accountAddress,
+        ICyToken asset,
+        address tokenAddress,
+        uint256 tokenPriceUsdc
+    ) public view returns (uint256) {
+        (, uint256 collateralBalanceShare, , ) = asset.getAccountSnapshot(
+            accountAddress
         );
+        uint256 collateralBalanceUnderlying = (collateralBalanceShare *
+            asset.exchangeRateStored()) / 10**18;
+        return
+            oracle().getNormalizedValueUsdc(
+                tokenAddress,
+                collateralBalanceUnderlying,
+                tokenPriceUsdc
+            );
     }
-
 
     /**
      * Cascading fallback proxy provides the contract with the ability to add new features at a later time

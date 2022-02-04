@@ -77,9 +77,11 @@ contract CalculationsIronBank is AddressesProviderConsumer {
         return false;
     }
 
-    function getIronBankMarketPriceUsdc(
-        address tokenAddress
-    ) public view returns (uint256) {
+    function getIronBankMarketPriceUsdc(address tokenAddress)
+        public
+        view
+        returns (uint256)
+    {
         ICyToken cyToken = ICyToken(tokenAddress);
         uint256 exchangeRateStored = cyToken.exchangeRateStored();
         address underlyingTokenAddress = cyToken.underlying();
@@ -107,8 +109,7 @@ contract CalculationsIronBank is AddressesProviderConsumer {
                 unitrollerIds[unitrollerIdx]
             );
             if (isIronBankMarket(unitrollerAddress, tokenAddress)) {
-                return
-                    getIronBankMarketPriceUsdc(tokenAddress);
+                return getIronBankMarketPriceUsdc(tokenAddress);
             }
         }
         revert();

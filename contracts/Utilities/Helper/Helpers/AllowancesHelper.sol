@@ -57,13 +57,12 @@ contract AllowancesHelper {
                 IERC20 token = IERC20(tokenAddress);
                 uint256 amount = token.allowance(ownerAddress, spenderAddress);
                 if (amount > 0) {
-                    Allowance memory allowance =
-                        Allowance({
-                            owner: ownerAddress,
-                            spender: spenderAddress,
-                            amount: amount,
-                            token: tokenAddress
-                        });
+                    Allowance memory allowance = Allowance({
+                        owner: ownerAddress,
+                        spender: spenderAddress,
+                        amount: amount,
+                        token: tokenAddress
+                    });
                     _allowances[allowanceIdx] = allowance;
                     allowanceIdx++;
                 }

@@ -11,6 +11,7 @@ interface IERC20 {
 
 interface ICurvePool {
     function get_virtual_price() external view returns (uint256);
+
     function coins(uint256 arg0) external view returns (address);
 }
 
@@ -36,10 +37,10 @@ interface ICryptoPool {
 
     function price_oracle(uint256) external view returns (uint256);
 
-    // Some crypto pools only consist of 2 coins, one of which is usd so 
+    // Some crypto pools only consist of 2 coins, one of which is usd so
     // it can be assumed that the price oracle doesn't need an argument
     // and the price of the oracle refers to the other coin.
-    // This function is mutually exclusive with the price_oracle function that takes 
+    // This function is mutually exclusive with the price_oracle function that takes
     // an argument of the index of the coin, only one will be present on the pool
     function price_oracle() external view returns (uint256);
 
@@ -93,14 +94,18 @@ contract CalculationsCurve is Ownable {
         );
     }
 
-    function updateYearnAddressesProviderAddress(address _yearnAddressesProviderAddress) external onlyOwner {
+    function updateYearnAddressesProviderAddress(
+        address _yearnAddressesProviderAddress
+    ) external onlyOwner {
         yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
         yearnAddressesProvider = IYearnAddressesProvider(
             _yearnAddressesProviderAddress
         );
     }
 
-    function updateCurveAddressesProviderAddress(address _curveAddressesProviderAddress) external onlyOwner {
+    function updateCurveAddressesProviderAddress(
+        address _curveAddressesProviderAddress
+    ) external onlyOwner {
         curveAddressesProviderAddress = _curveAddressesProviderAddress;
         curveAddressesProvider = ICurveAddressesProvider(
             _curveAddressesProviderAddress
@@ -114,7 +119,7 @@ contract CalculationsCurve is Ownable {
     function curveRegistry() internal view returns (ICurveRegistry) {
         return ICurveRegistry(curveAddressesProvider.get_registry());
     }
-    
+
     function cryptoPoolRegistry() internal view returns (ICurveRegistry) {
         return ICurveRegistry(curveAddressesProvider.get_address(5));
     }
@@ -145,7 +150,10 @@ contract CalculationsCurve is Ownable {
     {
         address poolAddress = getPoolFromLpToken(lpAddress);
 
-        address[] memory underlyingTokensAddresses = cryptoPoolUnderlyingTokensAddressesByPoolAddress(poolAddress);
+        address[]
+            memory underlyingTokensAddresses = cryptoPoolUnderlyingTokensAddressesByPoolAddress(
+                poolAddress
+            );
         uint256 totalValue;
         for (
             uint256 tokenIdx;
@@ -183,7 +191,10 @@ contract CalculationsCurve is Ownable {
         view
         returns (TokenAmount[] memory)
     {
-        address[] memory underlyingTokensAddresses = cryptoPoolUnderlyingTokensAddressesByPoolAddress(poolAddress);
+        address[]
+            memory underlyingTokensAddresses = cryptoPoolUnderlyingTokensAddressesByPoolAddress(
+                poolAddress
+            );
         TokenAmount[] memory _tokenAmounts = new TokenAmount[](
             underlyingTokensAddresses.length
         );
@@ -216,7 +227,8 @@ contract CalculationsCurve is Ownable {
         address tokenAddress = pool.coins(tokenIdx);
         uint8 decimals = IERC20(tokenAddress).decimals();
         uint256 tokenPrice = oracle().getPriceUsdcRecommended(tokenAddress);
-        uint256 tokenValueUsdc = pool.balances(tokenIdx) * tokenPrice / 10 ** decimals;
+        uint256 tokenValueUsdc = (pool.balances(tokenIdx) * tokenPrice) /
+            10**decimals;
         return tokenValueUsdc;
     }
 
@@ -288,13 +300,17 @@ contract CalculationsCurve is Ownable {
         }
 
         (bool successNoParams, ) = address(poolAddress).staticcall(
-            abi.encodeWithSignature("price_oracle()")   
+            abi.encodeWithSignature("price_oracle()")
         );
 
         return successNoParams;
     }
 
-    function getPoolFromLpToken(address lpAddress) public view returns (address) {
+    function getPoolFromLpToken(address lpAddress)
+        public
+        view
+        returns (address)
+    {
         address poolAddress = curveRegistry().get_pool_from_lp_token(lpAddress);
 
         if (poolAddress != address(0)) {
@@ -354,11 +370,11 @@ contract CalculationsCurve is Ownable {
         if (isCurveLpToken(assetAddress)) {
             return getCurvePriceUsdc(assetAddress);
         }
-        
+
         ICurvePool pool = ICurvePool(assetAddress);
         uint256 virtualPrice = pool.get_virtual_price();
         address[8] memory coins;
-        for (uint i = 0; i < 8; i++) {
+        for (uint256 i = 0; i < 8; i++) {
             try pool.coins(i) returns (address coin) {
                 coins[i] = coin;
             } catch {}
@@ -368,6 +384,6 @@ contract CalculationsCurve is Ownable {
         if (price == 0) {
             revert();
         }
-        return price * virtualPrice / 10 ** 18;
+        return (price * virtualPrice) / 10**18;
     }
 }
