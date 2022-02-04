@@ -8,12 +8,16 @@ autofetch_sources: true
 # require OpenZepplin Contracts
 dependencies:
   - OpenZeppelin/openzeppelin-contracts@3.1.0
+  - Uniswap/v3-periphery@1.3.0
+  - Uniswap/v3-core@1.0.0
 
 # path remapping to support OpenZepplin imports with NPM-style path
 compiler:
   solc:
     remappings:
       - "@openzeppelin=OpenZeppelin/openzeppelin-contracts@3.1.0"
+      - "@uniswap/v3-periphery=Uniswap/v3-periphery@1.3.0"
+      - "@uniswap/v3-core=Uniswap/v3-core@1.0.0"
 
 reports:
   exclude_paths:
