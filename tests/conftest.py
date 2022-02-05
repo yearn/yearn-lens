@@ -4,11 +4,6 @@ from eth_account import Account
 from brownie import web3, Contract, interface
 
 
-@pytest.fixture(scope="function", autouse=True)
-def shared_setup(fn_isolation):
-  pass
-
-
 class MiscAddresses:
     curveAddressProvider = "0x0000000022D53366457F9d5E68Ec105046FC4383"
     ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
@@ -64,6 +59,13 @@ class TokenAddresses:
     ibEurPoolAddress = "0x19b080FE1ffA0553469D20Ca36219F17Fcf03859"
     linkAddress = "0x514910771AF9Ca656af840dff83E8264EcF986CA"
     oBtcAddress = "0x8064d9Ae6cDf087b1bcd5BDf3531bD5d8C537a68"
+    random_token = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
+    sAUD = "0xF48e200EAF9906362BB1442fca31e0835773b8B4"
+    sCHF = "0x0F83287FF768D1c1e17a42F44d644D7F22e8ee1d"
+    sEUR = "0xD71eCFF9342A5Ced620049e616c5035F1dB98620"
+    sGBP = "0x97fe22E7341a0Cd8Db6F6C021A24Dc8f4DAD855F"
+    sJPY = "0xF6b1C627e95BFc3c1b4c9B825a032Ff0fBf3e07d"
+    sKRW = "0x269895a3dF4D73b077Fc823dD6dA1B95f72Aaf9B"
     steCrvAddress = "0x06325440D014e39736583c165C2963BA99fAf14E"
     sushiswapLpTokenAddress = "0x397FF1542f962076d0BFE58eA045FfA2d347ACa0"  # USDC/WETH
     threeCrvAddress = "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490"
@@ -97,6 +99,11 @@ class Addresses:
     routers = RouterAddresses()
     tokens = TokenAddresses()
     vaults = VaultAddresses()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def shared_setup(fn_isolation):
+  pass
 
 
 @pytest.fixture
