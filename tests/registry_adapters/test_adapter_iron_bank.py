@@ -1,20 +1,7 @@
 import pytest
+
+from ..addresses import *
 from brownie import ZERO_ADDRESS, Contract
-
-
-usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-cyWethAddress = "0x41c84c0e2EE0b740Cf0d31F63f3B6F627DC6b393"
-wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-cyUsdcAddress = "0x76eb2fe28b36b3ee97f3adae0c69606eedb2a37c"
-
-sushiAddress = "0x6B3595068778DD592e39A122f4f5a5cF09C90fE2"
-cySushiAddress = "0x226F3738238932BA0dB2319a8117D9555446102f"
-whaleAddress = "0x53c286E0AbE87c9e6d4d95ebE62ceaFa4aFCE849"
-comptrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
-userAddress = "0x4C026d5D6A7fe1B2e2B28B916Ef2016f6058F7B4"  # sssuttonsss.eth
-
-yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
-cyYfiAddress = "0xFa3472f7319477c9bFEcdD66E4B948569E7621b9"
 
 
 @pytest.fixture
