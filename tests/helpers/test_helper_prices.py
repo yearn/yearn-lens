@@ -1,4 +1,5 @@
 import pytest
+from ..addresses import *
 from conftest import usdcAddress, crvAddress
 
 

@@ -1,7 +1,6 @@
 import pytest
-import brownie
 
-from web3 import Web3
+from ..addresses import *
 from brownie import Contract, interface
 
 
@@ -26,11 +25,6 @@ def test_set_helpers(allowancesHelper, Helper, management):
 
 
 def test_allowances(helper, rando, AllowancesHelper):
-    yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
-    threeCrvAddress = "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490"
-    ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
-    wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-    masterChefAddress = "0xbD17B1ce622d73bD438b9E658acA5996dc394b0d"
 
     yfi = interface.IERC20(yfiAddress)
     yfi.approve(ethZapAddress, 500, {"from": rando})
