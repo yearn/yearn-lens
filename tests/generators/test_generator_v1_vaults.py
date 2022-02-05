@@ -10,7 +10,8 @@ def v1Generator(AddressesGeneratorV1Vaults, management):
     # TODO: what is this address?
     registryAddress = "0x3eE41C098f9666ed2eA246f4D2558010e59d63A0"
     generator = AddressesGeneratorV1Vaults.deploy(
-        registryAddress, {"from": management},
+        registryAddress,
+        {"from": management},
     )
     return generator
 

@@ -15,8 +15,10 @@ def ironBankTvlAdapter(
     management,
 ):
     return TvlAdapterIronBank.deploy(
-        oracle, ironBankAddressesGenerator, delegationMapping, {
-            "from": management},
+        oracle,
+        ironBankAddressesGenerator,
+        delegationMapping,
+        {"from": management},
     )
 
 
@@ -30,16 +32,15 @@ def test_generator_info(ironBankTvlAdapter):
 def test_asset_tvl_breakdown(ironBankTvlAdapter, oracle):
     cyDaiToken = Contract(cyDaiAddress)
     tokenAddress = ironBankTvlAdapter.underlyingTokenAddress(cyDaiAddress)
-    underlyingTokenBalanceAmount = ironBankTvlAdapter.assetBalance(
-        cyDaiAddress)
-    delegatedBalanceAmount = ironBankTvlAdapter.assetDelegatedBalance(
-        cyDaiAddress)
+    underlyingTokenBalanceAmount = ironBankTvlAdapter.assetBalance(cyDaiAddress)
+    delegatedBalanceAmount = ironBankTvlAdapter.assetDelegatedBalance(cyDaiAddress)
     cyDaiAdjustedBalance = underlyingTokenBalanceAmount - delegatedBalanceAmount
     cyDaiPriceUsdc = oracle.getPriceUsdcRecommended(tokenAddress)
     breakdown = ironBankTvlAdapter.assetTvlBreakdown(cyDaiAddress)
 
     cyDaiAdjustedBalanceUsdc = oracle.getNormalizedValueUsdc(
-        tokenAddress, cyDaiAdjustedBalance, cyDaiPriceUsdc)
+        tokenAddress, cyDaiAdjustedBalance, cyDaiPriceUsdc
+    )
 
     assetId = breakdown[0]
     tokenId = breakdown[1]
@@ -60,34 +61,36 @@ def test_asset_tvl_breakdown(ironBankTvlAdapter, oracle):
 
 def test_assets_tvl_breakdown(ironBankTvlAdapter, oracle):
     cyDaiUnderlyingTokenAddress = ironBankTvlAdapter.underlyingTokenAddress(
-        cyDaiAddress)
-    cyDaiUnderlyingTokenBalanceAmount = ironBankTvlAdapter.assetBalance(
-        cyDaiAddress)
-    cyDaiDelegatedBalanceAmount = ironBankTvlAdapter.assetDelegatedBalance(
-        cyDaiAddress)
-    cyDaiAdjustedBalance = cyDaiUnderlyingTokenBalanceAmount - cyDaiDelegatedBalanceAmount
-    cyDaiPriceUsdc = oracle.getPriceUsdcRecommended(
-        cyDaiUnderlyingTokenAddress)
+        cyDaiAddress
+    )
+    cyDaiUnderlyingTokenBalanceAmount = ironBankTvlAdapter.assetBalance(cyDaiAddress)
+    cyDaiDelegatedBalanceAmount = ironBankTvlAdapter.assetDelegatedBalance(cyDaiAddress)
+    cyDaiAdjustedBalance = (
+        cyDaiUnderlyingTokenBalanceAmount - cyDaiDelegatedBalanceAmount
+    )
+    cyDaiPriceUsdc = oracle.getPriceUsdcRecommended(cyDaiUnderlyingTokenAddress)
 
     cyDaiAdjustedBalanceUsdc = oracle.getNormalizedValueUsdc(
-        cyDaiUnderlyingTokenAddress, cyDaiAdjustedBalance, cyDaiPriceUsdc)
+        cyDaiUnderlyingTokenAddress, cyDaiAdjustedBalance, cyDaiPriceUsdc
+    )
 
     cyWethUnderlyingTokenAddress = ironBankTvlAdapter.underlyingTokenAddress(
-        cyWethAddress)
-    cyWethUnderlyingTokenBalanceAmount = ironBankTvlAdapter.assetBalance(
-        cyWethAddress)
+        cyWethAddress
+    )
+    cyWethUnderlyingTokenBalanceAmount = ironBankTvlAdapter.assetBalance(cyWethAddress)
     cyWethDelegatedBalanceAmount = ironBankTvlAdapter.assetDelegatedBalance(
-        cyWethAddress)
-    cyWethAdjustedBalance = cyWethUnderlyingTokenBalanceAmount - \
-        cyWethDelegatedBalanceAmount
-    cyWethPriceUsdc = oracle.getPriceUsdcRecommended(
-        cyWethUnderlyingTokenAddress)
+        cyWethAddress
+    )
+    cyWethAdjustedBalance = (
+        cyWethUnderlyingTokenBalanceAmount - cyWethDelegatedBalanceAmount
+    )
+    cyWethPriceUsdc = oracle.getPriceUsdcRecommended(cyWethUnderlyingTokenAddress)
 
     cyWethAdjustedBalanceUsdc = oracle.getNormalizedValueUsdc(
-        cyWethUnderlyingTokenAddress, cyWethAdjustedBalance, cyWethPriceUsdc)
+        cyWethUnderlyingTokenAddress, cyWethAdjustedBalance, cyWethPriceUsdc
+    )
 
-    breakdown = ironBankTvlAdapter.assetsTvlBreakdown(
-        [cyDaiAddress, cyWethAddress])
+    breakdown = ironBankTvlAdapter.assetsTvlBreakdown([cyDaiAddress, cyWethAddress])
 
     cyDaiTvlBreakdown = breakdown[0]
     cyWethBreakdown = breakdown[1]
@@ -127,13 +130,12 @@ def test_assets_tvl_breakdown(ironBankTvlAdapter, oracle):
 
 def test_asset_tvl_usdc(ironBankTvlAdapter, oracle):
     tokenAddress = ironBankTvlAdapter.underlyingTokenAddress(cyDaiAddress)
-    underlyingTokenBalanceAmount = ironBankTvlAdapter.assetBalance(
-        cyDaiAddress)
-    delegatedBalanceAmount = ironBankTvlAdapter.assetDelegatedBalance(
-        cyDaiAddress)
+    underlyingTokenBalanceAmount = ironBankTvlAdapter.assetBalance(cyDaiAddress)
+    delegatedBalanceAmount = ironBankTvlAdapter.assetDelegatedBalance(cyDaiAddress)
     cyDaiAdjustedBalanceAmount = underlyingTokenBalanceAmount - delegatedBalanceAmount
     cyDaiAdjustedBalanceUsdc = oracle.getNormalizedValueUsdc(
-        tokenAddress, cyDaiAdjustedBalanceAmount)
+        tokenAddress, cyDaiAdjustedBalanceAmount
+    )
 
     cyDaiTvlUsdc = ironBankTvlAdapter.assetTvlUsdc(cyDaiAddress)
 

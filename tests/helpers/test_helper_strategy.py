@@ -6,7 +6,10 @@ from ..addresses import *
 @pytest.fixture
 def v2VaultsAdapter(RegisteryAdapterV2Vault, managementList, oracle, management):
     return RegisteryAdapterV2Vault.deploy(
-        v2RegistryAddress, oracle, managementList, {"from": management},
+        v2RegistryAddress,
+        oracle,
+        managementList,
+        {"from": management},
     )
 
 

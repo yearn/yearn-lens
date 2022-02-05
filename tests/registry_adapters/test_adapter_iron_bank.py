@@ -12,8 +12,7 @@ def ironBankAdapter(
     gov,
 ):
     ironBankAdapter = RegistryAdapterIronBank.deploy(
-        yearnAddressesProvider,
-        {"from": gov}
+        yearnAddressesProvider, {"from": gov}
     )
     ironBankAdapter.setExtensionsAddresses([ironBankTvlAdapter], {"from": gov})
     return ironBankAdapter
@@ -36,7 +35,7 @@ def test_asset_user_metadata(ironBankAdapter, accounts, oracle):
     sushi = Contract.from_explorer(sushiAddress)
     cySushi = Contract.from_explorer(cySushiAddress)
     whale = accounts.at(whaleAddress, force=True)
-    MAX_UINT256 = 2 ** 256 - 1
+    MAX_UINT256 = 2**256 - 1
     sushi.approve(cySushi, MAX_UINT256, {"from": whale})
     sushi_bal = sushi.balanceOf(whale)
     cySushi.mint(sushi_bal, {"from": whale})
@@ -54,17 +53,20 @@ def test_asset_user_metadata(ironBankAdapter, accounts, oracle):
     supplyBalanceShares = cySushi.balanceOf(whale)
     supplyBalanceUnderlying = (supplyBalanceShares * exchangeRate) / 10**18
     supplyBalanceUsdc = oracle.getNormalizedValueUsdc(
-        tokenAddress, supplyBalanceUnderlying, tokenPriceUsdc)
+        tokenAddress, supplyBalanceUnderlying, tokenPriceUsdc
+    )
 
     borrowBalanceShares = cySushi.borrowBalanceStored(whale)
     borrowBalanceUsdc = oracle.getNormalizedValueUsdc(
-        tokenAddress, borrowBalanceShares, tokenPriceUsdc)
+        tokenAddress, borrowBalanceShares, tokenPriceUsdc
+    )
 
     _, collateralBalanceShare, _, _ = cySushi.getAccountSnapshot(whale)
     collateralBalanceUnderlying = collateralBalanceShare * exchangeRate / 10**18
 
     collateralBalanceUsdc = oracle.getNormalizedValueUsdc(
-        tokenAddress, collateralBalanceUnderlying, tokenPriceUsdc)
+        tokenAddress, collateralBalanceUnderlying, tokenPriceUsdc
+    )
 
     borrowLimitUsdc = collateralBalanceUsdc * collateralFactor / 10**18
 
@@ -82,7 +84,7 @@ def test_assets_user_metadata(ironBankAdapter, accounts, oracle):
     sushi = Contract.from_explorer(sushiAddress)
     cySushi = Contract.from_explorer(cySushiAddress)
     whale = accounts.at(whaleAddress, force=True)
-    MAX_UINT256 = 2 ** 256 - 1
+    MAX_UINT256 = 2**256 - 1
     sushi.approve(cySushi, MAX_UINT256, {"from": whale})
     sushi_bal = sushi.balanceOf(whale)
     cySushi.mint(sushi_bal, {"from": whale})
@@ -93,7 +95,7 @@ def test_assets_user_metadata(ironBankAdapter, accounts, oracle):
     yfi = Contract.from_explorer(yfiAddress)
     cyYfi = Contract.from_explorer(cyYfiAddress)
     whale = accounts.at(whaleAddress, force=True)
-    MAX_UINT256 = 2 ** 256 - 1
+    MAX_UINT256 = 2**256 - 1
     yfi.approve(cyYfi, MAX_UINT256, {"from": whale})
     yfi_bal = yfi.balanceOf(whale)
     cyYfi.mint(yfi_bal, {"from": whale})
@@ -111,20 +113,24 @@ def test_assets_user_metadata(ironBankAdapter, accounts, oracle):
     sushiPriceUsdc = ironBankAdapter.assetUnderlyingTokenPriceUsdc(cySushi)
     sushiExchangeRate = cySushi.exchangeRateStored()
     sushiSupplyBalShares = cySushi.balanceOf(whale)
-    sushiSupplyBalUnderlying = (
-        sushiSupplyBalShares * sushiExchangeRate) / 10**18
+    sushiSupplyBalUnderlying = (sushiSupplyBalShares * sushiExchangeRate) / 10**18
     sushiSupplyBalUsdc = oracle.getNormalizedValueUsdc(
-        sushiTokenAddress, sushiSupplyBalUnderlying, sushiPriceUsdc)
+        sushiTokenAddress, sushiSupplyBalUnderlying, sushiPriceUsdc
+    )
 
     sushiBorrowBalShares = cySushi.borrowBalanceStored(whale)
     sushiBorrowBalUsdc = oracle.getNormalizedValueUsdc(
-        sushiTokenAddress, sushiBorrowBalShares, sushiPriceUsdc)
+        sushiTokenAddress, sushiBorrowBalShares, sushiPriceUsdc
+    )
 
     _, sushiCollateralBalShare, _, _ = cySushi.getAccountSnapshot(whale)
-    sushiCollateralBalUnderlying = sushiCollateralBalShare * sushiExchangeRate / 10**18
+    sushiCollateralBalUnderlying = (
+        sushiCollateralBalShare * sushiExchangeRate / 10**18
+    )
 
     sushiCollateralBalUsdc = oracle.getNormalizedValueUsdc(
-        sushiTokenAddress, sushiCollateralBalUnderlying, sushiPriceUsdc)
+        sushiTokenAddress, sushiCollateralBalUnderlying, sushiPriceUsdc
+    )
 
     sushiBorrowLimitUsdc = sushiCollateralBalUsdc * sushiCollateralFactor / 10**18
 
@@ -135,22 +141,24 @@ def test_assets_user_metadata(ironBankAdapter, accounts, oracle):
     yfiSupplyBalShares = cyYfi.balanceOf(whale)
     yfiSupplyBalUnderlying = (yfiSupplyBalShares * yfiExchangeRate) / 10**18
     yfiSupplyBalUsdc = oracle.getNormalizedValueUsdc(
-        yfiTokenAddress, yfiSupplyBalUnderlying, yfiPriceUsdc)
+        yfiTokenAddress, yfiSupplyBalUnderlying, yfiPriceUsdc
+    )
 
     yfiBorrowBalShares = cyYfi.borrowBalanceStored(whale)
     yfiBorrowBalUsdc = oracle.getNormalizedValueUsdc(
-        yfiTokenAddress, yfiBorrowBalShares, yfiPriceUsdc)
+        yfiTokenAddress, yfiBorrowBalShares, yfiPriceUsdc
+    )
 
     _, yfiCollateralBalShare, _, _ = cyYfi.getAccountSnapshot(whale)
     yfiCollateralBalUnderlying = yfiCollateralBalShare * yfiExchangeRate / 10**18
 
     yfiCollateralBalUsdc = oracle.getNormalizedValueUsdc(
-        yfiTokenAddress, yfiCollateralBalUnderlying, yfiPriceUsdc)
+        yfiTokenAddress, yfiCollateralBalUnderlying, yfiPriceUsdc
+    )
 
     yfiBorrowLimitUsdc = yfiCollateralBalUsdc * yfiCollateralFactor / 10**18
 
-    asset_user_metadata = ironBankAdapter.assetsUserMetadata(whale, [
-                                                             cySushi, cyYfi])
+    asset_user_metadata = ironBankAdapter.assetsUserMetadata(whale, [cySushi, cyYfi])
     assert asset_user_metadata[0][0] == cySushi
     assert asset_user_metadata[0][1] == True
     assert asset_user_metadata[0][2] == sushiSupplyBalUsdc
@@ -190,8 +198,7 @@ def test_assets_addresses(ironBankAdapter):
 
 def test_asset_static(ironBankAdapter):
     cyUsdcToken = Contract.from_explorer(cyUsdcAddress)
-    usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(
-        cyUsdcAddress)
+    usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyUsdcAddress)
     _, typeId, _ = ironBankAdapter.adapterInfo()
     usdcTokenName = cyUsdcToken.name()
     usdcTokenSymbol = cyUsdcToken.symbol()
@@ -217,31 +224,31 @@ def test_asset_static(ironBankAdapter):
 
 def test_asset_dynamic(ironBankAdapter, oracle):
     cyUsdcToken = Contract.from_explorer(cyUsdcAddress)
-    usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(
-        cyUsdcAddress)
+    usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyUsdcAddress)
     liquidity = cyUsdcToken.getCash()
-    usdcTokenPrice = ironBankAdapter.assetUnderlyingTokenPriceUsdc(
-        cyUsdcAddress)
+    usdcTokenPrice = ironBankAdapter.assetUnderlyingTokenPriceUsdc(cyUsdcAddress)
     assert liquidity > 0
     assert usdcTokenPrice > 0
 
     liquidityUsdc = oracle.getNormalizedValueUsdc(
-        usdcTokenAddress, liquidity, usdcTokenPrice)
+        usdcTokenAddress, liquidity, usdcTokenPrice
+    )
     assert liquidityUsdc > 0
 
     cyUsdcAddressBalance = ironBankAdapter.assetBalance(cyUsdcAddress)
     assert cyUsdcAddressBalance > 0
 
     underlyingTokenBalanceUsdc = oracle.getNormalizedValueUsdc(
-        usdcTokenAddress, cyUsdcAddressBalance, usdcTokenPrice)
+        usdcTokenAddress, cyUsdcAddressBalance, usdcTokenPrice
+    )
     underlyingTokenBalance = (cyUsdcAddressBalance, underlyingTokenBalanceUsdc)
     totalBorrowedUsdc = oracle.getNormalizedValueUsdc(
-        usdcTokenAddress, cyUsdcToken.totalBorrows(), usdcTokenPrice)
+        usdcTokenAddress, cyUsdcToken.totalBorrows(), usdcTokenPrice
+    )
     assert totalBorrowedUsdc > 0
 
     comptroller = Contract.from_explorer(comptrollerAddress)
-    isListed, collateralFactorMantissa, version = comptroller.markets(
-        cyUsdcAddress)
+    isListed, collateralFactorMantissa, version = comptroller.markets(cyUsdcAddress)
     assert version >= 1
 
     collateralCap = cyUsdcToken.collateralCap()
@@ -296,12 +303,10 @@ def test_asset_dynamic(ironBankAdapter, oracle):
 
 def test_assets_static(ironBankAdapter):
     cyUsdcToken = Contract.from_explorer(cyUsdcAddress)
-    usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(
-        cyUsdcAddress)
+    usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyUsdcAddress)
 
     cySushiToken = Contract.from_explorer(cySushiAddress)
-    sushiTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(
-        cySushiAddress)
+    sushiTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cySushiAddress)
 
     _, typeId, _ = ironBankAdapter.adapterInfo()
     usdcTokenName = cyUsdcToken.name()
@@ -370,7 +375,7 @@ def test_asset_positions_of(ironBankAdapter, accounts):
     weth = Contract.from_explorer(wethAddress)
     cyWeth = Contract.from_explorer(cyWethAddress)
     user = accounts.at(userAddress, force=True)
-    MAX_UINT256 = 2 ** 256 - 1
+    MAX_UINT256 = 2**256 - 1
     weth.approve(cyWeth, MAX_UINT256, {"from": user})
     weth_bal = weth.balanceOf(userAddress)
     cyWeth.mint(weth_bal, {"from": user})
@@ -380,10 +385,8 @@ def test_asset_positions_of(ironBankAdapter, accounts):
     comptroller.enterMarkets([cyWeth], {"from": user})
 
     cyWeth = Contract.from_explorer(cyWethAddress)
-    cyWethTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(
-        cyWethAddress)
-    cyWethTokenPrice = ironBankAdapter.assetUnderlyingTokenPriceUsdc(
-        cyWethAddress)
+    cyWethTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyWethAddress)
+    cyWethTokenPrice = ironBankAdapter.assetUnderlyingTokenPriceUsdc(cyWethAddress)
     decimal = cyWeth.decimals()
 
     userSupplyBalanceShares = cyWeth.balanceOf(userAddress)
@@ -393,7 +396,7 @@ def test_asset_positions_of(ironBankAdapter, accounts):
 
     exchangeRate = cyWeth.exchangeRateStored()
 
-    userSupplyBalanceUnderlying = userSupplyBalanceShares * exchangeRate / 10 ** 18
+    userSupplyBalanceUnderlying = userSupplyBalanceShares * exchangeRate / 10**18
 
     positions = ironBankAdapter.assetPositionsOf(userAddress, cyWethAddress)
     assert userSupplyBalanceUnderlying > 0
@@ -421,7 +424,7 @@ def test_asset_positions_of(ironBankAdapter, accounts):
     assert allowance > 0
 
     # Test account borrow balance
-    userBorrowedCyTokenBalance = userBorrowBalanceShares * 10 ** 18 / exchangeRate
+    userBorrowedCyTokenBalance = userBorrowBalanceShares * 10**18 / exchangeRate
 
     borrowPosition = positions[1]
 
@@ -464,7 +467,8 @@ def test_assets_positions_of(ironBankAdapter):
 
     # Test positionsOf(address, [...address])
     positions = ironBankAdapter.assetsPositionsOf(
-        userAddress, [cyWethAddress, cyUsdcAddress])
+        userAddress, [cyWethAddress, cyUsdcAddress]
+    )
 
     position = positions[0]
     assetId = position[0]

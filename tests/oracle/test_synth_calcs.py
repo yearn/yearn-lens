@@ -31,6 +31,7 @@ def test_krw_price(synth_calculations):
     price = synth_calculations.getPriceUsdc(sKRW)
     assert price > 0
 
+
 def test_synth_price_reverts_when_not_added(synth_calculations):
     with brownie.reverts("token not a synth"):
         synth_calculations.getPriceUsdc(random_token)

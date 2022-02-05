@@ -5,7 +5,9 @@ from ..addresses import *
 
 @pytest.fixture
 def delegatedBalanceMapping(DelegatedBalanceMapping, management):
-    return DelegatedBalanceMapping.deploy({"from": management},)
+    return DelegatedBalanceMapping.deploy(
+        {"from": management},
+    )
 
 
 def test_update_delegation_status_for_asset(delegatedBalanceMapping):
