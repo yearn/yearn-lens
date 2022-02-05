@@ -1,9 +1,10 @@
-import pytest
+from operator import itemgetter
+
 import brownie
+import pytest
+from brownie import ZERO_ADDRESS, interface
 
 from ..addresses import *
-from brownie import interface, ZERO_ADDRESS
-from operator import itemgetter
 
 
 def test_generator_info(v2VaultsTvlAdapter):

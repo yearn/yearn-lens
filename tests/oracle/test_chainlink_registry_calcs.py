@@ -1,8 +1,8 @@
 import brownie
 import pytest
+from brownie import chain
 
 from ..addresses import *
-from brownie import chain
 
 
 @pytest.fixture

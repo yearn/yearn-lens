@@ -1,8 +1,8 @@
-import pytest
 import brownie
+import pytest
+from brownie import ZERO_ADDRESS, Contract, chain
 
 from ..addresses import *
-from brownie import Contract, ZERO_ADDRESS, chain
 
 
 # Fixtures

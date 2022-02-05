@@ -1,47 +1,47 @@
 from brownie import (
-    RegisteryAdapterV2Vault,
+    AddressesGeneratorIronBank,
     AddressesGeneratorV2Vaults,
+    AddressMergeHelper,
+    AllowancesHelper,
+    BalancesHelper,
+    CalculationsCurve,
+    CalculationsIronBank,
+    CalculationsSushiswap,
+    DelegatedBalanceMapping,
     Helper,
     ManagementList,
-    AddressMergeHelper,
     Oracle,
-    CalculationsCurve,
-    CalculationsSushiswap,
-    CalculationsIronBank,
-    AllowancesHelper,
+    PricesHelper,
+    RegisteryAdapterV2Vault,
     RegistryAdapterIronBank,
+    StrategiesHelper,
     TvlAdapterIronBank,
     TvlAdapterV2Vaults,
-    AddressesGeneratorIronBank,
     UniqueAddressesHelper,
-    BalancesHelper,
-    DelegatedBalanceMapping,
-    PricesHelper,
-    StrategiesHelper,
-    accounts,
+    accounts
 )
 
 
 def main():
-    trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
-    v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
-    usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-    steCrvAddress = "0x06325440D014e39736583c165C2963BA99fAf14E"
+    aLinkAddress = "0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84"
+    curveAddressProvider = "0x0000000022D53366457F9d5E68Ec105046FC4383"
+    cySusdOldAddress = "0x4e3a36A633f63aee0aB57b5054EC78867CB3C0b8"
     eCrvAddress = "0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c"
     ethAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
-    wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-    aLinkAddress = "0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84"
-    linkAddress = "0x514910771AF9Ca656af840dff83E8264EcF986CA"
-    usdpAddress = "0x1456688345527bE1f37E9e627DA0837D6f08C925"
-    oBtcAddress = "0x8064d9Ae6cDf087b1bcd5BDf3531bD5d8C537a68"
-    wbtcAddress = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
-    curveAddressProvider = "0x0000000022D53366457F9d5E68Ec105046FC4383"
-    uniswapRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
-    uniswapFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
-    sushiswapRouterAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
-    sushiswapFactoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
     ironBankRegistryAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
-    cySusdOldAddress = "0x4e3a36A633f63aee0aB57b5054EC78867CB3C0b8"
+    linkAddress = "0x514910771AF9Ca656af840dff83E8264EcF986CA"
+    oBtcAddress = "0x8064d9Ae6cDf087b1bcd5BDf3531bD5d8C537a68"
+    steCrvAddress = "0x06325440D014e39736583c165C2963BA99fAf14E"
+    sushiswapFactoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
+    sushiswapRouterAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
+    trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
+    uniswapFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
+    uniswapRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+    usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    usdpAddress = "0x1456688345527bE1f37E9e627DA0837D6f08C925"
+    v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
+    wbtcAddress = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+    wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
     yearnAddressProvider = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
 
     management = accounts[0]

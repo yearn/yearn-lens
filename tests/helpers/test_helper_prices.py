@@ -1,6 +1,7 @@
 import pytest
+from conftest import crvAddress, usdcAddress
+
 from ..addresses import *
-from conftest import usdcAddress, crvAddress
 
 
 def test_tokens_prices(pricesHelper):

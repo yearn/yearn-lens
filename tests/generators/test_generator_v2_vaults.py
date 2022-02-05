@@ -1,8 +1,8 @@
-import pytest
 import brownie
+import pytest
+from brownie import ZERO_ADDRESS
 
 from ..addresses import *
-from brownie import ZERO_ADDRESS
 
 
 def test_generator_info(v2VaultsGenerator):

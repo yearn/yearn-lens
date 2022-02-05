@@ -1,7 +1,7 @@
 import pytest
+from brownie import Contract, accounts, interface
 
 from ..addresses import *
-from brownie import Contract, interface, accounts
 
 
 def test_set_helpers(BalancesHelper, iv2Registry):

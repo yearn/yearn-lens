@@ -1,8 +1,8 @@
 import pytest
-from .addresses import *
-from brownie import Oracle
+from brownie import Contract, Oracle, interface, web3
 from eth_account import Account
-from brownie import web3, Contract, interface
+
+from .addresses import *
 
 
 @pytest.fixture(scope="function", autouse=True)

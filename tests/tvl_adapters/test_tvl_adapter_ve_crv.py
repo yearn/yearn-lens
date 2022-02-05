@@ -1,6 +1,7 @@
+from operator import itemgetter
+
 import pytest
 from brownie import interface
-from operator import itemgetter
 
 
 @pytest.fixture

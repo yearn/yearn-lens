@@ -1,7 +1,7 @@
 import pytest
+from brownie import ZERO_ADDRESS, Contract
 
 from ..addresses import *
-from brownie import ZERO_ADDRESS, Contract
 
 
 @pytest.fixture

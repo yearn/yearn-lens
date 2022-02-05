@@ -1,8 +1,8 @@
-import pytest
 import brownie
+import pytest
+from brownie import Contract, interface
 
 from ..addresses import *
-from brownie import Contract, interface
 
 
 @pytest.fixture
