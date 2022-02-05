@@ -32,10 +32,9 @@ def ironBankAdapter(
     return ironBankAdapter
 
 
-def test_interface(ironBankAdapter, introspection,registryAdapterCommonInterface):
+def test_interface(ironBankAdapter, introspection, registryAdapterCommonInterface):
     for method in registryAdapterCommonInterface:
-        methodImplemented = introspection.implementsMethod(
-            ironBankAdapter, method)
+        methodImplemented = introspection.implementsMethod(ironBankAdapter, method)
         if not methodImplemented:
             print(f"Missing method implementation: {method}")
         assert methodImplemented == True
