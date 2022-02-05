@@ -1,13 +1,13 @@
 import pytest
 import brownie
-from brownie import ZERO_ADDRESS
 
-yCrvAddress = "0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c"
-ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
+from ..addresses import *
+from brownie import ZERO_ADDRESS
 
 
 @pytest.fixture
 def v1Generator(AddressesGeneratorV1Vaults, management):
+    # TODO: what is this address?
     registryAddress = "0x3eE41C098f9666ed2eA246f4D2558010e59d63A0"
     generator = AddressesGeneratorV1Vaults.deploy(
         registryAddress, {"from": management},

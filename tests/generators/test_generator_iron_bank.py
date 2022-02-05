@@ -1,14 +1,13 @@
 import pytest
 import brownie
+
+from ..addresses import *
 from brownie import ZERO_ADDRESS
-
-
-cySusdAddress = "0x4e3a36A633f63aee0aB57b5054EC78867CB3C0b8"
-ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 
 
 @pytest.fixture
 def ironBankGenerator(AddressesGeneratorIronBank, management):
+    # TODO: what is this address?
     registryAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
     generator = AddressesGeneratorIronBank.deploy(registryAddress, {"from": management})
     return generator
@@ -35,12 +34,12 @@ def test_set_asset_deprecated(ironBankGenerator, management):
     originalAssetsAddressesLength = len(ironBankGenerator.assetsAddresses())
     assert originalAssetsLength > 0
     print(ironBankGenerator.assetsAddresses())
-    ironBankGenerator.setAssetDeprecated(cySusdAddress, True, {"from": management})
+    ironBankGenerator.setAssetDeprecated(cySusdOldAddress, True, {"from": management})
     newAssetsLength = ironBankGenerator.assetsLength()
     newAssetsAddressesLength = len(ironBankGenerator.assetsAddresses())
     print(ironBankGenerator.assetsAddresses())
     newAssetsLength = ironBankGenerator.assetsLength()
-    assert ironBankGenerator.assetDeprecated(cySusdAddress) == True
+    assert ironBankGenerator.assetDeprecated(cySusdOldAddress) == True
     assert newAssetsAddressesLength == originalAssetsAddressesLength - 1
     assert ironBankGenerator.numberOfDeprecatedAssets() > 0
     assert newAssetsLength == originalAssetsLength - 1
