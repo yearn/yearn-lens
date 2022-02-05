@@ -1,11 +1,8 @@
 import pytest
 import brownie
-from brownie import Contract, interface, ZERO_ADDRESS
-from operator import itemgetter
 
-cyDaiAddress = "0x8e595470Ed749b85C6F7669de83EAe304C2ec68F"
-ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
-cyWethAddress = "0x41c84c0e2EE0b740Cf0d31F63f3B6F627DC6b393"
+from ..addresses import *
+from brownie import Contract, interface
 
 
 @pytest.fixture

@@ -1,10 +1,10 @@
 import pytest
 import brownie
+
+from ..addresses import *
 from brownie import interface, ZERO_ADDRESS
 from operator import itemgetter
 
-yDaiV2Address = "0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01"
-ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 
 
 def test_generator_info(v1VaultTvlAdapter):
@@ -14,9 +14,7 @@ def test_generator_info(v1VaultTvlAdapter):
     assert adapterInfo[2] == "VAULT"
 
 
-def test_asset_tvl_usdc(
-    v1VaultTvlAdapter, v1VaultsAddressesGenerator, delegationMapping, management
-):
+def test_asset_tvl_usdc(v1VaultTvlAdapter, v1VaultsAddressesGenerator, delegationMapping):
     # delegationMapping.updateDelegationStatusForAsset(
     #     cyDaiAddress, True, {"from": management}
     # )
@@ -49,7 +47,7 @@ def test_asset_tvl_usdc(
     print("Total tvl", totalTvl)
 
 
-def test_asset_tvl(v1VaultTvlAdapter, delegationMapping, management):
+def test_asset_tvl(v1VaultTvlAdapter, delegationMapping):
     # delegationMapping.updateDelegationStatusForAsset(
     #     cyDaiAddress, True, {"from": management}
     # )

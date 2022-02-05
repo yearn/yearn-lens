@@ -1,10 +1,9 @@
 import pytest
 import brownie
+
+from ..addresses import *
 from brownie import interface, ZERO_ADDRESS
 from operator import itemgetter
-
-v2YfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
-ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 
 
 def test_generator_info(v2VaultsTvlAdapter):
