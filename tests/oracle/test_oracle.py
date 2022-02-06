@@ -299,8 +299,6 @@ def test_synth_calculations(oracle, synth_calculations):
 """
 
 # Chainlink
-
-
 def test_chainlink(chainlink_calculations, management):
     with brownie.reverts():
         chainlink_calculations.getPriceUsdc(eurt)

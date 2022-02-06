@@ -64,8 +64,9 @@ contract CalculationsYearnVaults {
             revert("CalculationsYearnVaults: Token is not a yearn vault");
         }
         address underlyingTokenAddress = vault.token();
-        uint256 underlyingTokenPrice =
-            oracle.getPriceUsdcRecommended(underlyingTokenAddress);
+        uint256 underlyingTokenPrice = oracle.getPriceUsdcRecommended(
+            underlyingTokenAddress
+        );
         if (isYearnV1Vault(tokenAddress)) {
             uint256 sharePrice = vault.getPricePerFullShare();
             return (underlyingTokenPrice * sharePrice) / 10**18;

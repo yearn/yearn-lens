@@ -3,6 +3,7 @@ import brownie
 from ..addresses import *
 
 
+
 def test_ibAud(calculationsFixedforex):
     price = calculationsFixedforex.getPriceUsdc(ibAud)
     assert price > 0

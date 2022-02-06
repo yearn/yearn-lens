@@ -141,8 +141,8 @@ contract AddressesGeneratorV1Vaults is Ownable {
         uint256 currentAssetIdx;
         for (uint256 assetIdx = 0; assetIdx < _numberOfAssets; assetIdx++) {
             address currentAssetAddress = originalAddresses[assetIdx];
-            bool assetIsNotDeprecated =
-                assetDeprecated[currentAssetAddress] == false;
+            bool assetIsNotDeprecated = assetDeprecated[currentAssetAddress] ==
+                false;
             if (assetIsNotDeprecated) {
                 originalAddresses[currentAssetIdx] = currentAssetAddress;
                 currentAssetIdx++;
@@ -153,8 +153,10 @@ contract AddressesGeneratorV1Vaults is Ownable {
             // Manually truncate the filtered list
             mstore(add(encodedAddresses, 0x40), _filteredAssetsLength)
         }
-        address[] memory filteredAddresses =
-            abi.decode(encodedAddresses, (address[]));
+        address[] memory filteredAddresses = abi.decode(
+            encodedAddresses,
+            (address[])
+        );
 
         return filteredAddresses;
     }

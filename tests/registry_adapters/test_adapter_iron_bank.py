@@ -51,7 +51,7 @@ def test_asset_user_metadata(ironBankAdapter, accounts, oracle):
     tokenPriceUsdc = ironBankAdapter.assetUnderlyingTokenPriceUsdc(cySushi)
     exchangeRate = cySushi.exchangeRateStored()
     supplyBalanceShares = cySushi.balanceOf(whale)
-    supplyBalanceUnderlying = (supplyBalanceShares * exchangeRate) / 10**18
+    supplyBalanceUnderlying = (supplyBalanceShares * exchangeRate) / 10 ** 18
     supplyBalanceUsdc = oracle.getNormalizedValueUsdc(
         tokenAddress, supplyBalanceUnderlying, tokenPriceUsdc
     )
@@ -62,13 +62,13 @@ def test_asset_user_metadata(ironBankAdapter, accounts, oracle):
     )
 
     _, collateralBalanceShare, _, _ = cySushi.getAccountSnapshot(whale)
-    collateralBalanceUnderlying = collateralBalanceShare * exchangeRate / 10**18
+    collateralBalanceUnderlying = collateralBalanceShare * exchangeRate / 10 ** 18
 
     collateralBalanceUsdc = oracle.getNormalizedValueUsdc(
         tokenAddress, collateralBalanceUnderlying, tokenPriceUsdc
     )
 
-    borrowLimitUsdc = collateralBalanceUsdc * collateralFactor / 10**18
+    borrowLimitUsdc = collateralBalanceUsdc * collateralFactor / 10 ** 18
 
     asset_user_metadata = ironBankAdapter.assetUserMetadata(whale, cySushi)
     assert asset_user_metadata[0] == cySushi
@@ -132,14 +132,14 @@ def test_assets_user_metadata(ironBankAdapter, accounts, oracle):
         sushiTokenAddress, sushiCollateralBalUnderlying, sushiPriceUsdc
     )
 
-    sushiBorrowLimitUsdc = sushiCollateralBalUsdc * sushiCollateralFactor / 10**18
+    sushiBorrowLimitUsdc = sushiCollateralBalUsdc * sushiCollateralFactor / 10 ** 18
 
     # yfi
     yfiTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyYfi)
     yfiPriceUsdc = ironBankAdapter.assetUnderlyingTokenPriceUsdc(cyYfi)
     yfiExchangeRate = cyYfi.exchangeRateStored()
     yfiSupplyBalShares = cyYfi.balanceOf(whale)
-    yfiSupplyBalUnderlying = (yfiSupplyBalShares * yfiExchangeRate) / 10**18
+    yfiSupplyBalUnderlying = (yfiSupplyBalShares * yfiExchangeRate) / 10 ** 18
     yfiSupplyBalUsdc = oracle.getNormalizedValueUsdc(
         yfiTokenAddress, yfiSupplyBalUnderlying, yfiPriceUsdc
     )
@@ -150,13 +150,13 @@ def test_assets_user_metadata(ironBankAdapter, accounts, oracle):
     )
 
     _, yfiCollateralBalShare, _, _ = cyYfi.getAccountSnapshot(whale)
-    yfiCollateralBalUnderlying = yfiCollateralBalShare * yfiExchangeRate / 10**18
+    yfiCollateralBalUnderlying = yfiCollateralBalShare * yfiExchangeRate / 10 ** 18
 
     yfiCollateralBalUsdc = oracle.getNormalizedValueUsdc(
         yfiTokenAddress, yfiCollateralBalUnderlying, yfiPriceUsdc
     )
 
-    yfiBorrowLimitUsdc = yfiCollateralBalUsdc * yfiCollateralFactor / 10**18
+    yfiBorrowLimitUsdc = yfiCollateralBalUsdc * yfiCollateralFactor / 10 ** 18
 
     asset_user_metadata = ironBankAdapter.assetsUserMetadata(whale, [cySushi, cyYfi])
     assert asset_user_metadata[0][0] == cySushi
@@ -258,8 +258,8 @@ def test_asset_dynamic(ironBankAdapter, oracle):
     assert totalCollateralTokens > 0
 
     blocksPerYear = 2102400
-    lendApyBips = cyUsdcToken.supplyRatePerBlock() * blocksPerYear / 10**14
-    borrowApyBips = cyUsdcToken.borrowRatePerBlock() * blocksPerYear / 10**14
+    lendApyBips = cyUsdcToken.supplyRatePerBlock() * blocksPerYear / 10 ** 14
+    borrowApyBips = cyUsdcToken.borrowRatePerBlock() * blocksPerYear / 10 ** 14
     assert lendApyBips > 0
     assert borrowApyBips > 0
     collateralFactor = collateralFactorMantissa

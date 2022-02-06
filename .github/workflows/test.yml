@@ -1,12 +1,12 @@
 name: Test
 
 on:
-  # disabled before linting PR comes in
-  # push:
-  #   branches:
-  #     - master
-  #     - develop
-  # pull_request:
+  push:
+    branches: master
+  # PR test runs are disabled for now
+  # need to speed up + fix tests first
+  # pull_request_target:
+  #  branches: master
   workflow_dispatch:
 
 env:
@@ -36,7 +36,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install ganache
-        run: npm install -g ${{ env.GANACHE_CLI_PACKAGE_NAME }}@${env.GANACHE_CLI_VERSION}
+        run: npm install -g ${{ env.GANACHE_CLI_PACKAGE_NAME }}@${{ env.GANACHE_CLI_VERSION }}
 
       - name: Set up python ${env.PYTHON_VERSION}
         uses: actions/setup-python@v2
@@ -62,12 +62,17 @@ jobs:
       - name: Install python dependencies
         run: pip install -r requirements-dev.txt
 
+      # removes defaults mainnet used by Brownie
+      - name: Add brownie networks
+        run: |
+          brownie networks delete 'mainnet'
+          brownie networks add 'Ethereum' 'mainnet' host='https://eth-mainnet.alchemyapi.io/v2/$ALCHEMY_SECRET_KEY' explorer='${{ secrets.EXPLORER_URL }}' chainid='1'
+
       - name: Compile Code
         run: brownie compile --size
 
-      # TODO: secrets to be added to the repository
       - name: Run Tests
         env:
-          ETHERSCAN_TOKEN: ${{ secrets.ETHERSCAN_TOKEN }}
-          WEB3_INFURA_PROJECT_ID: ${{ secrets.WEB3_INFURA_PROJECT_ID }}
+          ALCHEMY_SECRET_KEY: ${{ secrets.ALCHEMY_SECRET_KEY }}
+          PY_COLORS: 1
         run: brownie test

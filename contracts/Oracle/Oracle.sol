@@ -110,15 +110,13 @@ contract Oracle is Ownable {
         if (tokenAddressAlias != address(0)) {
             tokenToQuery = tokenAddressAlias;
         }
-        (bool success, bytes memory data) =
-            address(this).staticcall(
-                abi.encodeWithSignature("getPriceUsdc(address)", tokenToQuery)
-            );
+        (bool success, bytes memory data) = address(this).staticcall(
+            abi.encodeWithSignature("getPriceUsdc(address)", tokenToQuery)
+        );
         if (success) {
             return abi.decode(data, (uint256));
         }
         return 0;
-
     }
 
     /**
