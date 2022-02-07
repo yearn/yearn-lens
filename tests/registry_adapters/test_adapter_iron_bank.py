@@ -48,7 +48,7 @@ def test_assets_tokens_addresses(ironBankAdapter):
 
 def test_asset_user_metadata(ironBankAdapter, management, accounts, oracle):
     sushi = Contract(sushiAddress)
-    cySushi = Contract(cySushiAddress)
+    cySushi = Contract.from_explorer(cySushiAddress)
     whale = accounts.at(whaleAddress, force=True)
     MAX_UINT256 = 2 ** 256 - 1
     sushi.approve(cySushi, MAX_UINT256, {"from": whale})
@@ -97,7 +97,7 @@ def test_asset_user_metadata(ironBankAdapter, management, accounts, oracle):
 def test_assets_user_metadata(ironBankAdapter, management, accounts, oracle):
     # sushi and cySuchi
     sushi = Contract(sushiAddress)
-    cySushi = Contract(cySushiAddress)
+    cySushi = Contract.from_explorer(cySushiAddress)
     whale = accounts.at(whaleAddress, force=True)
     MAX_UINT256 = 2 ** 256 - 1
     sushi.approve(cySushi, MAX_UINT256, {"from": whale})
@@ -108,7 +108,7 @@ def test_assets_user_metadata(ironBankAdapter, management, accounts, oracle):
 
     # yfi and cyYfi
     yfi = Contract(yfiAddress)
-    cyYfi = Contract(cyYfiAddress)
+    cyYfi = Contract.from_explorer(cyYfiAddress)
     whale = accounts.at(whaleAddress, force=True)
     MAX_UINT256 = 2 ** 256 - 1
     yfi.approve(cyYfi, MAX_UINT256, {"from": whale})
@@ -238,7 +238,7 @@ def test_asset_static(ironBankAdapter):
 
 
 def test_asset_dynamic(ironBankAdapter, oracle):
-    cyUsdcToken = Contract(cyUsdcAddress)
+    cyUsdcToken = Contract.from_explorer(cyUsdcAddress)
     usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyUsdcAddress)
     liquidity = cyUsdcToken.getCash()
     usdcTokenPrice = ironBankAdapter.assetUnderlyingTokenPriceUsdc(cyUsdcAddress)
@@ -272,7 +272,7 @@ def test_asset_dynamic(ironBankAdapter, oracle):
     totalCollateralTokens = cyUsdcToken.totalCollateralTokens()
     assert totalCollateralTokens > 0
 
-    blocksPerYear = 2102400
+    blocksPerYear = 2300000
     lendApyBips = cyUsdcToken.supplyRatePerBlock() * blocksPerYear / 10 ** 14
     borrowApyBips = cyUsdcToken.borrowRatePerBlock() * blocksPerYear / 10 ** 14
     assert lendApyBips > 0
@@ -388,7 +388,7 @@ def test_assets_dynamic(ironBankAdapter):
 def test_asset_positions_of(ironBankAdapter, accounts, oracle):
 
     weth = Contract(wethAddress)
-    cyWeth = Contract(cyWethAddress)
+    cyWeth = Contract.from_explorer(cyWethAddress)
     user = accounts.at(userAddress, force=True)
     MAX_UINT256 = 2 ** 256 - 1
     weth.approve(cyWeth, MAX_UINT256, {"from": user})
@@ -465,7 +465,7 @@ def test_asset_positions_of(ironBankAdapter, accounts, oracle):
 
 
 def test_assets_positions_of(ironBankAdapter, oracle, accounts):
-    cyWeth = Contract(cyWethAddress)
+    cyWeth = Contract.from_explorer(cyWethAddress)
 
     userSupplyBalanceShares = cyWeth.balanceOf(userAddress)
     userBorrowBalanceShares = cyWeth.borrowBalanceStored(userAddress)
