@@ -1,7 +1,6 @@
-import pytest
 import brownie
-
-from brownie import ManagementList, ZERO_ADDRESS
+import pytest
+from brownie import ZERO_ADDRESS, ManagementList
 
 
 @pytest.fixture

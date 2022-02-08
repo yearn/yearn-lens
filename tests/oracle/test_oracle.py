@@ -1,33 +1,8 @@
-import pytest
 import brownie
+import pytest
+from brownie import ZERO_ADDRESS, Contract, chain
 
-from brownie import Contract, ZERO_ADDRESS, chain
-
-# Oracle deployment options
-uniswapRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
-uniswapFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
-sushiswapRouterAddress = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
-sushiswapFactoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
-curveAddressProvider = "0x0000000022D53366457F9d5E68Ec105046FC4383"
-unitrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
-usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-yveCRVAddress = "0xc5bDdf9843308380375a611c18B50Fb9341f502A"
-yvBOOSTAddress = "0x9d409a0A012CFbA9B15F6D4B36Ac57A46966Ab9a"
-
-# Test token addresses
-uniswapLpTokenAddress = "0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc"  # USDC/WETH
-sushiswapLpTokenAddress = "0x397FF1542f962076d0BFE58eA045FfA2d347ACa0"  # USDC/WETH
-ethAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
-wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
-threeCrvAddress = "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490"
-threeCrvPoolAddress = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
-cyDaiAddress = "0x8e595470Ed749b85C6F7669de83EAe304C2ec68F"
-ibEurPoolAddress = "0x19b080FE1ffA0553469D20Ca36219F17Fcf03859"
-cvxCrvAddress = "0x9D0464996170c6B9e75eED71c68B99dDEDf279e8"
-crvEURSUSDCAddress = "0x3D229E1B4faab62F621eF2F6A610961f7BD7b23B"
-crvEURTUSDAddress = "0x3b6831c0077a1e44ED0a21841C3bC4dC11bCE833"
-triCryptoAddress = "0xc4AD29ba4B3c580e6D59105FFf484999997675Ff"
+from ..addresses import *
 
 
 # Fixtures
@@ -50,6 +25,7 @@ def oracleProxyCurve(oracle, CalculationsCurve):
 def test_update_prices_helper_oracle_address(pricesHelper, management):
     chain.snapshot()
     oracleAddress = pricesHelper.oracleAddress()
+    # TODO: what address is this?
     newOracleAddress = "0x6951b5Bd815043E3F842c1b026b0Fa888Cc2DD85"
     assert newOracleAddress != oracleAddress
     pricesHelper.updateOracleAddress(newOracleAddress, {"from": management})
@@ -73,7 +49,7 @@ def test_add_token_aliases(oracle, management):
 def test_set_calculations(Oracle, CalculationsCurve, gov, management, rando):
     oracle = Oracle.deploy(usdcAddress, {"from": management})
     calculationsCurve = CalculationsCurve.deploy(
-        curveAddressProvider, oracle, {"from": gov}
+        curveAddressProviderAddress, oracle, {"from": gov}
     )
 
     # Oracles with no calculations should revert
@@ -192,9 +168,6 @@ def test_tri_crypto_price(curve_calculations):
 
 
 def test_curv_eurs_usdc_underlying_coins(curve_calculations):
-    eursUsdcPool = "0x98a7F18d4E56Cfe84E3D081B40001B3d5bD3eB8B"
-    usdc = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-    eurs = "0xdB25f211AB05b1c97D595516F45794528a807ad8"
     coins = curve_calculations.cryptoPoolUnderlyingTokensAddressesByPoolAddress(
         eursUsdcPool
     )
@@ -226,6 +199,7 @@ def test_curve_tri_crypto_price(curve_calculations):
 def test_update_yearn_addresses_provider(curve_calculations, management):
     chain.snapshot()
     old_address = curve_calculations.yearnAddressesProviderAddress()
+    # TODO: what is this address?
     new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
     curve_calculations.updateYearnAddressesProviderAddress(
         new_address, {"from": management}
@@ -238,6 +212,7 @@ def test_update_yearn_addresses_provider(curve_calculations, management):
 def test_update_yearn_addresses_provider_only_possible_by_owner(
     curve_calculations, rando
 ):
+    # TODO: what is this address?
     new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
     with brownie.reverts():
         curve_calculations.updateYearnAddressesProviderAddress(
@@ -248,6 +223,7 @@ def test_update_yearn_addresses_provider_only_possible_by_owner(
 def test_update_curve_addresses_provider(curve_calculations, management):
     chain.snapshot()
     old_address = curve_calculations.curveAddressesProviderAddress()
+    # TODO: what is this address?
     new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
     curve_calculations.updateCurveAddressesProviderAddress(
         new_address, {"from": management}
@@ -260,6 +236,7 @@ def test_update_curve_addresses_provider(curve_calculations, management):
 def test_update_curve_addresses_provider_only_possible_by_owner(
     curve_calculations, rando
 ):
+    # TODO: what is this address?
     new_address = "0x12360e44C676ed0246c6Fb4c44B26191A5171B55"
     with brownie.reverts():
         curve_calculations.updateCurveAddressesProviderAddress(
@@ -322,15 +299,8 @@ def test_synth_calculations(oracle, synth_calculations):
 """
 
 # Chainlink
-
-
 def test_chainlink(chainlink_calculations, management):
-    eurt_namehash = "0xd5aa869323f85cb893514ce48950ba7e84a8d0bf062a7e3058bcc494217da39f"
-    eurt = "0xC581b735A1688071A1746c968e0798D642EDE491"
-
     with brownie.reverts():
         chainlink_calculations.getPriceUsdc(eurt)
-
     chainlink_calculations.setNamehash(eurt, eurt_namehash, {"from": management})
-
     assert chainlink_calculations.getPriceUsdc(eurt) > 0

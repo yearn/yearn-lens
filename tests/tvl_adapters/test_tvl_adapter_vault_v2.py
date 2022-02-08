@@ -1,10 +1,10 @@
-import pytest
-import brownie
-from brownie import interface, ZERO_ADDRESS
 from operator import itemgetter
 
-v2YfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
-ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
+import brownie
+import pytest
+from brownie import ZERO_ADDRESS, interface
+
+from ..addresses import *
 
 
 def test_generator_info(v2VaultsTvlAdapter):
@@ -28,14 +28,14 @@ def test_asset_tvl_usdc(v2VaultsTvlAdapter):
     tvlList = []
     for address in assetsAddresses:
         token = interface.IERC20(address)
-        tvl = v2VaultsTvlAdapter.assetTvlUsdc(address) / 10 ** 6
+        tvl = v2VaultsTvlAdapter.assetTvlUsdc(address) / 10**6
         totalTvl += tvl
         tvlList.append({"symbol": token.symbol(), "tvl": tvl})
     sortedTvlItems = sorted(tvlList, key=itemgetter("tvl"), reverse=True)
     for item in sortedTvlItems:
         print(item.get("symbol"), item.get("tvl"))
 
-    calculatedTotalTvl = v2VaultsTvlAdapter.assetsTvlUsdc() / 10 ** 6
+    calculatedTotalTvl = v2VaultsTvlAdapter.assetsTvlUsdc() / 10**6
     assert round(calculatedTotalTvl) == round(totalTvl)
     print("Total tvl", totalTvl)
 
