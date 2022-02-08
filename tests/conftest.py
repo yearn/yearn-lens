@@ -224,6 +224,12 @@ def chainlink_calculations(CalculationsChainlink, management):
     chainlink_calculations = CalculationsChainlink.deploy({"from": management})
     return chainlink_calculations
 
+@pytest.fixture
+def uniswapv3_calculations(CalculationsUniswapV3, management):
+    uniswapv3_calculations = CalculationsUniswapV3.deploy(
+        uniswapV3FactoryAddress, usdcAddress, {"from": management}
+    )
+    return uniswapv3_calculations
 
 @pytest.fixture
 def calculationsIronBank(CalculationsIronBank, management):
