@@ -1,18 +1,8 @@
-import pytest
 import brownie
-from brownie import interface, ZERO_ADDRESS
+import pytest
+from brownie import ZERO_ADDRESS, Contract, interface
 
-
-yfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
-yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
-usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-v2UsdcVaultV1Address = "0xe2F6b9773BF3A015E2aA70741Bde1498bdB9425b"
-v2UsdcVaultV2Address = "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9"
-ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
-v2YfiVaultAddress = "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1"
-vestedYfiAddress = "0x34dDFC06ce0c39242Fb380066Ee01e409a4a525e"
-trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
-zapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
+from ..addresses import *
 
 
 @pytest.fixture
@@ -23,7 +13,6 @@ def v2VaultsAdapter(
     helper,
     management,
 ):
-    trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
     positionSpenderAddresses = [trustedMigratorAddress]
     adapter = RegisteryAdapterV2Vault.deploy(
         oracle,
@@ -131,7 +120,7 @@ def test_asset_dynamic(v2VaultsAdapter, oracle):
     balance = underlyingTokenBalance[0]
     balanceUsdc = underlyingTokenBalance[1]
     tolerance = 5000000  # $5.00
-    estimatedBalanceUsdc = tokenPriceUsdc * balance / 10 ** 6
+    estimatedBalanceUsdc = tokenPriceUsdc * balance / 10**6
     assert tokenPriceUsdc > 900000
     assert tokenPriceUsdc < 1100000
     assert balance > 0
@@ -205,14 +194,14 @@ def test_asset_positions_of(v2VaultsAdapter, oracle, accounts):
     # Deposit into YFI vault
     yfiAccount = accounts.at(vestedYfiAddress, force=True)
     yfi = Contract.from_explorer(yfiAddress)
-    yfi.approve(v2YfiVaultAddress, 2 ** 256 - 1, {"from": vestedYfiAddress})
+    yfi.approve(v2YfiVaultAddress, 2**256 - 1, {"from": vestedYfiAddress})
     yfiVault = interface.IV2Vault(v2YfiVaultAddress)
     # yfiVault.deposit(0.5 * 10 ** 18, {"from": yfiAccount})
     yfiVault.approve(trustedMigratorAddress, 100, {"from": vestedYfiAddress})
     pricePerShare = yfiVault.pricePerShare()
     decimals = yfiVault.decimals()
     userVaultBalanceShares = yfiVault.balanceOf(vestedYfiAddress)
-    userVaultBalance = userVaultBalanceShares * pricePerShare / 10 ** decimals
+    userVaultBalance = userVaultBalanceShares * pricePerShare / 10**decimals
     userVaultBalanceUsdc = oracle.getNormalizedValueUsdc(yfiAddress, userVaultBalance)
     assert userVaultBalanceShares > 0
     positions = v2VaultsAdapter.assetPositionsOf(vestedYfiAddress, v2YfiVaultAddress)
@@ -234,7 +223,7 @@ def test_asset_positions_of(v2VaultsAdapter, oracle, accounts):
     underlyingTokenBalanceAmountUsdc = underlyingTokenBalance[1]
     assert userVaultBalanceUsdc >= underlyingTokenBalanceAmountUsdc - 100
     assert userVaultBalanceUsdc <= underlyingTokenBalanceAmountUsdc + 100
-    assert underlyingTokenBalanceAmountUsdc > underlyingTokenBalanceAmount / 10 ** 18
+    assert underlyingTokenBalanceAmountUsdc > underlyingTokenBalanceAmount / 10**18
 
     # Test token allowances
     tokenAllowances = position[5]
@@ -257,19 +246,14 @@ def test_asset_positions_of(v2VaultsAdapter, oracle, accounts):
     # Test assetPositionOf
 
 
-def test_assets_positions_of(v2VaultsAdapter, oracle, accounts):
+def test_assets_positions_of(v2VaultsAdapter, oracle):
     # Deposit into YFI vault
-    yfiAccount = accounts.at(vestedYfiAddress, force=True)
     yfi = interface.IERC20(yfiAddress)
-    yfi.approve(v2YfiVaultAddress, 2 ** 256 - 1, {"from": vestedYfiAddress})
+    yfi.approve(v2YfiVaultAddress, 2**256 - 1, {"from": vestedYfiAddress})
     yfiVault = interface.IV2Vault(v2YfiVaultAddress)
     # yfiVault.deposit(1 * 10 ** 18, {"from": yfiAccount})
     yfiVault.approve(trustedMigratorAddress, 100, {"from": vestedYfiAddress})
-    pricePerShare = yfiVault.pricePerShare()
-    decimals = yfiVault.decimals()
     userVaultBalanceShares = yfiVault.balanceOf(vestedYfiAddress)
-    userVaultBalance = userVaultBalanceShares * pricePerShare / 10 ** decimals
-    userVaultBalanceUsdc = oracle.getNormalizedValueUsdc(yfiAddress, userVaultBalance)
     assert userVaultBalanceShares > 0
 
     # Test positionsOf(address, [...address])
@@ -282,9 +266,7 @@ def test_assets_positions_of(v2VaultsAdapter, oracle, accounts):
     assert assetId == v2YfiVaultAddress
 
 
-def test_set_position_spender_addresses(
-    v2VaultsAdapter, v2AddressesGenerator, management, rando
-):
+def test_set_position_spender_addresses(v2AddressesGenerator, management, rando):
     with brownie.reverts():
         v2AddressesGenerator.setPositionSpenderAddresses(
             [ethZapAddress], {"from": rando}
@@ -293,20 +275,3 @@ def test_set_position_spender_addresses(
         [ethZapAddress], {"from": management}
     )
     assert v2AddressesGenerator.positionSpenderAddresses(0) == ethZapAddress
-
-
-## Test oracle slot update
-# v2VaultsAdapter.updateSlot(
-#     "0000000000000000000000000000000000000000000000000000000000000001",
-#     "0000000000000000000000000000000000000000000000000000000000000000",
-#     {"from": management},
-# )
-# # Test vault underlying balances
-# with brownie.reverts():
-#     v2VaultsAdapter.tokenAmount(1000000000000000000, yfiAddress)
-
-# v2VaultsAdapter.updateSlot(
-#     "0000000000000000000000000000000000000000000000000000000000000001",
-#     "00000000000000000000000083d95e0d5f402511db06817aff3f9ea88224b030",
-#     {"from": management},
-# )

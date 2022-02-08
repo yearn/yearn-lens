@@ -1,18 +1,15 @@
-import pytest
 import brownie
+import pytest
 from brownie import ZERO_ADDRESS
 
-yDaiV2Address = "0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01"
-ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
+from ..addresses import *
 
 
 @pytest.fixture
-def earnGenerator(AddressesGeneratorEarn, oracle, helper, management):
+def earnGenerator(AddressesGeneratorEarn, oracle, management):
+    # TODO: what address is this?
     registryAddress = "0x62a4e0E7574E5407656A65CC8DbDf70f3C6EB04B"
-    generator = AddressesGeneratorEarn.deploy(
-        registryAddress,
-        {"from": management},
-    )
+    generator = AddressesGeneratorEarn.deploy(registryAddress, {"from": management})
     return generator
 
 
