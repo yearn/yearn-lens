@@ -37,14 +37,14 @@ def test_asset_tvl_usdc(
     tvlList = []
     for address in assetsAddresses:
         token = interface.IERC20(address)
-        tvl = v1VaultTvlAdapter.assetTvlUsdc(address) / 10**6
+        tvl = v1VaultTvlAdapter.assetTvlUsdc(address) / 10 ** 6
         totalTvl += tvl
         tvlList.append({"symbol": token.symbol(), "tvl": tvl})
     sortedTvlItems = sorted(tvlList, key=itemgetter("tvl"), reverse=True)
     for item in sortedTvlItems:
         print(item.get("symbol"), item.get("tvl"))
 
-    calculatedTotalTvl = v1VaultTvlAdapter.assetsTvlUsdc() / 10**6
+    calculatedTotalTvl = v1VaultTvlAdapter.assetsTvlUsdc() / 10 ** 6
     assert round(calculatedTotalTvl) == round(totalTvl)
     print("Total tvl", totalTvl)
 
