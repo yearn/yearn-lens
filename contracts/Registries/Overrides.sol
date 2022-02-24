@@ -4,8 +4,6 @@ pragma solidity 0.8.11;
 
 import "../Utilities/Ownable.sol";
 
-// TODO: Should I redefine the interface here or just add methods to
-//       interfaces/Curve/Registry.sol?
 interface ICurveRegistry {
     function get_pool_from_lp_token(address) external view returns (address);
 
@@ -14,26 +12,24 @@ interface ICurveRegistry {
     function pool_count() external view returns (uint256);
 }
 
-// Do I need both Address Provider and Registry?
 interface ICurveAddressesProvider {
     function max_id() external view returns (uint256);
 
     function get_id_info(uint256 id) external view returns (address);
 }
 
-// Update CalculationsCurve to use this contract instead of get_pool_from_lp_token
-// curve registry address: 0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5
-// curveAddressProviderAddress: 0x0000000022D53366457F9d5E68Ec105046FC4383
 contract CurveRegistryOverrides is Ownable {
-    ICurveAddressesProvider public curveAddressesProvider;
-    ICurveRegistry public curveRegistry;
+    ICurveAddressesProvider internal curveAddressesProvider;
+    ICurveRegistry internal curveRegistry;
     mapping(address => address) public poolByLpOverride;
     address[] public poolAddresses;
 
-    constructor(address _curveAddressesProvider, address _curveRegistryAddress)
-    {
+    constructor(
+        address _curveAddressesProviderAddress,
+        address _curveRegistryAddress
+    ) {
         require(
-            _curveAddressesProvider != address(0),
+            _curveAddressesProviderAddress != address(0),
             "Missing Curve Addresses Provider address"
         );
         require(
@@ -41,12 +37,12 @@ contract CurveRegistryOverrides is Ownable {
             "Missing Curve Registry address"
         );
         curveAddressesProvider = ICurveAddressesProvider(
-            _curveAddressesProvider
+            _curveAddressesProviderAddress
         );
         curveRegistry = ICurveRegistry(_curveRegistryAddress);
     }
 
-    /// @notice Updates ICurveRegistry
+    /// @notice Updates Curve Registry Address
     function addCurveRegistry(address _curveRegistryAddress) public onlyOwner {
         require(
             _curveRegistryAddress != address(0),
@@ -57,14 +53,15 @@ contract CurveRegistryOverrides is Ownable {
 
     /// @notice Returns both override and curve registry pools as list
     function curveRegistriesList() public view returns (address[] memory) {
-        uint256 numRegistries = poolAddresses.length +
-            curveRegistry.pool_count();
+        uint256 poolOverrideCount = poolAddresses.length;
+        uint256 poolRegistryCount = curveRegistry.pool_count();
+        uint256 numRegistries = poolOverrideCount + poolRegistryCount;
         address[] memory _registries = new address[](numRegistries);
-        for (uint256 i; i < poolAddresses.length; i++) {
+        for (uint256 i; i < poolOverrideCount; i++) {
             _registries[i] = poolAddresses[i];
         }
-        for (uint256 i; i < curveRegistry.pool_count(); i++) {
-            _registries[i + poolAddresses.length] = curveRegistry.pool_list(i);
+        for (uint256 i; i < poolRegistryCount; i++) {
+            _registries[i + poolOverrideCount] = curveRegistry.pool_list(i);
         }
         return _registries;
     }
@@ -79,37 +76,43 @@ contract CurveRegistryOverrides is Ownable {
         poolAddresses.push(_poolAddress);
     }
 
-    // poolByLp(address) - first check poolByLpOverride to see if an override exists.. return if it does.
-    // if not, loop through curve registries using get_pool_from_lp_token and try to find a pool
     /// @notice Search through pool registry overrides and curve registries for a LP Pool
     function poolByLp(address _lpAddress) public view returns (address) {
         address pool = poolByLpOverride[_lpAddress];
         if (pool != address(0)) {
             return pool;
         }
+        pool = executeSelectorOnCurveRegistries(_lpAddress);
+        return pool;
+    }
+
+    /// @notice Cycle through all curve registries and try to staticcall each one using manual selector
+    function executeSelectorOnCurveRegistries(address _lpAddress)
+        public
+        view
+        returns (address)
+    {
+        address pool;
         // loop through registries
-        // registry address provider?
-        // --> curver address provider, interface
-        for (uint256 i; i < curveAddressesProvider.max_id(); i++) {
+        uint256 numRegistries = curveAddressesProvider.max_id();
+        for (uint256 i; i < numRegistries; i++) {
             address curveRegistryAddress = curveAddressesProvider.get_id_info(
                 i
             );
-            // create a new registry with above registy adderss?
-            // -> not alll addresses returned from the address provider have the .get_pool_from_lp_token method
-            // -> should I check if method exists somehow? try/catch?
-            pool = ICurveRegistry(curveRegistryAddress).get_pool_from_lp_token(
-                _lpAddress
-            );
-            if (pool != address(0)) {
-                return pool;
+            (bool success, bytes memory data) = address(curveRegistryAddress)
+                .staticcall(
+                    abi.encodeWithSignature(
+                        "get_pool_from_lp_token(address)",
+                        _lpAddress
+                    )
+                );
+            if (success) {
+                pool = abi.decode(data, (address));
+                if (pool != address(0)) {
+                    return pool;
+                }
             }
         }
         revert("Pool not found");
     }
-
-    // executeSelectorOnCurveRegistries(bytes) - Loop through all curve registries and try to staticcall
-    // each of them using the manual selector
-    // --> maybe similar to the fallback in oracle.sol?
-    /// @notice Cycle through all curve registries and try to staticcall each one using manual selector
-    // function executeSelectorOnCurveRegistries() {}
 }

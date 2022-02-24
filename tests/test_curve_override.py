@@ -19,8 +19,5 @@ def test_lp_pool_override(curve_registry_override):
     assert override_pool == threeCrvPoolAddress
 
 def test_lp_pool_curve(curve_registry_override):
-    curve_pool = curve_registry_override.poolByLp(triCryptoAddress)
+    curve_pool = curve_registry_override.poolByLp(threeCrvAddress)
     assert curve_pool == threeCrvPoolAddress
-
-def test_curve_registries_list(curve_registry_override):
-    print(curve_registry_override.curveRegistriesList())
