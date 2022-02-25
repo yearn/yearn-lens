@@ -15,12 +15,12 @@ interface ICurveRegistry {
 interface ICurveAddressesProvider {
     function max_id() external view returns (uint256);
 
-    function get_id_info(uint256 id) external view returns (address);
+    function get_address(uint256) external view returns (address);
 }
 
 contract CurveRegistryOverrides is Ownable {
-    ICurveAddressesProvider internal curveAddressesProvider;
-    ICurveRegistry internal curveRegistry;
+    ICurveAddressesProvider public curveAddressesProvider;
+    ICurveRegistry public curveRegistry;
     mapping(address => address) public poolByLpOverride;
     address[] public poolAddresses;
 
@@ -87,26 +87,26 @@ contract CurveRegistryOverrides is Ownable {
     }
 
     /// @notice Cycle through all curve registries and try to staticcall each one using manual selector
+    /// @dev return type is inconsistent across curve registres
     function executeSelectorOnCurveRegistries(address _lpAddress)
         public
         view
         returns (address)
     {
+        uint256 numRegistries = curveAddressesProvider.max_id() + 1;
+        address curveRegistryAddress;
         address pool;
-        // loop through registries
-        uint256 numRegistries = curveAddressesProvider.max_id();
+        bool success;
+        bytes memory data;
         for (uint256 i; i < numRegistries; i++) {
-            address curveRegistryAddress = curveAddressesProvider.get_id_info(
-                i
+            curveRegistryAddress = curveAddressesProvider.get_address(i);
+            (success, data) = address(curveRegistryAddress).staticcall(
+                abi.encodeWithSignature(
+                    "get_pool_from_lp_token(address)",
+                    _lpAddress
+                )
             );
-            (bool success, bytes memory data) = address(curveRegistryAddress)
-                .staticcall(
-                    abi.encodeWithSignature(
-                        "get_pool_from_lp_token(address)",
-                        _lpAddress
-                    )
-                );
-            if (success) {
+            if (success && data.length > 0) {
                 pool = abi.decode(data, (address));
                 if (pool != address(0)) {
                     return pool;

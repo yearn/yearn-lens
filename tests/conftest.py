@@ -9,6 +9,13 @@ from .addresses import *
 def shared_setup(fn_isolation):
     pass
 
+@pytest.fixture
+def curve_registry_override(CurveRegistryOverrides, management):
+    return CurveRegistryOverrides.deploy(
+            curveAddressProviderAddress,
+            curveRegistryAddress,
+            {'from': management}
+            )
 
 @pytest.fixture
 def iv2Registry():
