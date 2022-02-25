@@ -35,7 +35,7 @@ def test_asset_user_metadata(ironBankAdapter, accounts, oracle):
     sushi = Contract.from_explorer(sushiAddress)
     cySushi = Contract.from_explorer(cySushiAddress)
     whale = accounts.at(whaleAddress, force=True)
-    MAX_UINT256 = 2**256 - 1
+    MAX_UINT256 = 2 ** 256 - 1
     sushi.approve(cySushi, MAX_UINT256, {"from": whale})
     sushi_bal = sushi.balanceOf(whale)
     cySushi.mint(sushi_bal, {"from": whale})
@@ -84,7 +84,7 @@ def test_assets_user_metadata(ironBankAdapter, accounts, oracle):
     sushi = Contract.from_explorer(sushiAddress)
     cySushi = Contract.from_explorer(cySushiAddress)
     whale = accounts.at(whaleAddress, force=True)
-    MAX_UINT256 = 2**256 - 1
+    MAX_UINT256 = 2 ** 256 - 1
     sushi.approve(cySushi, MAX_UINT256, {"from": whale})
     sushi_bal = sushi.balanceOf(whale)
     cySushi.mint(sushi_bal, {"from": whale})
@@ -95,7 +95,7 @@ def test_assets_user_metadata(ironBankAdapter, accounts, oracle):
     yfi = Contract.from_explorer(yfiAddress)
     cyYfi = Contract.from_explorer(cyYfiAddress)
     whale = accounts.at(whaleAddress, force=True)
-    MAX_UINT256 = 2**256 - 1
+    MAX_UINT256 = 2 ** 256 - 1
     yfi.approve(cyYfi, MAX_UINT256, {"from": whale})
     yfi_bal = yfi.balanceOf(whale)
     cyYfi.mint(yfi_bal, {"from": whale})
@@ -113,7 +113,7 @@ def test_assets_user_metadata(ironBankAdapter, accounts, oracle):
     sushiPriceUsdc = ironBankAdapter.assetUnderlyingTokenPriceUsdc(cySushi)
     sushiExchangeRate = cySushi.exchangeRateStored()
     sushiSupplyBalShares = cySushi.balanceOf(whale)
-    sushiSupplyBalUnderlying = (sushiSupplyBalShares * sushiExchangeRate) / 10**18
+    sushiSupplyBalUnderlying = (sushiSupplyBalShares * sushiExchangeRate) / 10 ** 18
     sushiSupplyBalUsdc = oracle.getNormalizedValueUsdc(
         sushiTokenAddress, sushiSupplyBalUnderlying, sushiPriceUsdc
     )
@@ -125,7 +125,7 @@ def test_assets_user_metadata(ironBankAdapter, accounts, oracle):
 
     _, sushiCollateralBalShare, _, _ = cySushi.getAccountSnapshot(whale)
     sushiCollateralBalUnderlying = (
-        sushiCollateralBalShare * sushiExchangeRate / 10**18
+        sushiCollateralBalShare * sushiExchangeRate / 10 ** 18
     )
 
     sushiCollateralBalUsdc = oracle.getNormalizedValueUsdc(
@@ -375,7 +375,7 @@ def test_asset_positions_of(ironBankAdapter, accounts):
     weth = Contract.from_explorer(wethAddress)
     cyWeth = Contract.from_explorer(cyWethAddress)
     user = accounts.at(userAddress, force=True)
-    MAX_UINT256 = 2**256 - 1
+    MAX_UINT256 = 2 ** 256 - 1
     weth.approve(cyWeth, MAX_UINT256, {"from": user})
     weth_bal = weth.balanceOf(userAddress)
     cyWeth.mint(weth_bal, {"from": user})
@@ -396,7 +396,7 @@ def test_asset_positions_of(ironBankAdapter, accounts):
 
     exchangeRate = cyWeth.exchangeRateStored()
 
-    userSupplyBalanceUnderlying = userSupplyBalanceShares * exchangeRate / 10**18
+    userSupplyBalanceUnderlying = userSupplyBalanceShares * exchangeRate / 10 ** 18
 
     positions = ironBankAdapter.assetPositionsOf(userAddress, cyWethAddress)
     assert userSupplyBalanceUnderlying > 0
@@ -424,7 +424,7 @@ def test_asset_positions_of(ironBankAdapter, accounts):
     assert allowance > 0
 
     # Test account borrow balance
-    userBorrowedCyTokenBalance = userBorrowBalanceShares * 10**18 / exchangeRate
+    userBorrowedCyTokenBalance = userBorrowBalanceShares * 10 ** 18 / exchangeRate
 
     borrowPosition = positions[1]
 
