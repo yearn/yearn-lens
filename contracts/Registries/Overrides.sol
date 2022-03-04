@@ -6,10 +6,6 @@ import "../Utilities/Ownable.sol";
 
 interface ICurveRegistry {
     function get_pool_from_lp_token(address) external view returns (address);
-
-    function pool_list(uint256) external view returns (address);
-
-    function pool_count() external view returns (uint256);
 }
 
 interface ICurveAddressesProvider {
@@ -20,50 +16,36 @@ interface ICurveAddressesProvider {
 
 contract CurveRegistryOverrides is Ownable {
     ICurveAddressesProvider public curveAddressesProvider;
-    ICurveRegistry public curveRegistry;
     mapping(address => address) public poolByLpOverride;
-    address[] public poolAddresses;
 
-    constructor(
-        address _curveAddressesProviderAddress,
-        address _curveRegistryAddress
-    ) {
+    constructor(address _curveAddressesProviderAddress) {
         require(
             _curveAddressesProviderAddress != address(0),
             "Missing Curve Addresses Provider address"
         );
-        require(
-            _curveRegistryAddress != address(0),
-            "Missing Curve Registry address"
-        );
         curveAddressesProvider = ICurveAddressesProvider(
             _curveAddressesProviderAddress
         );
-        curveRegistry = ICurveRegistry(_curveRegistryAddress);
     }
 
-    /// @notice Updates Curve Registry Address
-    function addCurveRegistry(address _curveRegistryAddress) public onlyOwner {
-        require(
-            _curveRegistryAddress != address(0),
-            "Missing Curve Registry Address"
-        );
-        curveRegistry = ICurveRegistry(_curveRegistryAddress);
-    }
-
-    /// @notice Returns both override and curve registry pools as list
+    /// @notice Returns all curve registries
+    /// @dev only the 0th and 5th registries have LP --> pool mappings
     function curveRegistriesList() public view returns (address[] memory) {
-        uint256 poolOverrideCount = poolAddresses.length;
-        uint256 poolRegistryCount = curveRegistry.pool_count();
-        uint256 numRegistries = poolOverrideCount + poolRegistryCount;
-        address[] memory _registries = new address[](numRegistries);
-        for (uint256 i; i < poolOverrideCount; i++) {
-            _registries[i] = poolAddresses[i];
-        }
-        for (uint256 i; i < poolRegistryCount; i++) {
-            _registries[i + poolOverrideCount] = curveRegistry.pool_list(i);
+        uint256 numCurveRegistries = curveAddressesProvider.max_id() + 1;
+        address[] memory _registries = new address[](numCurveRegistries);
+        for (uint256 i; i < numCurveRegistries; i++) {
+            _registries[i] = curveAddressesProvider.get_address(i);
         }
         return _registries;
+    }
+
+    /// @notice Helper function to return registries from the provider
+    function getCurveRegistry(uint256 _idx)
+        public
+        view
+        returns (ICurveRegistry)
+    {
+        return ICurveRegistry(curveAddressesProvider.get_address(_idx));
     }
 
     /// @notice Adds an override pool address for an LP
@@ -73,45 +55,24 @@ contract CurveRegistryOverrides is Ownable {
         onlyOwner
     {
         poolByLpOverride[_lpAddress] = _poolAddress;
-        poolAddresses.push(_poolAddress);
     }
 
     /// @notice Search through pool registry overrides and curve registries for a LP Pool
+    /// @dev the 0th and 5th curve registry addresses contain LP -> pool mappings
     function poolByLp(address _lpAddress) public view returns (address) {
         address pool = poolByLpOverride[_lpAddress];
         if (pool != address(0)) {
             return pool;
         }
-        pool = executeSelectorOnCurveRegistries(_lpAddress);
-        return pool;
-    }
-
-    /// @notice Cycle through all curve registries and try to staticcall each one using manual selector
-    /// @dev return type is inconsistent across curve registres
-    function executeSelectorOnCurveRegistries(address _lpAddress)
-        public
-        view
-        returns (address)
-    {
-        uint256 numRegistries = curveAddressesProvider.max_id() + 1;
-        address curveRegistryAddress;
-        address pool;
-        bool success;
-        bytes memory data;
-        for (uint256 i; i < numRegistries; i++) {
-            curveRegistryAddress = curveAddressesProvider.get_address(i);
-            (success, data) = address(curveRegistryAddress).staticcall(
-                abi.encodeWithSignature(
-                    "get_pool_from_lp_token(address)",
-                    _lpAddress
-                )
-            );
-            if (success && data.length > 0) {
-                pool = abi.decode(data, (address));
-                if (pool != address(0)) {
-                    return pool;
-                }
-            }
+        // check 1st pool from registry provider
+        pool = getCurveRegistry(0).get_pool_from_lp_token(_lpAddress);
+        if (pool != address(0)) {
+            return pool;
+        }
+        // check 6th pool from registry provider
+        pool = getCurveRegistry(5).get_pool_from_lp_token(_lpAddress);
+        if (pool != address(0)) {
+            return pool;
         }
         revert("Pool not found");
     }

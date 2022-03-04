@@ -27,6 +27,7 @@ def test_lp_pool_reverts(curve_registry_override):
         # curve registry should never be in an LP->Pool mapping
         curve_pool = curve_registry_override.poolByLp(curveRegistryAddress)
 
+
 def test_pool_list(curve_registry_override):
     pool_list = curve_registry_override.curveRegistriesList()
     assert len(pool_list) > 0
