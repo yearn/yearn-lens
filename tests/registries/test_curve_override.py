@@ -31,6 +31,8 @@ def test_lp_pool_reverts(curve_registry_override):
 
 
 def test_pool_list(curve_registry_override):
-    # ether some or no registries are returned, anything positive implies a success
+    curve_registry_override.setCurveRegistries(
+            [curveRegistryAddress0, curveRegistryAddress5]
+            )
     pool_list = curve_registry_override.curveRegistriesList()
-    assert len(pool_list) > 0
+    assert len(pool_list) == 2
