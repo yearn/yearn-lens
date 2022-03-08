@@ -8,26 +8,9 @@ interface ICurveRegistry {
     function get_pool_from_lp_token(address) external view returns (address);
 }
 
-interface ICurveAddressesProvider {
-    function max_id() external view returns (uint256);
-
-    function get_address(uint256) external view returns (address);
-}
-
 contract CurveRegistryOverrides is Ownable {
     address[] public curveRegistries;
-    ICurveAddressesProvider public curveAddressesProvider;
     mapping(address => address) public poolByLpOverride;
-
-    constructor(address _curveAddressesProviderAddress) {
-        require(
-            _curveAddressesProviderAddress != address(0),
-            "Missing Curve Addresses Provider address"
-        );
-        curveAddressesProvider = ICurveAddressesProvider(
-            _curveAddressesProviderAddress
-        );
-    }
 
     /// @notice Sets the registries this contract will search when running poolByLp
     /// @dev Registries added must have .get_pool_from_lp_token method
