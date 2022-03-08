@@ -11,6 +11,11 @@ def shared_setup(fn_isolation):
 
 
 @pytest.fixture
+def curve_registry_override(CurveRegistryOverrides, management):
+    return CurveRegistryOverrides.deploy({"from": management})
+
+
+@pytest.fixture
 def iv2Registry():
     return interface.IV2Registry(v2RegistryAddress)
 

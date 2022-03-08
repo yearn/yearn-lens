@@ -3,7 +3,6 @@ import pytest
 from ..addresses import *
 
 
-
 @pytest.fixture
 def delegatedBalanceMapping(DelegatedBalanceMapping, management):
     return DelegatedBalanceMapping.deploy(
