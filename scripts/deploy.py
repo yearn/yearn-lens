@@ -18,7 +18,7 @@ from brownie import (
     TvlAdapterIronBank,
     TvlAdapterV2Vaults,
     UniqueAddressesHelper,
-    accounts
+    accounts,
 )
 
 
