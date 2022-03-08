@@ -120,7 +120,7 @@ def test_asset_dynamic(v2VaultsAdapter, oracle):
     balance = underlyingTokenBalance[0]
     balanceUsdc = underlyingTokenBalance[1]
     tolerance = 5000000  # $5.00
-    estimatedBalanceUsdc = tokenPriceUsdc * balance / 10 ** 6
+    estimatedBalanceUsdc = tokenPriceUsdc * balance / 10**6
     assert tokenPriceUsdc > 900000
     assert tokenPriceUsdc < 1100000
     assert balance > 0
@@ -194,14 +194,14 @@ def test_asset_positions_of(v2VaultsAdapter, oracle, accounts):
     # Deposit into YFI vault
     yfiAccount = accounts.at(vestedYfiAddress, force=True)
     yfi = Contract.from_explorer(yfiAddress)
-    yfi.approve(v2YfiVaultAddress, 2 ** 256 - 1, {"from": vestedYfiAddress})
+    yfi.approve(v2YfiVaultAddress, 2**256 - 1, {"from": vestedYfiAddress})
     yfiVault = interface.IV2Vault(v2YfiVaultAddress)
     # yfiVault.deposit(0.5 * 10 ** 18, {"from": yfiAccount})
     yfiVault.approve(trustedMigratorAddress, 100, {"from": vestedYfiAddress})
     pricePerShare = yfiVault.pricePerShare()
     decimals = yfiVault.decimals()
     userVaultBalanceShares = yfiVault.balanceOf(vestedYfiAddress)
-    userVaultBalance = userVaultBalanceShares * pricePerShare / 10 ** decimals
+    userVaultBalance = userVaultBalanceShares * pricePerShare / 10**decimals
     userVaultBalanceUsdc = oracle.getNormalizedValueUsdc(yfiAddress, userVaultBalance)
     assert userVaultBalanceShares > 0
     positions = v2VaultsAdapter.assetPositionsOf(vestedYfiAddress, v2YfiVaultAddress)
@@ -223,7 +223,7 @@ def test_asset_positions_of(v2VaultsAdapter, oracle, accounts):
     underlyingTokenBalanceAmountUsdc = underlyingTokenBalance[1]
     assert userVaultBalanceUsdc >= underlyingTokenBalanceAmountUsdc - 100
     assert userVaultBalanceUsdc <= underlyingTokenBalanceAmountUsdc + 100
-    assert underlyingTokenBalanceAmountUsdc > underlyingTokenBalanceAmount / 10 ** 18
+    assert underlyingTokenBalanceAmountUsdc > underlyingTokenBalanceAmount / 10**18
 
     # Test token allowances
     tokenAllowances = position[5]
@@ -249,7 +249,7 @@ def test_asset_positions_of(v2VaultsAdapter, oracle, accounts):
 def test_assets_positions_of(v2VaultsAdapter, oracle):
     # Deposit into YFI vault
     yfi = interface.IERC20(yfiAddress)
-    yfi.approve(v2YfiVaultAddress, 2 ** 256 - 1, {"from": vestedYfiAddress})
+    yfi.approve(v2YfiVaultAddress, 2**256 - 1, {"from": vestedYfiAddress})
     yfiVault = interface.IV2Vault(v2YfiVaultAddress)
     # yfiVault.deposit(1 * 10 ** 18, {"from": yfiAccount})
     yfiVault.approve(trustedMigratorAddress, 100, {"from": vestedYfiAddress})

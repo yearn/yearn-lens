@@ -34,4 +34,3 @@ def test_pool_list(curve_registry_override):
     # ether some or no registries are returned, anything positive implies a success
     pool_list = curve_registry_override.curveRegistriesList()
     assert len(pool_list) > 0
-
