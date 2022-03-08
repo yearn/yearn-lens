@@ -15,6 +15,7 @@ interface ICurveAddressesProvider {
 }
 
 contract CurveRegistryOverrides is Ownable {
+    address[] public curveRegistries;
     ICurveAddressesProvider public curveAddressesProvider;
     mapping(address => address) public poolByLpOverride;
 
@@ -28,24 +29,18 @@ contract CurveRegistryOverrides is Ownable {
         );
     }
 
-    /// @notice Returns all curve registries
-    /// @dev only the 0th and 5th registries have LP --> pool mappings
-    function curveRegistriesList() public view returns (address[] memory) {
-        uint256 numCurveRegistries = curveAddressesProvider.max_id() + 1;
-        address[] memory _registries = new address[](numCurveRegistries);
-        for (uint256 i; i < numCurveRegistries; i++) {
-            _registries[i] = curveAddressesProvider.get_address(i);
-        }
-        return _registries;
+    /// @notice Sets the registries this contract will search when running poolByLp
+    /// @dev Registries added must have .get_pool_from_lp_token method
+    function setCurveRegistries(address[] memory _curveRegistries)
+        public
+        onlyOwner
+    {
+        curveRegistries = _curveRegistries;
     }
 
-    /// @notice Helper function to return registries from the provider
-    function getCurveRegistry(uint256 _idx)
-        public
-        view
-        returns (ICurveRegistry)
-    {
-        return ICurveRegistry(curveAddressesProvider.get_address(_idx));
+    /// @notice Returns all curve registries that have been set
+    function curveRegistriesList() public view returns (address[] memory) {
+        return curveRegistries;
     }
 
     /// @notice Adds an override pool address for an LP
@@ -58,21 +53,18 @@ contract CurveRegistryOverrides is Ownable {
     }
 
     /// @notice Search through pool registry overrides and curve registries for a LP Pool
-    /// @dev the 0th and 5th curve registry addresses contain LP -> pool mappings
     function poolByLp(address _lpAddress) public view returns (address) {
         address pool = poolByLpOverride[_lpAddress];
         if (pool != address(0)) {
             return pool;
         }
-        // check 1st pool from registry provider
-        pool = getCurveRegistry(0).get_pool_from_lp_token(_lpAddress);
-        if (pool != address(0)) {
-            return pool;
-        }
-        // check 6th pool from registry provider
-        pool = getCurveRegistry(5).get_pool_from_lp_token(_lpAddress);
-        if (pool != address(0)) {
-            return pool;
+        for (uint256 i; i < curveRegistries.length; i++) {
+            pool = ICurveRegistry(curveRegistries[i]).get_pool_from_lp_token(
+                _lpAddress
+            );
+            if (pool != address(0)) {
+                return pool;
+            }
         }
         revert("Pool not found");
     }

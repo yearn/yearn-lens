@@ -27,6 +27,8 @@ yearnAddressesProviderAddress = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
 # Registries
 curveRegistryAddress = "0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c"
 v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
+curveRegistryAddress0 = "0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5"
+curveRegistryAddress5 = "0x8F942C20D02bEfc377D41445793068908E2250D0"
 
 
 # Factories
