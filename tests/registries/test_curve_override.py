@@ -12,14 +12,14 @@ def test_lp_pool_override(curve_registry_override):
     assert override_pool == threeCrvPoolAddress
 
 
-def test_lp_pool_curve_registry0(curve_registry_override):
-    curve_registry_override.setCurveRegistries([curveRegistryAddress0])
+def test_lp_pool_curve_registry(curve_registry_override):
+    curve_registry_override.setCurveRegistries([curveRegistryAddress])
     curve_pool = curve_registry_override.poolByLp(threeCrvAddress)
     assert curve_pool == threeCrvPoolAddress
 
 
-def test_lp_pool_curve_registry5(curve_registry_override):
-    curve_registry_override.setCurveRegistries([curveRegistryAddress5])
+def test_lp_pool_curve_cryptoswap_registry(curve_registry_override):
+    curve_registry_override.setCurveRegistries([curveCryptoSwapRegistryAddress])
     curve_pool = curve_registry_override.poolByLp(triCryptoAddress)
     assert curve_pool == triCryptoPoolAddress
 
@@ -32,7 +32,7 @@ def test_lp_pool_reverts(curve_registry_override):
 
 def test_pool_list(curve_registry_override):
     curve_registry_override.setCurveRegistries(
-            [curveRegistryAddress0, curveRegistryAddress5]
+            [curveRegistryAddress, curveCryptoSwapRegistryAddress]
             )
     pool_list = curve_registry_override.curveRegistriesList()
     assert len(pool_list) == 2
