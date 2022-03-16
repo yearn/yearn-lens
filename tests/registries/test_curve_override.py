@@ -1,5 +1,6 @@
 import brownie
 import pytest
+from brownie import ZERO_ADDRESS
 
 from ..addresses import *
 
@@ -24,10 +25,10 @@ def test_lp_pool_curve_cryptoswap_registry(curve_registry_override):
     assert curve_pool == triCryptoPoolAddress
 
 
-def test_lp_pool_reverts(curve_registry_override):
-    with brownie.reverts():
-        # curve registry should never be in an LP->Pool mapping
-        curve_pool = curve_registry_override.poolByLp(curveRegistryAddress)
+def test_lp_pool_returns_zero(curve_registry_override):
+    # curve registry should never be in an LP->Pool mapping
+    curve_pool = curve_registry_override.poolByLp(curveRegistryAddress)
+    assert curve_pool == ZERO_ADDRESS
 
 
 def test_pool_list(curve_registry_override):

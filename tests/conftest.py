@@ -12,7 +12,11 @@ def shared_setup(fn_isolation):
 
 @pytest.fixture
 def curve_registry_override(CurveRegistryOverrides, management):
-    return CurveRegistryOverrides.deploy({"from": management})
+    cro = CurveRegistryOverrides.deploy({"from": management})
+    cro.setCurveRegistries(
+            [curveRegistryAddress, curveCryptoSwapRegistryAddress]
+            )
+    return cro
 
 
 @pytest.fixture
@@ -210,9 +214,12 @@ def synth_calculations(CalculationsSynth, management):
 
 
 @pytest.fixture
-def curve_calculations(CalculationsCurve, management):
+def curve_calculations(CalculationsCurve, curve_registry_override, management):
     calculations_curve = CalculationsCurve.deploy(
-        yearnAddressesProviderAddress, curveAddressProviderAddress, {"from": management}
+        yearnAddressesProviderAddress,
+        curveAddressProviderAddress,
+        curve_registry_override.address,
+        {"from": management}
     )
     return calculations_curve
 

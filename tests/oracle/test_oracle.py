@@ -46,10 +46,20 @@ def test_add_token_aliases(oracle, management):
     assert oracle.tokenAliases(ethAddress) == yfiAddress
 
 
-def test_set_calculations(Oracle, CalculationsCurve, gov, management, rando):
+def test_set_calculations(
+        Oracle,
+        CalculationsCurve,
+        curve_registry_override,
+        gov,
+        management,
+        rando
+        ):
     oracle = Oracle.deploy(usdcAddress, {"from": management})
     calculationsCurve = CalculationsCurve.deploy(
-        curveAddressProviderAddress, oracle, {"from": gov}
+        curveAddressProviderAddress,
+        oracle,
+        curve_registry_override.address,
+        {"from": gov}
     )
 
     # Oracles with no calculations should revert

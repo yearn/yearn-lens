@@ -74,43 +74,34 @@ interface ICalculationsChainlink {
     function oracleNamehashes(address) external view returns (bytes32);
 }
 
-interface ICurveRegistryOverride {
-    function setCurveRegistries(address[] memory) external view;
-
-    function setPoolForLp(address) external view;
-
+interface ICurveRegistryOverrides {
     function poolByLp(address) external view returns (address);
 }
 
 contract CalculationsCurve is Ownable {
     address public yearnAddressesProviderAddress;
     address public curveAddressesProviderAddress;
+    address public curveRegistryOverridesAddress;
     IYearnAddressesProvider internal yearnAddressesProvider;
     ICurveAddressesProvider internal curveAddressesProvider;
-
-
-    // TODO: added
-    address public curveRegistryOverrideAddress;
-    ICurveRegistryOverride internal curveRegistryOverride;
+    ICurveRegistryOverrides internal curveRegistryOverrides;
 
     constructor(
         address _yearnAddressesProviderAddress,
         address _curveAddressesProviderAddress,
-        address _curveRegistryOverrideAddress
+        address _curveRegistryOverridesAddress
     ) {
         yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
         curveAddressesProviderAddress = _curveAddressesProviderAddress;
-        // TODO: added
-        curveRegistryOverrideAddress = _curveRegistryOverrideAddress;
+        curveRegistryOverridesAddress = _curveRegistryOverridesAddress;
         yearnAddressesProvider = IYearnAddressesProvider(
             _yearnAddressesProviderAddress
         );
         curveAddressesProvider = ICurveAddressesProvider(
             _curveAddressesProviderAddress
         );
-        // TODO: added
-        curveRegistryOverride = ICurveRegistryOverride(
-            _curveRegistryOverrideAddress
+        curveRegistryOverrides = ICurveRegistryOverrides(
+            _curveRegistryOverridesAddress
         );
     }
 
@@ -331,13 +322,7 @@ contract CalculationsCurve is Ownable {
         view
         returns (address)
     {
-        address poolAddress = curveRegistry().get_pool_from_lp_token(lpAddress);
-
-        if (poolAddress != address(0)) {
-            return poolAddress;
-        }
-
-        return cryptoPoolRegistry().get_pool_from_lp_token(lpAddress);
+        return curveRegistryOverrides.poolByLp(lpAddress);
     }
 
     function isBasicToken(address tokenAddress) public view returns (bool) {
