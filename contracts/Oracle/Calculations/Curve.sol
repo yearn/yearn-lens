@@ -74,23 +74,43 @@ interface ICalculationsChainlink {
     function oracleNamehashes(address) external view returns (bytes32);
 }
 
+interface ICurveRegistryOverride {
+    function setCurveRegistries(address[] memory) external view;
+
+    function setPoolForLp(address) external view;
+
+    function poolByLp(address) external view returns (address);
+}
+
 contract CalculationsCurve is Ownable {
     address public yearnAddressesProviderAddress;
     address public curveAddressesProviderAddress;
     IYearnAddressesProvider internal yearnAddressesProvider;
     ICurveAddressesProvider internal curveAddressesProvider;
 
+
+    // TODO: added
+    address public curveRegistryOverrideAddress;
+    ICurveRegistryOverride internal curveRegistryOverride;
+
     constructor(
         address _yearnAddressesProviderAddress,
-        address _curveAddressesProviderAddress
+        address _curveAddressesProviderAddress,
+        address _curveRegistryOverrideAddress
     ) {
         yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
         curveAddressesProviderAddress = _curveAddressesProviderAddress;
+        // TODO: added
+        curveRegistryOverrideAddress = _curveRegistryOverrideAddress;
         yearnAddressesProvider = IYearnAddressesProvider(
             _yearnAddressesProviderAddress
         );
         curveAddressesProvider = ICurveAddressesProvider(
             _curveAddressesProviderAddress
+        );
+        // TODO: added
+        curveRegistryOverride = ICurveRegistryOverride(
+            _curveRegistryOverrideAddress
         );
     }
 
