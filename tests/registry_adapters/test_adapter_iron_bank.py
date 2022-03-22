@@ -8,11 +8,10 @@ from ..addresses import *
 def ironBankAdapter(
     RegistryAdapterIronBank,
     ironBankTvlAdapter,
-    yearnAddressesProvider,
     gov,
 ):
     ironBankAdapter = RegistryAdapterIronBank.deploy(
-        yearnAddressesProvider, {"from": gov}
+        Contract(yearnAddressesProviderAddress), {"from": gov}
     )
     ironBankAdapter.setExtensionsAddresses([ironBankTvlAdapter], {"from": gov})
     return ironBankAdapter
@@ -32,9 +31,9 @@ def test_assets_tokens_addresses(ironBankAdapter):
 
 
 def test_asset_user_metadata(ironBankAdapter, accounts, oracle):
-    sushi = Contract.from_explorer(sushiAddress)
-    cySushi = Contract.from_explorer(cySushiAddress)
-    whale = accounts.at(whaleAddress, force=True)
+    sushi = Contract(sushiAddress)
+    cySushi = Contract(cySushiAddress)
+    whale = accounts.at(sushiWhaleAddress, force=True)
     MAX_UINT256 = 2**256 - 1
     sushi.approve(cySushi, MAX_UINT256, {"from": whale})
     sushi_bal = sushi.balanceOf(whale)
@@ -42,7 +41,7 @@ def test_asset_user_metadata(ironBankAdapter, accounts, oracle):
     assert sushi.balanceOf(whale) == 0
     assert cySushi.balanceOf(whale) > 0
 
-    comptroller = Contract.from_explorer(comptrollerAddress)
+    comptroller = Contract(comptrollerAddress)
     _, collateralFactor, _ = comptroller.markets(cySushiAddress)
 
     comptroller.enterMarkets([cySushi], {"from": whale})
@@ -81,9 +80,9 @@ def test_asset_user_metadata(ironBankAdapter, accounts, oracle):
 
 def test_assets_user_metadata(ironBankAdapter, accounts, oracle):
     # sushi and cySuchi
-    sushi = Contract.from_explorer(sushiAddress)
-    cySushi = Contract.from_explorer(cySushiAddress)
-    whale = accounts.at(whaleAddress, force=True)
+    sushi = Contract(sushiAddress)
+    cySushi = Contract(cySushiAddress)
+    whale = accounts.at(sushiWhaleAddress, force=True)
     MAX_UINT256 = 2**256 - 1
     sushi.approve(cySushi, MAX_UINT256, {"from": whale})
     sushi_bal = sushi.balanceOf(whale)
@@ -92,9 +91,9 @@ def test_assets_user_metadata(ironBankAdapter, accounts, oracle):
     assert cySushi.balanceOf(whale) > 0
 
     # yfi and cyYfi
-    yfi = Contract.from_explorer(yfiAddress)
-    cyYfi = Contract.from_explorer(cyYfiAddress)
-    whale = accounts.at(whaleAddress, force=True)
+    yfi = Contract(yfiAddress)
+    cyYfi = Contract(cyYfiAddress)
+    whale = accounts.at(sushiWhaleAddress, force=True)
     MAX_UINT256 = 2**256 - 1
     yfi.approve(cyYfi, MAX_UINT256, {"from": whale})
     yfi_bal = yfi.balanceOf(whale)
@@ -102,7 +101,7 @@ def test_assets_user_metadata(ironBankAdapter, accounts, oracle):
     assert yfi.balanceOf(whale) == 0
     assert cyYfi.balanceOf(whale) > 0
 
-    comptroller = Contract.from_explorer(comptrollerAddress)
+    comptroller = Contract(comptrollerAddress)
     _, sushiCollateralFactor, _ = comptroller.markets(cySushiAddress)
     _, yfiCollateralFactor, _ = comptroller.markets(cyYfiAddress)
 
@@ -197,7 +196,7 @@ def test_assets_addresses(ironBankAdapter):
 
 
 def test_asset_static(ironBankAdapter):
-    cyUsdcToken = Contract.from_explorer(cyUsdcAddress)
+    cyUsdcToken = Contract(cyUsdcAddress)
     usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyUsdcAddress)
     _, typeId, _ = ironBankAdapter.adapterInfo()
     usdcTokenName = cyUsdcToken.name()
@@ -223,7 +222,7 @@ def test_asset_static(ironBankAdapter):
 
 
 def test_asset_dynamic(ironBankAdapter, oracle):
-    cyUsdcToken = Contract.from_explorer(cyUsdcAddress)
+    cyUsdcToken = Contract(cyUsdcAddress)
     usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyUsdcAddress)
     liquidity = cyUsdcToken.getCash()
     usdcTokenPrice = ironBankAdapter.assetUnderlyingTokenPriceUsdc(cyUsdcAddress)
@@ -247,7 +246,7 @@ def test_asset_dynamic(ironBankAdapter, oracle):
     )
     assert totalBorrowedUsdc > 0
 
-    comptroller = Contract.from_explorer(comptrollerAddress)
+    comptroller = Contract(comptrollerAddress)
     isListed, collateralFactorMantissa, version = comptroller.markets(cyUsdcAddress)
     assert version >= 1
 
@@ -302,10 +301,10 @@ def test_asset_dynamic(ironBankAdapter, oracle):
 
 
 def test_assets_static(ironBankAdapter):
-    cyUsdcToken = Contract.from_explorer(cyUsdcAddress)
+    cyUsdcToken = Contract(cyUsdcAddress)
     usdcTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyUsdcAddress)
 
-    cySushiToken = Contract.from_explorer(cySushiAddress)
+    cySushiToken = Contract(cySushiAddress)
     sushiTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cySushiAddress)
 
     _, typeId, _ = ironBankAdapter.adapterInfo()
@@ -372,19 +371,19 @@ def test_assets_dynamic(ironBankAdapter):
 
 def test_asset_positions_of(ironBankAdapter, accounts):
 
-    weth = Contract.from_explorer(wethAddress)
-    cyWeth = Contract.from_explorer(cyWethAddress)
+    weth = Contract(wethAddress)
+    cyWeth = Contract(cyWethAddress)
     user = accounts.at(userAddress, force=True)
     MAX_UINT256 = 2**256 - 1
     weth.approve(cyWeth, MAX_UINT256, {"from": user})
     weth_bal = weth.balanceOf(userAddress)
     cyWeth.mint(weth_bal, {"from": user})
 
-    comptroller = Contract.from_explorer(comptrollerAddress)
+    comptroller = Contract(comptrollerAddress)
 
     comptroller.enterMarkets([cyWeth], {"from": user})
 
-    cyWeth = Contract.from_explorer(cyWethAddress)
+    cyWeth = Contract(cyWethAddress)
     cyWethTokenAddress = ironBankAdapter.assetUnderlyingTokenAddress(cyWethAddress)
     cyWethTokenPrice = ironBankAdapter.assetUnderlyingTokenPriceUsdc(cyWethAddress)
     decimal = cyWeth.decimals()
@@ -450,7 +449,7 @@ def test_asset_positions_of(ironBankAdapter, accounts):
 
 
 def test_assets_positions_of(ironBankAdapter):
-    cyWeth = Contract.from_explorer(cyWethAddress)
+    cyWeth = Contract(cyWethAddress)
 
     userSupplyBalanceShares = cyWeth.balanceOf(userAddress)
     userBorrowBalanceShares = cyWeth.borrowBalanceStored(userAddress)
