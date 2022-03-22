@@ -49,7 +49,6 @@ def test_add_token_aliases(oracle, management):
 def test_set_calculations(
         Oracle,
         CalculationsCurve,
-        curve_registry_override,
         gov,
         management,
         rando
@@ -58,7 +57,6 @@ def test_set_calculations(
     calculationsCurve = CalculationsCurve.deploy(
         curveAddressProviderAddress,
         oracle,
-        curve_registry_override.address,
         {"from": gov}
     )
 

@@ -81,27 +81,20 @@ interface ICurveRegistryOverrides {
 contract CalculationsCurve is Ownable {
     address public yearnAddressesProviderAddress;
     address public curveAddressesProviderAddress;
-    address public curveRegistryOverridesAddress;
     IYearnAddressesProvider internal yearnAddressesProvider;
     ICurveAddressesProvider internal curveAddressesProvider;
-    ICurveRegistryOverrides internal curveRegistryOverrides;
 
     constructor(
         address _yearnAddressesProviderAddress,
-        address _curveAddressesProviderAddress,
-        address _curveRegistryOverridesAddress
+        address _curveAddressesProviderAddress
     ) {
         yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
         curveAddressesProviderAddress = _curveAddressesProviderAddress;
-        curveRegistryOverridesAddress = _curveRegistryOverridesAddress;
         yearnAddressesProvider = IYearnAddressesProvider(
             _yearnAddressesProviderAddress
         );
         curveAddressesProvider = ICurveAddressesProvider(
             _curveAddressesProviderAddress
-        );
-        curveRegistryOverrides = ICurveRegistryOverrides(
-            _curveRegistryOverridesAddress
         );
     }
 
@@ -133,6 +126,17 @@ contract CalculationsCurve is Ownable {
 
     function cryptoPoolRegistry() internal view returns (ICurveRegistry) {
         return ICurveRegistry(curveAddressesProvider.get_address(5));
+    }
+
+    function curveRegistryOverrides()
+        internal
+        view
+        returns (ICurveRegistryOverrides)
+    {
+        return
+            ICurveRegistryOverrides(
+                yearnAddressesProvider.addressById("CURVE_REGISTRY_OVERRIDES")
+            );
     }
 
     function getCurvePriceUsdc(address lpAddress)
@@ -322,7 +326,7 @@ contract CalculationsCurve is Ownable {
         view
         returns (address)
     {
-        return curveRegistryOverrides.poolByLp(lpAddress);
+        return curveRegistryOverrides().poolByLp(lpAddress);
     }
 
     function isBasicToken(address tokenAddress) public view returns (bool) {
