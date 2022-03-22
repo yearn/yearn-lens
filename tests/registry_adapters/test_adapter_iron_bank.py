@@ -256,7 +256,7 @@ def test_asset_dynamic(ironBankAdapter, oracle):
     totalCollateralTokens = cyUsdcToken.totalCollateralTokens()
     assert totalCollateralTokens > 0
 
-    blocksPerYear = 2102400
+    blocksPerYear = 2300000
     lendApyBips = cyUsdcToken.supplyRatePerBlock() * blocksPerYear / 10**14
     borrowApyBips = cyUsdcToken.borrowRatePerBlock() * blocksPerYear / 10**14
     assert lendApyBips > 0
