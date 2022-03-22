@@ -74,6 +74,10 @@ interface ICalculationsChainlink {
     function oracleNamehashes(address) external view returns (bytes32);
 }
 
+interface ICurveRegistryOverrides {
+    function poolByLp(address) external view returns (address);
+}
+
 contract CalculationsCurve is Ownable {
     address public yearnAddressesProviderAddress;
     address public curveAddressesProviderAddress;
@@ -122,6 +126,17 @@ contract CalculationsCurve is Ownable {
 
     function cryptoPoolRegistry() internal view returns (ICurveRegistry) {
         return ICurveRegistry(curveAddressesProvider.get_address(5));
+    }
+
+    function curveRegistryOverrides()
+        internal
+        view
+        returns (ICurveRegistryOverrides)
+    {
+        return
+            ICurveRegistryOverrides(
+                yearnAddressesProvider.addressById("CURVE_REGISTRY_OVERRIDES")
+            );
     }
 
     function getCurvePriceUsdc(address lpAddress)
@@ -311,13 +326,7 @@ contract CalculationsCurve is Ownable {
         view
         returns (address)
     {
-        address poolAddress = curveRegistry().get_pool_from_lp_token(lpAddress);
-
-        if (poolAddress != address(0)) {
-            return poolAddress;
-        }
-
-        return cryptoPoolRegistry().get_pool_from_lp_token(lpAddress);
+        return curveRegistryOverrides().poolByLp(lpAddress);
     }
 
     function isBasicToken(address tokenAddress) public view returns (bool) {
