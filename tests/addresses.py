@@ -5,6 +5,7 @@ ethZapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 eurt_namehash = "0xd5aa869323f85cb893514ce48950ba7e84a8d0bf062a7e3058bcc494217da39f"
 masterChefAddress = "0xbD17B1ce622d73bD438b9E658acA5996dc394b0d"
 oracleAddress = "0x83d95e0D5f402511dB06817Aff3f9eA88224B030"
+sushiWhaleAddress = "0x7abE0cE388281d2aCF297Cb089caef3819b13448"
 trustedMigratorAddress = "0x1824df8D751704FA10FA371d62A37f9B8772ab90"
 unitrollerAddress = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB"
 usdcAddress = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
@@ -25,10 +26,11 @@ yearnAddressesProviderAddress = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
 
 
 # Registries
-curveRegistryAddress = "0x7D86446dDb609eD0F5f8684AcF30380a356b2B4c"
 v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
-curveRegistryAddress0 = "0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5"
-curveRegistryAddress5 = "0x8F942C20D02bEfc377D41445793068908E2250D0"
+# --> 0th address in addresses provider
+curveRegistryAddress = "0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5"
+# --> 5th address in addresses provider
+curveCryptoSwapRegistryAddress = "0x8F942C20D02bEfc377D41445793068908E2250D0"
 
 
 # Factories
@@ -93,6 +95,8 @@ usdpAddress = "0x1456688345527bE1f37E9e627DA0837D6f08C925"
 wbtcAddress = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
 wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
 yfiAddress = "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
+yfiEthAddress = "0x29059568bB40344487d62f7450E78b8E6C74e0e5"
+yfiEthPoolAddress = "0xC26b89A667578ec7b3f11b2F98d6Fd15C07C54ba"
 # Earn v2
 yDaiV2Address = "0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01"
 yUsdcV2Address = "0xd6aD7a6750A7593E092a9B218d66C0A814a3436e"

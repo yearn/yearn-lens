@@ -12,7 +12,11 @@ def shared_setup(fn_isolation):
 
 @pytest.fixture
 def curve_registry_override(CurveRegistryOverrides, management):
-    return CurveRegistryOverrides.deploy({"from": management})
+    cro = CurveRegistryOverrides.deploy({"from": management})
+    cro.setCurveRegistries(
+            [curveRegistryAddress, curveCryptoSwapRegistryAddress]
+            )
+    return cro
 
 
 @pytest.fixture
@@ -39,9 +43,21 @@ def gov(accounts):
     yield accounts.at(web3.ens.resolve("ychad.eth"), force=True)
 
 
+# TODO: set scope? reuse?
 @pytest.fixture
-def yearnAddressesProvider():
-    return Contract.from_explorer(yearnAddressesProviderAddress)
+def yearn_addresses_provider(curve_registry_override):
+    '''Returns the live yearn addresses provider with curve registry override
+    added.  Fixture is used wherever the override contract is needed so
+    some of the calculations_curve, oracle & curve override tests.  All other
+    contexts, the yearnAddressesProviderAddress is preferrred.
+    '''
+    owner = '0xC27AE930D94434bE000000000000000000000000'
+    yap = Contract(yearnAddressesProviderAddress)
+    yap.setAddress(
+            ('CURVE_REGISTRY_OVERRIDES', curve_registry_override.address),
+            {'from': owner}
+            )
+    return yap
 
 
 @pytest.fixture
@@ -210,9 +226,12 @@ def synth_calculations(CalculationsSynth, management):
 
 
 @pytest.fixture
-def curve_calculations(CalculationsCurve, management):
+def curve_calculations(CalculationsCurve, yearn_addresses_provider, management):
     calculations_curve = CalculationsCurve.deploy(
-        yearnAddressesProviderAddress, curveAddressProviderAddress, {"from": management}
+        #yearn_addresses_provider.address,
+        yearn_addresses_provider,
+        curveAddressProviderAddress,
+        {"from": management}
     )
     return calculations_curve
 

@@ -49,6 +49,6 @@ contract CurveRegistryOverrides is Ownable {
                 return pool;
             }
         }
-        revert("Pool not found");
+        return address(0);
     }
 }
