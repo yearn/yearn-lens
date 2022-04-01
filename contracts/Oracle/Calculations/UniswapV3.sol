@@ -20,6 +20,8 @@ interface IUniswapV3Factory {
 contract CalculationsUniswapV3 is Ownable {
     address public uniswapV3FactoryAddress;
     address public usdcAddress;
+    address public wethAddress = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address public wethUsdcPool = 0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8;
     uint24[] public fees = [500, 3000, 10000];
     uint32 public period = 10; // seconds
 
@@ -42,26 +44,39 @@ contract CalculationsUniswapV3 is Ownable {
         fees = _fees;
     }
 
+    function setWethUsdcPool(address newPool) external onlyOwner {
+        wethUsdcPool = newPool;
+    }
+
     function getPriceUsdc(address tokenAddress) public view returns (uint256) {
+        if (tokenAddress == wethAddress) {
+            return getWethPriceUsdc(1 ether);
+        }
+
         // attempt to find the first pool that can provide a price
         for (uint256 i = 0; i < fees.length; i++) {
             address pool = uniswapV3Factory.getPool(
                 tokenAddress,
-                usdcAddress,
+                wethAddress,
                 fees[i]
             );
             if (pool == address(0)) continue;
             IERC20 tokenIn = IERC20(tokenAddress);
             uint256 amountIn = 10**tokenIn.decimals();
-            return
+            uint256 wethOut =
                 getAmountOut(
                     pool,
                     tokenAddress,
                     toUint128(amountIn),
-                    usdcAddress
+                    wethAddress
                 );
+            return getWethPriceUsdc(wethOut);
         }
         revert();
+    }
+
+    function getWethPriceUsdc(uint256 amountIn) public view returns (uint256) {
+        return getAmountOut(wethUsdcPool, wethAddress, toUint128(amountIn), usdcAddress);
     }
 
     function getAmountOut(
