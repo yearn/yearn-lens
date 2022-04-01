@@ -20,16 +20,23 @@ interface IUniswapV3Factory {
 contract CalculationsUniswapV3 is Ownable {
     address public uniswapV3FactoryAddress;
     address public usdcAddress;
-    address public wethAddress = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address public wethUsdcPool = 0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8;
+    address public wethAddress;
+    address public wethUsdcPoolAddress;
     uint24[] public fees = [500, 3000, 10000];
     uint32 public period = 10; // seconds
 
     IUniswapV3Factory private uniswapV3Factory;
 
-    constructor(address _uniswapV3FactoryAddress, address _usdcAddress) {
+    constructor(
+        address _uniswapV3FactoryAddress, 
+        address _usdcAddress,
+        address _wethAddress,
+        address _wethUsdcPoolAddress
+        ) {
         uniswapV3FactoryAddress = _uniswapV3FactoryAddress;
         usdcAddress = _usdcAddress;
+        wethAddress = _wethAddress;
+        wethUsdcPoolAddress = _wethUsdcPoolAddress;
         uniswapV3Factory = IUniswapV3Factory(_uniswapV3FactoryAddress);
     }
 
@@ -44,8 +51,8 @@ contract CalculationsUniswapV3 is Ownable {
         fees = _fees;
     }
 
-    function setWethUsdcPool(address newPool) external onlyOwner {
-        wethUsdcPool = newPool;
+    function setWethUsdcPoolAddress(address newPoolAddress) external onlyOwner {
+        wethUsdcPoolAddress = newPoolAddress;
     }
 
     function getPriceUsdc(address tokenAddress) public view returns (uint256) {
@@ -76,7 +83,7 @@ contract CalculationsUniswapV3 is Ownable {
     }
 
     function getWethPriceUsdc(uint256 amountIn) public view returns (uint256) {
-        return getAmountOut(wethUsdcPool, wethAddress, toUint128(amountIn), usdcAddress);
+        return getAmountOut(wethUsdcPoolAddress, wethAddress, toUint128(amountIn), usdcAddress);
     }
 
     function getAmountOut(
