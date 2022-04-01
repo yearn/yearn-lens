@@ -32,7 +32,7 @@ contract CalculationsUniswapV3 is Ownable {
         address _usdcAddress,
         address _wethAddress,
         address _wethUsdcPoolAddress
-        ) {
+    ) {
         uniswapV3FactoryAddress = _uniswapV3FactoryAddress;
         usdcAddress = _usdcAddress;
         wethAddress = _wethAddress;
