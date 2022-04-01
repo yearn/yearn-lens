@@ -17,6 +17,10 @@ interface IUniswapV3Factory {
     ) external view returns (address pool);
 }
 
+interface IUniswapPool {
+    function liquidity() external view returns (uint128);
+}
+
 contract CalculationsUniswapV3 is Ownable {
     address public uniswapV3FactoryAddress;
     address public usdcAddress;
@@ -62,17 +66,21 @@ contract CalculationsUniswapV3 is Ownable {
 
         // attempt to find the first pool that can provide a price
         for (uint256 i = 0; i < fees.length; i++) {
-            address pool = uniswapV3Factory.getPool(
+            address poolAddress = uniswapV3Factory.getPool(
                 tokenAddress,
                 wethAddress,
                 fees[i]
             );
-            if (pool == address(0)) continue;
+            if (poolAddress == address(0)) continue;
+
+            IUniswapPool pool = IUniswapPool(poolAddress);
+            if (pool.liquidity() == 0) continue;
+
             IERC20 tokenIn = IERC20(tokenAddress);
             uint256 amountIn = 10**tokenIn.decimals();
             uint256 wethOut =
                 getAmountOut(
-                    pool,
+                    poolAddress,
                     tokenAddress,
                     toUint128(amountIn),
                     wethAddress
