@@ -251,7 +251,7 @@ def chainlink_calculations(CalculationsChainlink, management):
 @pytest.fixture
 def uniswapv3_calculations(CalculationsUniswapV3, management):
     uniswapv3_calculations = CalculationsUniswapV3.deploy(
-        uniswapV3FactoryAddress, usdcAddress, {"from": management}
+        uniswapV3FactoryAddress, usdcAddress, wethAddress, wethUsdcPoolAddress, {"from": management}
     )
     return uniswapv3_calculations
 
