@@ -17,17 +17,30 @@ interface IUniswapV3Factory {
     ) external view returns (address pool);
 }
 
+interface IUniswapPool {
+    function liquidity() external view returns (uint128);
+}
+
 contract CalculationsUniswapV3 is Ownable {
     address public uniswapV3FactoryAddress;
     address public usdcAddress;
+    address public wethAddress;
+    address public wethUsdcPoolAddress;
     uint24[] public fees = [500, 3000, 10000];
     uint32 public period = 10; // seconds
 
     IUniswapV3Factory private uniswapV3Factory;
 
-    constructor(address _uniswapV3FactoryAddress, address _usdcAddress) {
+    constructor(
+        address _uniswapV3FactoryAddress, 
+        address _usdcAddress,
+        address _wethAddress,
+        address _wethUsdcPoolAddress
+    ) {
         uniswapV3FactoryAddress = _uniswapV3FactoryAddress;
         usdcAddress = _usdcAddress;
+        wethAddress = _wethAddress;
+        wethUsdcPoolAddress = _wethUsdcPoolAddress;
         uniswapV3Factory = IUniswapV3Factory(_uniswapV3FactoryAddress);
     }
 
@@ -42,26 +55,42 @@ contract CalculationsUniswapV3 is Ownable {
         fees = _fees;
     }
 
+    function setWethUsdcPoolAddress(address newPoolAddress) external onlyOwner {
+        wethUsdcPoolAddress = newPoolAddress;
+    }
+
     function getPriceUsdc(address tokenAddress) public view returns (uint256) {
+        if (tokenAddress == wethAddress) {
+            return getWethPriceUsdc(1 ether);
+        }
+
         // attempt to find the first pool that can provide a price
         for (uint256 i = 0; i < fees.length; i++) {
-            address pool = uniswapV3Factory.getPool(
+            address poolAddress = uniswapV3Factory.getPool(
                 tokenAddress,
-                usdcAddress,
+                wethAddress,
                 fees[i]
             );
-            if (pool == address(0)) continue;
+            if (poolAddress == address(0)) continue;
+
+            if (IUniswapPool(poolAddress).liquidity() == 0) continue;
+
             IERC20 tokenIn = IERC20(tokenAddress);
             uint256 amountIn = 10**tokenIn.decimals();
-            return
+            uint256 wethOut =
                 getAmountOut(
-                    pool,
+                    poolAddress,
                     tokenAddress,
                     toUint128(amountIn),
-                    usdcAddress
+                    wethAddress
                 );
+            return getWethPriceUsdc(wethOut);
         }
         revert();
+    }
+
+    function getWethPriceUsdc(uint256 amountIn) internal view returns (uint256) {
+        return getAmountOut(wethUsdcPoolAddress, wethAddress, toUint128(amountIn), usdcAddress);
     }
 
     function getAmountOut(
