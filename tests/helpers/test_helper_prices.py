@@ -42,9 +42,9 @@ def test_tokens_prices_normalized_usdc(pricesHelper):
     use 18-6 = 12 decimals for erc20 testing
     """
     token_prices = pricesHelper.tokensPricesNormalizedUsdc(
-        [(usdcAddress, 1), (crvAddress, 1e12)]
+        [(yfiAddress, 1e12), (crvAddress, 1e12)]
     )
-    assert token_prices[0][0] == usdcAddress
+    assert token_prices[0][0] == yfiAddress
     assert token_prices[0][1] > 0
     assert token_prices[1][0] == crvAddress
     assert token_prices[1][1] > 0

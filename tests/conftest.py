@@ -102,8 +102,11 @@ def strings(String, management):
 
 
 @pytest.fixture
-def pricesHelper(PricesHelper, management, oracle):
-    return PricesHelper.deploy(oracle, {"from": management})
+def pricesHelper(PricesHelper, management):
+    return PricesHelper.deploy(
+            yearnAddressesProviderAddress,
+            {"from": management}
+            )
 
 
 @pytest.fixture

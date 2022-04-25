@@ -16,8 +16,12 @@ interface IOracle {
         returns (uint256);
 }
 
+interface IYearnAddressesProvider {
+    function addressById(string memory) external view returns (address);
+}
+
 contract PricesHelper is Ownable {
-    address public oracleAddress;
+    address public yearnAddressesProviderAddress;
 
     struct TokenPrice {
         address tokenId;
@@ -29,9 +33,12 @@ contract PricesHelper is Ownable {
         uint256 amount;
     }
 
-    constructor(address _oracleAddress) {
-        require(_oracleAddress != address(0), "Missing oracle address");
-        oracleAddress = _oracleAddress;
+    constructor(address _yearnAddressesProviderAddress) {
+        require(
+            _yearnAddressesProviderAddress != address(0),
+            "Missing yearn addresses provider address"
+        );
+        yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
     }
 
     function tokensPrices(address[] memory tokensAddresses)
@@ -50,7 +57,7 @@ contract PricesHelper is Ownable {
             address tokenAddress = tokensAddresses[tokenIdx];
             _tokensPrices[tokenIdx] = TokenPrice({
                 tokenId: tokenAddress,
-                priceUsdc: IOracle(oracleAddress).getPriceUsdcRecommended(
+                priceUsdc: IOracle(getOracleAddress()).getPriceUsdcRecommended(
                     tokenAddress
                 )
             });
@@ -71,7 +78,7 @@ contract PricesHelper is Ownable {
             uint256 amount = tokens[tokenIdx].amount;
             _tokenPricesNormalized[tokenIdx] = TokenPrice({
                 tokenId: tokenAddress,
-                priceUsdc: IOracle(oracleAddress).getNormalizedValueUsdc(
+                priceUsdc: IOracle(getOracleAddress()).getNormalizedValueUsdc(
                     tokenAddress,
                     amount
                 )
@@ -80,7 +87,16 @@ contract PricesHelper is Ownable {
         return _tokenPricesNormalized;
     }
 
-    function updateOracleAddress(address _oracleAddress) external onlyOwner {
-        oracleAddress = _oracleAddress;
+    function getOracleAddress() internal view returns (address) {
+        return
+            IYearnAddressesProvider(yearnAddressesProviderAddress).addressById(
+                "ORACLE"
+            );
+    }
+
+    function updateYearnAddressesProviderAddress(
+        address _yearnAddressesProviderAddress
+    ) external onlyOwner {
+        yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
     }
 }
