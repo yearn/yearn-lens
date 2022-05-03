@@ -94,8 +94,9 @@ contract CalculationsIronBank is AddressesProviderConsumer {
             underlyingTokenAddress
         );
 
-        uint256 price = (underlyingTokenPrice * exchangeRateStored) /
-            10**(underlyingTokenDecimals + decimals);
+        uint256 price = (underlyingTokenPrice *
+            exchangeRateStored *
+            10**decimals) / 10**(underlyingTokenDecimals + 18);
         return price;
     }
 
