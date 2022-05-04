@@ -42,7 +42,7 @@ def main():
     v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
     wbtcAddress = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
     wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-    yearnAddressProvider = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
+    yearnAddressProvider = "0xe11dC9f2Ab122dC5978EACA41483Da0D7D7e6128"
 
     management = accounts[0]
     positionSpenderAddresses = [trustedMigratorAddress]
