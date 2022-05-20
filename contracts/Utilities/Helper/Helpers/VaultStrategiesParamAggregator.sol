@@ -28,6 +28,14 @@ interface IVault {
         returns (VaultStrategyParams memory);
 
     function withdrawalQueue(uint256 arg0) external view returns (address);
+
+    function token() external view returns (address);
+
+    function totalAssets() external view returns (uint256);
+}
+
+interface IERC20 {
+    function symbol() external view returns (string memory);
 }
 
 interface IStrategy {
@@ -38,6 +46,8 @@ contract VaultStrategiesParamAggregator is AddressesProviderConsumer {
     struct StrategyInfo {
         address strategyAddress;
         string name;
+        string vaultSymbol;
+        uint256 realDebtRatio;
         IVault.VaultStrategyParams params;
     }
 
@@ -59,6 +69,8 @@ contract VaultStrategiesParamAggregator is AddressesProviderConsumer {
             assetAddress
         );
         StrategyInfo[] memory result = new StrategyInfo[](numberOfStrategies);
+        string memory underlyingTokenSymbol = IERC20(vault.token()).symbol();
+        uint256 totalAssets = vault.totalAssets();
 
         for (
             uint256 strategyIdx = 0;
@@ -70,9 +82,12 @@ contract VaultStrategiesParamAggregator is AddressesProviderConsumer {
                 strategyAddress
             );
             string memory name = IStrategy(strategyAddress).name();
+            uint256 realDebtRatio = (params.totalDebt * 10000) / totalAssets;
             StrategyInfo memory info = StrategyInfo(
                 strategyAddress,
                 name,
+                underlyingTokenSymbol,
+                realDebtRatio,
                 params
             );
             result[strategyIdx] = info;
