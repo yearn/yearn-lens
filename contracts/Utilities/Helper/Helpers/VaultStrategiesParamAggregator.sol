@@ -36,6 +36,8 @@ interface IVault {
 
 interface IERC20 {
     function symbol() external view returns (string memory);
+
+    function decimals() external view returns (uint8);
 }
 
 interface IStrategy {
@@ -46,7 +48,8 @@ contract VaultStrategiesParamAggregator is AddressesProviderConsumer {
     struct StrategyInfo {
         address strategyAddress;
         string name;
-        string vaultSymbol;
+        string underlyingTokenSymbol;
+        uint8 underlyingTokenDecimals;
         uint256 realDebtRatio;
         IVault.VaultStrategyParams params;
     }
@@ -69,7 +72,9 @@ contract VaultStrategiesParamAggregator is AddressesProviderConsumer {
             assetAddress
         );
         StrategyInfo[] memory result = new StrategyInfo[](numberOfStrategies);
-        string memory underlyingTokenSymbol = IERC20(vault.token()).symbol();
+        IERC20 underlyingToken = IERC20(vault.token());
+        string memory underlyingTokenSymbol = underlyingToken.symbol();
+        uint8 underlyingTokenDecimals = underlyingToken.decimals();
         uint256 totalAssets = vault.totalAssets();
 
         for (
@@ -87,6 +92,7 @@ contract VaultStrategiesParamAggregator is AddressesProviderConsumer {
                 strategyAddress,
                 name,
                 underlyingTokenSymbol,
+                underlyingTokenDecimals,
                 realDebtRatio,
                 params
             );
