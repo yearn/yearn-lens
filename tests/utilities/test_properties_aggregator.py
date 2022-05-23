@@ -1,5 +1,5 @@
 import pytest
-from brownie import convert, Contract
+from brownie import convert, Contract, chain
 
 @pytest.fixture
 def properties_aggregator(PropertiesAggregator, management):
@@ -7,7 +7,14 @@ def properties_aggregator(PropertiesAggregator, management):
 
 @pytest.fixture
 def vault_address():
-    return "0xd9788f3931Ede4D5018184E198699dC6d66C1915"
+    if chain.id == 1:
+        return "0xd9788f3931Ede4D5018184E198699dC6d66C1915"
+    elif chain.id == 250:
+        return "0x637eC617c86D24E421328e6CAEa1d92114892439"
+    elif chain.id == 42161:
+        return "0x239e14A19DFF93a17339DCC444f74406C17f8E67"
+    else:
+        return None
 
 @pytest.fixture
 def vault(vault_address):
