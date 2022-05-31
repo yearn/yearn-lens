@@ -22,7 +22,7 @@ zapAddress = "0x5A0bade607eaca65A0FE6d1437E0e3EC2144d540"
 
 # Providers
 curveAddressProviderAddress = "0x0000000022D53366457F9d5E68Ec105046FC4383"
-yearnAddressesProviderAddress = "0x9be19Ee7Bc4099D62737a7255f5c227fBcd6dB93"
+yearnAddressesProviderAddress = "0xe11dC9f2Ab122dC5978EACA41483Da0D7D7e6128"
 
 
 # Registries
