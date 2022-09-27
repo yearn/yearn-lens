@@ -122,6 +122,6 @@ live:
 | AllowancesHelper         | [Link](https://etherscan.io/address/0x4218e20db87023049fc582aaa4bd47a3611a20ab) | [Link](https://ftmscan.com/address/0x14785e5e3650f0603ee17401c9890de380713914) | [Link](https://arbiscan.io/address/0xf5875d60241c8f6448649206a6f485b812acf44d) |
 | AddressMergeHelper       | [Link](https://etherscan.io/address/0x957e3ae7983155a9f9e08da555b8084448be26e4) | [Link](https://ftmscan.com/address/0x001d0a58b336f60ee050cb11ee455fd7eb984518) | n/a |
 | ParnterTracker           | [Link](https://etherscan.io/address/0x8ee392a4787397126C163Cb9844d7c447da419D8) | n/a | n/a |
-| CurveRegistryOverrides   | [Link](https://etherscan.io/address/0xc455D134AfCC5353317A4e5afb553Fd5Ab6C2eE3) | n/a | [Link](https://arbiscan.io/address/0x3d197c5b6ea199e04ed4c9002e8435bb371efeed) |
+| CurveRegistryOverrides   | [Link](https://etherscan.io/address/0x5e853B0d7D17b7013A98B02Ac686E71Ca354424B) | n/a | [Link](https://arbiscan.io/address/0x3d197c5b6ea199e04ed4c9002e8435bb371efeed) |
 | AddressGeneratorV2Vaults | [Link](https://etherscan.io/address/0x437758d475f70249e03eda6be23684ad1fc375f0) | [Link](https://ftmscan.com/address/0x8ca27a3ab8917a033f278D20135d2467faA099bA) | [Link](https://arbiscan.io/address/0x3a8efa2d87d60c0289f19b44a0928f4269c0f094) |
 | AddressGeneratorIronBank | [Link](https://etherscan.io/address/0xa0b57619a980dfefd50f24f310ee1b55a40a9d46) | [Link](https://ftmscan.com/address/0x5ABdfDfa0cF2d83c4755E0a2a782eF57FEd5c23B) | [Link](https://arbiscan.io/address/0x941f727f267913e76e3f03a25d3bc7c07e891763) |
