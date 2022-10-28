@@ -268,6 +268,12 @@ def calculationsIronBank(CalculationsIronBank, management):
     )
     return calculations
 
+@pytest.fixture
+def balancer_calculations(CalculationsBalancer, management):
+    bal_calcs = CalculationsBalancer.deploy(
+        yearnAddressesProviderAddress, {"from": management}
+    )
+    return bal_calcs
 
 @pytest.fixture
 def oracle(
@@ -280,6 +286,7 @@ def oracle(
     CalculationsYearnVaults,
     calculationsOverrides,
     chainlink_calculations,
+    balancer_calculations
 ):
     oracle = Oracle.deploy(usdcAddress, {"from": management})
     oracle.addTokenAliases(
@@ -305,6 +312,7 @@ def oracle(
             calculationsIronBank,
             synth_calculations,
             calculationsSushiswap,
+            balancer_calculations
         ],
         {"from": management},
     )
