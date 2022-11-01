@@ -45,7 +45,7 @@ interface IYearnAddressesProvider {
 }
 
 contract CalculationsBalancer is Ownable {
-    IYearnAddressesProvider internal yearnAddressesProvider;
+    IYearnAddressesProvider public yearnAddressesProvider;
 
     IBalancerVault internal constant balancerVault =
         IBalancerVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
@@ -88,13 +88,14 @@ contract CalculationsBalancer is Ownable {
         (IERC20[] memory tokens, uint256[] memory balances, ) = balancerVault
             .getPoolTokens(poolId);
         uint256 totalValue;
-        for (uint256 i; i < tokens.length; i++) {
-            address token = address(tokens[i]);
+        uint256 i;
+        address token;
+        for (i; i < tokens.length; ++i) {
+            token = address(tokens[i]);
 
             if(token == lpAddress) continue;
 
-            uint256 tokenValueUsdc = getTokenAmountUsdc(token, balances[i]);
-            totalValue += tokenValueUsdc;
+            totalValue += getTokenAmountUsdc(token, balances[i]);
         }
         return totalValue;
     }
