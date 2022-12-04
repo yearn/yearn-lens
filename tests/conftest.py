@@ -13,9 +13,7 @@ def shared_setup(fn_isolation):
 @pytest.fixture
 def curve_registry_override(CurveRegistryOverrides, management):
     cro = CurveRegistryOverrides.deploy({"from": management})
-    cro.setCurveRegistries(
-            [curveRegistryAddress, curveCryptoSwapRegistryAddress]
-            )
+    cro.setCurveRegistries([curveRegistryAddress, curveCryptoSwapRegistryAddress])
     return cro
 
 
@@ -46,17 +44,16 @@ def gov(accounts):
 # TODO: set scope? reuse?
 @pytest.fixture
 def yearn_addresses_provider(curve_registry_override):
-    '''Returns the live yearn addresses provider with curve registry override
+    """Returns the live yearn addresses provider with curve registry override
     added.  Fixture is used wherever the override contract is needed so
     some of the calculations_curve, oracle & curve override tests.  All other
     contexts, the yearnAddressesProviderAddress is preferrred.
-    '''
-    owner = '0xC27AE930D94434bE000000000000000000000000'
+    """
+    owner = "0xC27AE930D94434bE000000000000000000000000"
     yap = Contract(yearnAddressesProviderAddress)
     yap.setAddress(
-            ('CURVE_REGISTRY_OVERRIDES', curve_registry_override.address),
-            {'from': owner}
-            )
+        ("CURVE_REGISTRY_OVERRIDES", curve_registry_override.address), {"from": owner}
+    )
     return yap
 
 
@@ -103,10 +100,7 @@ def strings(String, management):
 
 @pytest.fixture
 def pricesHelper(PricesHelper, management):
-    return PricesHelper.deploy(
-            yearnAddressesProviderAddress,
-            {"from": management}
-            )
+    return PricesHelper.deploy(yearnAddressesProviderAddress, {"from": management})
 
 
 @pytest.fixture
@@ -231,10 +225,10 @@ def synth_calculations(CalculationsSynth, management):
 @pytest.fixture
 def curve_calculations(CalculationsCurve, yearn_addresses_provider, management):
     calculations_curve = CalculationsCurve.deploy(
-        #yearn_addresses_provider.address,
+        # yearn_addresses_provider.address,
         yearn_addresses_provider,
         curveAddressProviderAddress,
-        {"from": management}
+        {"from": management},
     )
     return calculations_curve
 
@@ -251,12 +245,18 @@ def chainlink_calculations(CalculationsChainlink, management):
     chainlink_calculations = CalculationsChainlink.deploy({"from": management})
     return chainlink_calculations
 
+
 @pytest.fixture
 def uniswapv3_calculations(CalculationsUniswapV3, management):
     uniswapv3_calculations = CalculationsUniswapV3.deploy(
-        uniswapV3FactoryAddress, usdcAddress, wethAddress, wethUsdcPoolAddress, {"from": management}
+        uniswapV3FactoryAddress,
+        usdcAddress,
+        wethAddress,
+        wethUsdcPoolAddress,
+        {"from": management},
     )
     return uniswapv3_calculations
+
 
 @pytest.fixture
 def calculationsIronBank(CalculationsIronBank, management):
@@ -270,6 +270,14 @@ def calculationsIronBank(CalculationsIronBank, management):
 
 
 @pytest.fixture
+def balancer_calculations(CalculationsBalancer, management):
+    bal_calcs = CalculationsBalancer.deploy(
+        yearnAddressesProviderAddress, {"from": management}
+    )
+    return bal_calcs
+
+
+@pytest.fixture
 def oracle(
     Oracle,
     management,
@@ -280,6 +288,7 @@ def oracle(
     CalculationsYearnVaults,
     calculationsOverrides,
     chainlink_calculations,
+    balancer_calculations,
 ):
     oracle = Oracle.deploy(usdcAddress, {"from": management})
     oracle.addTokenAliases(
@@ -305,6 +314,7 @@ def oracle(
             calculationsIronBank,
             synth_calculations,
             calculationsSushiswap,
+            balancer_calculations,
         ],
         {"from": management},
     )

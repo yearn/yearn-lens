@@ -10,9 +10,11 @@ def test_weth_price(uniswapv3_calculations):
     price = uniswapv3_calculations.getPriceUsdc(weth)
     assert price > 0
 
+
 def test_wsteth_price(uniswapv3_calculations):
     price = uniswapv3_calculations.getPriceUsdc(wsteth)
     assert price > 0
+
 
 def test_weth_price_with_invalid_pool_from_first_fee(uniswapv3_calculations):
     uniswapv3_calculations.setFees([1, 500])

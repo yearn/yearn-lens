@@ -1,9 +1,11 @@
 import pytest
 from brownie import convert, Contract, chain
 
+
 @pytest.fixture
 def properties_aggregator(PropertiesAggregator, management):
     return PropertiesAggregator.deploy({"from": management})
+
 
 @pytest.fixture
 def vault_address():
@@ -16,9 +18,11 @@ def vault_address():
     else:
         return None
 
+
 @pytest.fixture
 def vault(vault_address):
     return Contract(vault_address)
+
 
 def test_get_property(properties_aggregator, vault, vault_address):
     expected_total_assets = vault.totalAssets()
@@ -26,11 +30,14 @@ def test_get_property(properties_aggregator, vault, vault_address):
     decoded = convert.to_uint(result)
     assert decoded == expected_total_assets
 
+
 def test_get_properties(properties_aggregator, vault, vault_address):
     expected_total_assets = vault.totalAssets()
     expected_pps = vault.pricePerShare()
 
-    result = properties_aggregator.getProperties(vault_address, ["totalAssets", "pricePerShare"])
+    result = properties_aggregator.getProperties(
+        vault_address, ["totalAssets", "pricePerShare"]
+    )
     decoded_total_assets = convert.to_uint(result[0])
     decoded_pps = convert.to_uint(result[1])
 

@@ -33,7 +33,7 @@ def test_lp_pool_returns_zero(curve_registry_override):
 
 def test_pool_list(curve_registry_override):
     curve_registry_override.setCurveRegistries(
-            [curveRegistryAddress, curveCryptoSwapRegistryAddress]
-            )
+        [curveRegistryAddress, curveCryptoSwapRegistryAddress]
+    )
     pool_list = curve_registry_override.curveRegistriesList()
     assert len(pool_list) == 2
