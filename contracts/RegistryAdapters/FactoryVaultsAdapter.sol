@@ -113,7 +113,7 @@ interface IHelper {
 /*******************************************************
  *                     Adapter Logic
  *******************************************************/
-contract RegisteryAdapterV2Vault is Ownable {
+contract FactoryVaultsAdapter is Ownable {
     /*******************************************************
      *           Common code shared by all adapters
      *******************************************************/
