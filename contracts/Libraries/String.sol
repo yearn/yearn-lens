@@ -157,7 +157,13 @@ library String {
             buf[length - 1 - idx] ^= buf[idx];
             buf[idx] ^= buf[length - 1 - idx];
         }
+        if (length % 2 != 0 && input % base == 0) {
+            buf[length++] = "0"; // Append '0' if the length is odd and ends with a zero
+        }
         output = string(buf);
+        assembly {
+            mstore(output, length)
+        }
     }
 
     /**
