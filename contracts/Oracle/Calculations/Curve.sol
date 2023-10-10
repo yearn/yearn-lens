@@ -144,12 +144,16 @@ contract CalculationsCurve is Ownable {
         view
         returns (uint256)
     {
-        if (isLpTriCryptoPool(lpAddress)) {
-            return triCryptoPoolLpPriceUsdc(lpAddress);
+        address poolAddress = curveMetaRegistry.get_pool_from_lp_token(lpAddress);
+        require(poolAddress != address(0));
+        
+        if (isPoolTriCryptoPool(poolAddress)) {
+            return triCryptoPoolLpPriceUsdc(poolAddress);
         }
-        if (isLpCryptoPool(lpAddress)) {
+        if (isPoolCryptoPool(poolAddress)) {
             return cryptoPoolLpPriceUsdc(lpAddress);
         }
+        
         uint256 basePrice = getBasePrice(lpAddress);
         uint256 virtualPrice = getVirtualPrice(lpAddress);
         IERC20 usdc = IERC20(oracle().usdcAddress());
@@ -198,13 +202,12 @@ contract CalculationsCurve is Ownable {
         return priceUsdc;
     }
 
-    function triCryptoPoolLpPriceUsdc(address lpAddress)
+    function triCryptoPoolLpPriceUsdc(address poolAddress)
         public
         view
         returns (uint256)
     {
-        ITriCryptoPool pool = ITriCryptoPool(getPoolFromLpToken(lpAddress));
-        return pool.lp_price() / 10 ** 12; // Prices are returned in 18 decimals. Scale down to USDC decimals.
+        return ITriCryptoPool(poolAddress).lp_price() / 10 ** 12; // Prices are returned in 18 decimals. Scale down to USDC decimals.
     }
 
     struct TokenAmount {
@@ -305,28 +308,7 @@ contract CalculationsCurve is Ownable {
 
     function isCurveLpToken(address lpAddress) public view returns (bool) {
         address poolAddress = getPoolFromLpToken(lpAddress);
-        bool tokenHasCurvePool = poolAddress != address(0);
-        return tokenHasCurvePool;
-    }
-
-    function isLpCryptoPool(address lpAddress) public view returns (bool) {
-        address poolAddress = getPoolFromLpToken(lpAddress);
-
-        if (poolAddress != address(0)) {
-            return isPoolCryptoPool(poolAddress);
-        }
-
-        return false;
-    }
-
-    function isLpTriCryptoPool(address lpAddress) public view returns (bool) {
-        address poolAddress = getPoolFromLpToken(lpAddress);
-
-        if (poolAddress != address(0)) {
-            return isPoolTriCryptoPool(poolAddress);
-        }
-
-        return false;
+        return poolAddress != address(0);
     }
 
     function isPoolCryptoPool(address poolAddress) public view returns (bool) {

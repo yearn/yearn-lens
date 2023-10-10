@@ -120,6 +120,8 @@ yUsdtV3Address = "0xE6354ed5bC4b393a5Aad09f21c46E101e692d447"
 yBusdV3Address = "0x04bC0Ab673d88aE9dbC9DA2380cB6B79C4BCa9aE"
 
 # Curve LPs
+
+# Tri Pools
 TriCryptoUSDC = "0x7f86bf177dd4f3494b841a37e810a34dd56c829b"
 TriCRV = "0x4ebdf703948ddcea3b11f675b4d1fba9d2414a14"
 TriCryptoINV = "0x5426178799ee0a0181a89b4f57efddfab49941ec"
