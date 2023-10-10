@@ -31,7 +31,7 @@ v2RegistryAddress = "0x50c1a2eA0a861A967D9d0FFE2AE4012c2E053804"
 curveRegistryAddress = "0x90E00ACe148ca3b23Ac1bC8C240C2a7Dd9c2d7f5"
 # --> 5th address in addresses provider
 curveCryptoSwapRegistryAddress = "0x8F942C20D02bEfc377D41445793068908E2250D0"
-
+metaRegistry = "0xF98B45FA17DE75FB1aD0e7aFD971b0ca00e379fC"
 
 # Factories
 sushiswapFactoryAddress = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
@@ -118,3 +118,9 @@ yDaiV3Address = "0xC2cB1040220768554cf699b0d863A3cd4324ce32"
 yUsdcV3Address = "0x26EA744E5B887E5205727f55dFBE8685e3b21951"
 yUsdtV3Address = "0xE6354ed5bC4b393a5Aad09f21c46E101e692d447"
 yBusdV3Address = "0x04bC0Ab673d88aE9dbC9DA2380cB6B79C4BCa9aE"
+
+# Curve LPs
+TriCryptoUSDC = "0x7f86bf177dd4f3494b841a37e810a34dd56c829b"
+TriCRV = "0x4ebdf703948ddcea3b11f675b4d1fba9d2414a14"
+TriCryptoINV = "0x5426178799ee0a0181a89b4f57efddfab49941ec"
+TriSilo = "0x86bf09acb47ab31686be413d614e9ded3666a1d3"

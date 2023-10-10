@@ -74,27 +74,38 @@ interface ICalculationsChainlink {
     function oracleNamehashes(address) external view returns (bytes32);
 }
 
-interface ICurveRegistryOverrides {
-    function poolByLp(address) external view returns (address);
+interface ICurveMetaRegistry {
+    function get_pool_from_lp_token(address) external view returns (address);
+}
+
+interface ITriCryptoPool {
+    function lp_price() external view returns (uint256);
 }
 
 contract CalculationsCurve is Ownable {
     address public yearnAddressesProviderAddress;
     address public curveAddressesProviderAddress;
+    address public curveMetaRegistryAddress;
+    ICurveMetaRegistry public curveMetaRegistry;
     IYearnAddressesProvider internal yearnAddressesProvider;
     ICurveAddressesProvider internal curveAddressesProvider;
 
     constructor(
         address _yearnAddressesProviderAddress,
-        address _curveAddressesProviderAddress
+        address _curveAddressesProviderAddress,
+        address _curveMetaRegistryAddress
     ) {
         yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
         curveAddressesProviderAddress = _curveAddressesProviderAddress;
+        curveMetaRegistryAddress = _curveMetaRegistryAddress;
         yearnAddressesProvider = IYearnAddressesProvider(
             _yearnAddressesProviderAddress
         );
         curveAddressesProvider = ICurveAddressesProvider(
             _curveAddressesProviderAddress
+        );
+        curveMetaRegistry = ICurveMetaRegistry(
+            _curveMetaRegistryAddress
         );
     }
 
@@ -128,22 +139,14 @@ contract CalculationsCurve is Ownable {
         return ICurveRegistry(curveAddressesProvider.get_address(5));
     }
 
-    function curveRegistryOverrides()
-        internal
-        view
-        returns (ICurveRegistryOverrides)
-    {
-        return
-            ICurveRegistryOverrides(
-                yearnAddressesProvider.addressById("CURVE_REGISTRY_OVERRIDES")
-            );
-    }
-
     function getCurvePriceUsdc(address lpAddress)
         public
         view
         returns (uint256)
     {
+        if (isLpTriCryptoPool(lpAddress)) {
+            return triCryptoPoolLpPriceUsdc(lpAddress);
+        }
         if (isLpCryptoPool(lpAddress)) {
             return cryptoPoolLpPriceUsdc(lpAddress);
         }
@@ -193,6 +196,15 @@ contract CalculationsCurve is Ownable {
         uint256 totalSupply = ILp(lpAddress).totalSupply();
         uint256 priceUsdc = (totalValueUsdc * 10**18) / totalSupply;
         return priceUsdc;
+    }
+
+    function triCryptoPoolLpPriceUsdc(address lpAddress)
+        public
+        view
+        returns (uint256)
+    {
+        ITriCryptoPool pool = ITriCryptoPool(getPoolFromLpToken(lpAddress));
+        return pool.lp_price() / 10 ** 12; // Prices are returned in 18 decimals. Scale down to USDC decimals.
     }
 
     struct TokenAmount {
@@ -286,6 +298,8 @@ contract CalculationsCurve is Ownable {
 
     // should not be used with lpAddresses that are from the crypto swap registry
     function getVirtualPrice(address lpAddress) public view returns (uint256) {
+        address pool = curveMetaRegistry.get_pool_from_lp_token(lpAddress);
+        ICurvePool(pool).get_virtual_price();
         return curveRegistry().get_virtual_price_from_lp_token(lpAddress);
     }
 
@@ -300,6 +314,16 @@ contract CalculationsCurve is Ownable {
 
         if (poolAddress != address(0)) {
             return isPoolCryptoPool(poolAddress);
+        }
+
+        return false;
+    }
+
+    function isLpTriCryptoPool(address lpAddress) public view returns (bool) {
+        address poolAddress = getPoolFromLpToken(lpAddress);
+
+        if (poolAddress != address(0)) {
+            return isPoolTriCryptoPool(poolAddress);
         }
 
         return false;
@@ -321,12 +345,20 @@ contract CalculationsCurve is Ownable {
         return successNoParams;
     }
 
+    function isPoolTriCryptoPool(address poolAddress) public view returns (bool) {
+        (bool success, ) = address(poolAddress).staticcall(
+            abi.encodeWithSignature("lp_price()")
+        );
+
+        return success;
+    }
+
     function getPoolFromLpToken(address lpAddress)
         public
         view
         returns (address)
     {
-        return curveRegistryOverrides().poolByLp(lpAddress);
+        return curveMetaRegistry.get_pool_from_lp_token(lpAddress);
     }
 
     function isBasicToken(address tokenAddress) public view returns (bool) {

@@ -4,9 +4,9 @@ from eth_account import Account
 
 from .addresses import *
 
-
 @pytest.fixture(scope="function", autouse=True)
 def shared_setup(fn_isolation):
+    web3.manager.request_blocking('anvil_setNextBlockBaseFeePerGas',[0])
     pass
 
 
@@ -228,6 +228,7 @@ def curve_calculations(CalculationsCurve, yearn_addresses_provider, management):
         # yearn_addresses_provider.address,
         yearn_addresses_provider,
         curveAddressProviderAddress,
+        metaRegistry,
         {"from": management},
     )
     return calculations_curve

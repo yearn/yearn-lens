@@ -110,7 +110,7 @@ interface IHelper {
 /*******************************************************
  *                     Adapter Logic
  *******************************************************/
-contract RegisteryAdapterV2Vault is Ownable {
+contract RegisteryAdapterV2Vault_Old is Ownable {
     /*******************************************************
      *           Common code shared by all adapters
      *******************************************************/
