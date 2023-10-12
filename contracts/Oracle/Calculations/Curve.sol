@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.2;
-import "../../Utilities/Ownable.sol";
+import "./Utilities/Ownable.sol";
 
 interface IERC20 {
     function decimals() external view returns (uint8);
@@ -13,6 +13,8 @@ interface ICurvePool {
     function get_virtual_price() external view returns (uint256);
 
     function coins(uint256 arg0) external view returns (address);
+
+    function lp_price() external view returns (uint256);
 }
 
 interface ICurveRegistry {
@@ -78,23 +80,34 @@ interface ICurveRegistryOverrides {
     function poolByLp(address) external view returns (address);
 }
 
+interface ICurveMetaRegistry {
+    function get_pool_from_lp_token(address) external view returns (address);
+}
+
 contract CalculationsCurve is Ownable {
     address public yearnAddressesProviderAddress;
     address public curveAddressesProviderAddress;
+    address public curveMetaRegistryAddress;
+    ICurveMetaRegistry public curveMetaRegistry;
     IYearnAddressesProvider internal yearnAddressesProvider;
     ICurveAddressesProvider internal curveAddressesProvider;
 
     constructor(
         address _yearnAddressesProviderAddress,
-        address _curveAddressesProviderAddress
+        address _curveAddressesProviderAddress,
+        address _curveMetaRegistryAddress
     ) {
         yearnAddressesProviderAddress = _yearnAddressesProviderAddress;
         curveAddressesProviderAddress = _curveAddressesProviderAddress;
+        curveMetaRegistryAddress = _curveMetaRegistryAddress;
         yearnAddressesProvider = IYearnAddressesProvider(
             _yearnAddressesProviderAddress
         );
         curveAddressesProvider = ICurveAddressesProvider(
             _curveAddressesProviderAddress
+        );
+        curveMetaRegistry = ICurveMetaRegistry(
+            _curveMetaRegistryAddress
         );
     }
 
@@ -113,6 +126,15 @@ contract CalculationsCurve is Ownable {
         curveAddressesProviderAddress = _curveAddressesProviderAddress;
         curveAddressesProvider = ICurveAddressesProvider(
             _curveAddressesProviderAddress
+        );
+    }
+
+    function updateCurveMetaRegistry(
+        address _curveMetaRegistryAddress
+    ) external onlyOwner {
+        curveMetaRegistryAddress = _curveMetaRegistryAddress;
+        curveMetaRegistry = ICurveMetaRegistry(
+            _curveMetaRegistryAddress
         );
     }
 
@@ -144,6 +166,9 @@ contract CalculationsCurve is Ownable {
         view
         returns (uint256)
     {
+        if(isLpTriCryptoPool(lpAddress)){
+            return triCryptoPoolLpPriceUsdc(lpAddress);
+        }
         if (isLpCryptoPool(lpAddress)) {
             return cryptoPoolLpPriceUsdc(lpAddress);
         }
@@ -193,6 +218,16 @@ contract CalculationsCurve is Ownable {
         uint256 totalSupply = ILp(lpAddress).totalSupply();
         uint256 priceUsdc = (totalValueUsdc * 10**18) / totalSupply;
         return priceUsdc;
+    }
+
+    function triCryptoPoolLpPriceUsdc(address lpAddress)
+        public
+        view
+        returns (uint256)
+    {
+        address poolAddress = curveMetaRegistry.get_pool_from_lp_token(lpAddress);
+        if (poolAddress == address(0)) return 0;
+        return ICurvePool(poolAddress).lp_price() / 10 ** 12; // Prices are returned in 18 decimals. Scale down to USDC decimals.
     }
 
     struct TokenAmount {
@@ -305,6 +340,16 @@ contract CalculationsCurve is Ownable {
         return false;
     }
 
+    function isLpTriCryptoPool(address lpAddress) public view returns (bool) {
+        address poolAddress = curveMetaRegistry.get_pool_from_lp_token(lpAddress);
+
+        if (poolAddress != address(0)) {
+            return isPoolTriCryptoPool(poolAddress);
+        }
+
+        return false;
+    }
+
     function isPoolCryptoPool(address poolAddress) public view returns (bool) {
         (bool success, ) = address(poolAddress).staticcall(
             abi.encodeWithSignature("price_oracle(uint256)", 0)
@@ -319,6 +364,14 @@ contract CalculationsCurve is Ownable {
         );
 
         return successNoParams;
+    }
+
+    function isPoolTriCryptoPool(address poolAddress) public view returns (bool) {
+        (bool success, bytes memory data) = address(poolAddress).staticcall(
+            abi.encodeWithSignature("lp_price()")
+        );
+
+        return success && data.length > 0;
     }
 
     function getPoolFromLpToken(address lpAddress)
@@ -376,7 +429,7 @@ contract CalculationsCurve is Ownable {
     }
 
     function getPriceUsdc(address assetAddress) public view returns (uint256) {
-        if (isCurveLpToken(assetAddress)) {
+        if (isCurveLpToken(assetAddress) || isLpTriCryptoPool(assetAddress)) {
             return getCurvePriceUsdc(assetAddress);
         }
 

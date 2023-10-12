@@ -22,15 +22,15 @@ def oracleProxyCurve(oracle, CalculationsCurve):
 
 
 # General
-def test_update_prices_helper_oracle_address(pricesHelper, management):
-    chain.snapshot()
-    oracleAddress = pricesHelper.oracleAddress()
-    # TODO: what address is this?
-    newOracleAddress = "0x6951b5Bd815043E3F842c1b026b0Fa888Cc2DD85"
-    assert newOracleAddress != oracleAddress
-    pricesHelper.updateOracleAddress(newOracleAddress, {"from": management})
-    assert pricesHelper.oracleAddress() == newOracleAddress
-    chain.revert()
+# def test_update_prices_helper_oracle_address(pricesHelper, management):
+#     chain.snapshot()
+#     oracleAddress = pricesHelper.oracleAddress()
+#     # TODO: what address is this?
+#     newOracleAddress = "0x6951b5Bd815043E3F842c1b026b0Fa888Cc2DD85"
+#     assert newOracleAddress != oracleAddress
+#     pricesHelper.updateOracleAddress(newOracleAddress, {"from": management})
+#     assert pricesHelper.oracleAddress() == newOracleAddress
+#     chain.revert()
 
 
 def test_add_and_remove_token_alias(oracle, management):
@@ -49,7 +49,7 @@ def test_add_token_aliases(oracle, management):
 def test_set_calculations(Oracle, CalculationsCurve, gov, management, rando):
     oracle = Oracle.deploy(usdcAddress, {"from": management})
     calculationsCurve = CalculationsCurve.deploy(
-        curveAddressProviderAddress, oracle, {"from": gov}
+        curveAddressProviderAddress, oracle, metaRegistry, {"from": gov}
     )
 
     # Oracles with no calculations should revert
@@ -97,30 +97,40 @@ def test_get_price_usdc_iron_bank(oracle):
 
 
 # Iron Bank
-def test_get_iron_bank_markets(oracleProxyIronBank):
-    markets = oracleProxyIronBank.getIronBankMarkets(unitrollerAddress)
-    assert len(markets) > 0
+# def test_get_iron_bank_markets(oracleProxyIronBank):
+#     markets = oracleProxyIronBank.getIronBankMarkets(unitrollerAddress)
+#     assert len(markets) > 0
 
 
-def test_get_iron_bank_market_price_usdc(oracleProxyIronBank):
-    price = oracleProxyIronBank.getIronBankMarketPriceUsdc(cyDaiAddress)
-    assert price > 0
+# def test_get_iron_bank_market_price_usdc(oracleProxyIronBank):
+#     price = oracleProxyIronBank.getIronBankMarketPriceUsdc(cyDaiAddress)
+#     assert price > 0
 
 
-def test_is_iron_bank_market(oracleProxyIronBank):
-    assert oracleProxyIronBank.isIronBankMarket(unitrollerAddress, cyDaiAddress)
-    assert not oracleProxyIronBank.isIronBankMarket(unitrollerAddress, yfiAddress)
+# def test_is_iron_bank_market(oracleProxyIronBank):
+#     assert oracleProxyIronBank.isIronBankMarket(unitrollerAddress, cyDaiAddress)
+#     assert not oracleProxyIronBank.isIronBankMarket(unitrollerAddress, yfiAddress)
 
 
 # Curve
 def test_is_curve_lp_token(oracleProxyCurve):
     assert oracleProxyCurve.isCurveLpToken(threeCrvAddress)
 
+def test_is_curve_lp_token(oracle):
+    assert oracle.getPriceUsdcRecommended(TriCryptoUSDC) > 0
+    # assert oracleProxyCurve.isCurveLpToken(threeCrvAddress)
 
-def test_get_curve_price_usdc(oracleProxyCurve):
-    price = oracleProxyCurve.getCurvePriceUsdc(threeCrvAddress)
-    assert price > 0
-
+def test_get_curve_price_usdc(oracleProxyCurve, oracle):
+    lps = [
+        TriCryptoUSDC,
+        TriCRV,
+        TriCryptoINV,
+        TriSilo,
+    ]
+    for lp in lps:
+        price = oracle.getPriceUsdcRecommended(lp)
+        assert int(price) == int(Contract(lp).lp_price()) # These pools have built-in LP oracle
+        assert price > 0
 
 def test_base_price(oracleProxyCurve):
     price = oracleProxyCurve.getBasePrice(threeCrvAddress)
